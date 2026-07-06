@@ -13,6 +13,7 @@ const Page = styled.main`
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
   }
 `;
 
@@ -27,6 +28,11 @@ const Hero = styled.section`
     font-size: 24px;
     font-weight: 700;
     letter-spacing: -.03em;
+  }
+
+  @media (max-width: 900px) {
+    min-height: auto;
+    padding: 32px 24px 16px;
   }
 `;
 
@@ -54,6 +60,14 @@ const HeroContent = styled.div`
     font-size: 16px;
     line-height: 1.75;
   }
+
+  @media (max-width: 900px) {
+    margin: 32px 0 16px;
+    
+    h1 {
+      font-size: 32px;
+    }
+  }
 `;
 
 const BlobSpot = styled.div`
@@ -76,6 +90,13 @@ const AuthPanel = styled.section`
   place-items: center;
   padding: 28px;
   background: linear-gradient(90deg, rgba(255,255,255,.16), rgba(255,255,255,.34));
+
+  @media (max-width: 900px) {
+    min-height: auto;
+    padding: 32px 24px 64px;
+    align-items: start;
+    background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.24));
+  }
 `;
 
 const AuthBox = styled.div`
