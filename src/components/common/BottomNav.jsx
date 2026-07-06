@@ -5,7 +5,7 @@ const Bar = styled.nav`
   position: fixed;
   left: 12px;
   right: 12px;
-  bottom: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 40;
   display: none;
   grid-template-columns: repeat(5, 1fr);

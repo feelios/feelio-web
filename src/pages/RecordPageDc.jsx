@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
@@ -30,6 +30,10 @@ const MainPanel = styled(GlassCard)`
   overflow: hidden;
   min-height: 610px;
   padding: clamp(22px, 3vw, 34px);
+
+  @media (max-width: 920px) {
+    min-height: auto;
+  }
 `;
 
 const FaintBlob = styled.div`
@@ -98,16 +102,17 @@ const BlobGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, minmax(78px, 1fr));
   gap: 14px 10px;
-  margin-top: 18px;
+  margin-top: 12px;
 
   @media (max-width: 560px) {
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px 4px;
+    gap: 8px 4px;
+    margin-top: 6px;
   }
 `;
 
 const BlobChoice = styled.button`
-  height: 128px;
+  height: 148px;
   border: 0;
   background: transparent;
   color: ${({ active }) => active ? 'var(--text)' : 'var(--sub)'};
@@ -115,10 +120,15 @@ const BlobChoice = styled.button`
   flex-direction: column;
   align-items: center;
   justify-content: end;
-  gap: 2px;
+  gap: 4px;
   font-weight: ${({ active }) => active ? 900 : 700};
   cursor: pointer;
   filter: ${({ dim }) => dim ? 'saturate(.55) opacity(.45)' : 'none'};
+
+  @media (max-width: 560px) {
+    height: 96px;
+    gap: 2px;
+  }
 `;
 
 const Side = styled.div`
@@ -198,6 +208,13 @@ export default function RecordPageDc({ actions, onSaved }) {
     memo: '',
     date: '2026-07-01T21:30'
   });
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 560);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 560);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const selected = getEmotion(form.emotion || '스트레스');
   const canSave = form.amount && form.emotion && form.category;
 
@@ -333,8 +350,8 @@ export default function RecordPageDc({ actions, onSaved }) {
                 const active = form.emotion === name;
                 return (
                   <BlobChoice key={name} active={active} dim={form.emotion && !active} onClick={() => setField('emotion', active ? null : name)}>
-                    <EmotionBlob emotion={name} size={active ? 122 : 92} interactive={false} />
-                    <span>{name}</span>
+                    <EmotionBlob emotion={name} size={isMobile ? (active ? 74 : 60) : (active ? 122 : 92)} interactive={false} />
+                    <span css={{ fontSize: isMobile ? 12 : 14 }}>{name}</span>
                   </BlobChoice>
                 );
               })}

@@ -8,7 +8,7 @@ import { dayKey, money, percent } from '../utils/format.js';
 
 const Grid = styled.div`
   width: min(100%, 1420px);
-  min-height: clamp(680px, calc(100vh - 92px), 820px);
+  min-height: clamp(680px, calc(100dvh - 92px), 820px);
   margin: 0 auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(370px, .76fr);

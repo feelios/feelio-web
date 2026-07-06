@@ -5,11 +5,11 @@ import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { stepIn } from '../styles/animations.js';
 
 const Page = styled.main`
-  min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(520px, 1.05fr) minmax(420px, .95fr);
+  grid-template-columns: 1.05fr .95fr;
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
@@ -17,7 +17,7 @@ const Page = styled.main`
 `;
 
 const Hero = styled.section`
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: clamp(42px, 6vw, 72px) clamp(38px, 7vw, 92px);
@@ -71,7 +71,7 @@ const BlobSpot = styled.div`
 `;
 
 const AuthPanel = styled.section`
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 28px;

@@ -337,7 +337,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
     <Modal
       onClose={onClose}
       width="min(460px, calc(100vw - 40px))"
-      maxHeight="min(720px, calc(100vh - 40px))"
+      maxHeight="min(720px, calc(100dvh - 40px))"
       overflow="auto"
     >
       {view === 'profile' && (

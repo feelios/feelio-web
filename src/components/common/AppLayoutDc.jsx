@@ -20,7 +20,7 @@ const Shell = styled.div`
   --scrim: ${({ mode }) => mode === 'dark' ? 'rgba(5,6,12,.42)' : 'rgba(40,32,24,.22)'};
   --shadow: ${({ mode }) => mode === 'dark' ? theme.darkShadow : theme.shadow};
   position: relative;
-  min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   background: linear-gradient(160deg, var(--bg-1), var(--bg-2));
 `;
@@ -42,7 +42,7 @@ const Veil = styled.div`
 const Main = styled.main`
   position: relative;
   z-index: 2;
-  min-height: 100vh;
+  min-height: 100dvh;
   padding: clamp(22px, 2.4vw, 32px) clamp(24px, 3vw, 54px) 42px 268px;
 
   @media (max-width: 820px) {

@@ -33,7 +33,7 @@ const Root = styled.div`
   --scrim: ${({ mode }) => mode === 'dark' ? 'rgba(5,6,12,.42)' : 'rgba(40,32,24,.22)'};
   --shadow: ${({ mode }) => mode === 'dark' ? theme.darkShadow : theme.shadow};
   position: relative;
-  min-height: 100vh;
+  min-height: 100dvh;
   color: var(--text);
   background: linear-gradient(160deg, var(--bg-1), var(--bg-2));
   overflow-x: hidden;
