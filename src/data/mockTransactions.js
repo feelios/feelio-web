@@ -1,0 +1,22 @@
+export const mockTransactions = [
+  { id: 't1', type: 'expense', amount: 18600, category: '카페', emotion: '스트레스', situation: '퇴근 후', memo: '달달한 라떼와 케이크', date: '2026-07-01T21:30' },
+  { id: 't2', type: 'expense', amount: 32000, category: '식비', emotion: '외로움', situation: '혼자 있을 때', memo: '늦은 저녁 배달', date: '2026-07-01T20:10' },
+  { id: 't3', type: 'expense', amount: 58000, category: '쇼핑', emotion: '설렘', situation: '보상', memo: '여름 셔츠', date: '2026-07-03T18:20' },
+  { id: 't4', type: 'income', amount: 2600000, category: '월급', emotion: '뿌듯함', situation: '아침', memo: '7월 급여', date: '2026-07-03T09:00' },
+  { id: 't5', type: 'expense', amount: 12400, category: '교통', emotion: '무덤덤', situation: '이동 중', memo: '택시', date: '2026-07-08T23:15' },
+  { id: 't6', type: 'expense', amount: 67000, category: '문화', emotion: '평온', situation: '친구와', memo: '전시와 저녁', date: '2026-07-12T17:40' },
+  { id: 't7', type: 'expense', amount: 98000, category: '식비', emotion: '스트레스', situation: '퇴근 후', memo: '야식과 장보기', date: '2026-07-20T22:10' },
+  { id: 't8', type: 'expense', amount: 46000, category: '카페', emotion: '외로움', situation: '밤', memo: '혼자 간 카페', date: '2026-07-28T21:10' },
+  { id: 't9', type: 'expense', amount: 30000, category: '건강', emotion: '뿌듯함', situation: '보상', memo: '요가 클래스', date: '2026-07-30T10:00' },
+  { id: 't10', type: 'expense', amount: 42000, category: '배달', emotion: '스트레스', situation: '퇴근 후', memo: '야근 후 치킨', date: '2026-06-18T22:20' },
+  { id: 't11', type: 'expense', amount: 16400, category: '카페', emotion: '외로움', situation: '혼자 있음', memo: '늦은 밤 라떼', date: '2026-06-22T21:10' },
+  { id: 't12', type: 'expense', amount: 79000, category: '쇼핑', emotion: '설렘', situation: '보상', memo: '여름 신발', date: '2026-05-14T18:35' },
+  { id: 't13', type: 'income', amount: 180000, category: '용돈', emotion: '뿌듯함', situation: '아침', memo: '프로젝트 보너스', date: '2026-04-03T09:00' },
+  { id: 't14', type: 'expense', amount: 53000, category: '문화', emotion: '평온', situation: '친구와', memo: '연말 전시', date: '2025-12-20T16:40' },
+  { id: 't15', type: 'expense', amount: 11800, category: '교통', emotion: '무덤덤', situation: '이동 중', memo: '택시 기본요금', date: '2025-09-08T08:25' },
+  { id: 't16', type: 'income', amount: 2550000, category: '월급', emotion: '뿌듯함', situation: '아침', memo: '2025년 9월 급여', date: '2025-09-01T09:00' },
+  { id: 't17', type: 'expense', amount: 36000, category: '건강', emotion: '뿌듯함', situation: '보상', memo: '필라테스 체험', date: '2024-11-12T19:00' },
+  { id: 't18', type: 'expense', amount: 22000, category: '편의점', emotion: '화남', situation: '밤', memo: '충동 간식', date: '2024-02-02T23:30' },
+  { id: 't19', type: 'expense', amount: 64000, category: '여행', emotion: '신남', situation: '친구와', memo: '부산 숙소 예약금', date: '2024-02-18T12:00' },
+  { id: 't20', type: 'expense', amount: 27000, category: '배달', emotion: '화남', situation: '밤', memo: '매운 떡볶이 배달', date: '2023-12-29T23:40' }
+];
