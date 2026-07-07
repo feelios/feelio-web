@@ -4,7 +4,6 @@ import styled from '@emotion/styled';
 import { Modal } from '../common/Modal.jsx';
 import { EmotionBlob } from '../common/EmotionBlob.jsx';
 import { auroras } from '../../data/aurorasDc.js';
-import { emotions, getEmotion } from '../../data/emotions.js';
 import { money, percent } from '../../utils/format.js';
 
 const Screen = styled.div`
@@ -199,28 +198,6 @@ const SmallAction = styled.button`
   color: ${({ danger }) => danger ? '#E87573' : 'var(--text)'};
 `;
 
-const TagChip = styled.span`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  background: ${({ light }) => light};
-  color: ${({ color }) => color};
-  padding: 7px 12px;
-  border-radius: 99px;
-`;
-
-const TagRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 10px 14px;
-`;
-
 const ToggleRow = styled.div`
   display: flex;
   align-items: center;
@@ -279,16 +256,9 @@ const DangerBox = styled.div`
   padding: 16px 18px;
 `;
 
-const userTags = [
-  ['야근', '#9E96EE'],
-  ['혼자 있음', '#76A7E8'],
-  ['보상', '#F2C766'],
-  ['이동 중', '#83C9B0']
-];
-
 function cleanName(name) {
   if (!name || name.length > 8) return '서연';
-  if (/[?�]/.test(name) || name.includes('쒖') || name.includes('뿰')) return '서연';
+  if (/[\uFFFD?]/.test(name) || name.includes('\uC496') || name.includes('\uBF30')) return '서연';
   return name;
 }
 
@@ -307,7 +277,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
   const [editIndex, setEditIndex] = useState(-1);
   const [goalForm, setGoalForm] = useState({ name: '', target: '', current: '', period: '' });
   const [noti, setNoti] = useState({ record: true, weekly: true, goal: false });
-  const goal = state.goals[0] || { name: '제주도 여행', current: 0, target: 1 };
+  const goal = useMemo(() => state.goals[0] || { name: '제주도 여행', current: 0, target: 1 }, [state.goals]);
   const goalPct = percent(goal.current, goal.target);
   const provider = state.user.provider || 'Google';
   const email = state.user.email || 'seoyeon@feelio.app';

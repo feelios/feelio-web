@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function UniverseConsole({ 
   isMobile, leverA, leverB, startLeverA, startLeverB, ignite, recommending, statusText, 
   selectCurrent, selectReduced, leftOn, rightOn 

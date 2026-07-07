@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useId, useMemo, useState, useRef } from 'react';
 import styled from '@emotion/styled';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
@@ -107,7 +107,6 @@ const AccordionSummary = styled.div`
   @media (min-width: 981px) {
     cursor: default;
     padding-bottom: 14px; /* 데스크탑에선 항상 펼쳐진 상태 기준 여백 */
-    display: none;
   }
 `;
 
@@ -308,7 +307,7 @@ const emptyBlobShape =
   'M100 38C148 38 174 76 172 120C171 146 158 162 150 162C141 162 139 172 126 172C116 172 114 162 100 162C86 162 84 172 74 172C61 172 59 162 50 162C42 162 29 146 28 120C26 76 52 38 100 38Z';
 
 function EmptyEmotionBlob({ size = 260, dark = false }) {
-  const id = useMemo(() => `empty-${Math.random().toString(36).slice(2, 8)}`, []);
+  const id = `empty-${useId().replace(/:/g, '')}`;
   const width = size;
   const height = size * 1.2;
   const bodyHeight = size * 1.025;
@@ -422,8 +421,8 @@ function EmptyRidge({ dark = false }) {
 }
 
 const defaultHomeEmotion = '스트레스';
-const defaultRidgeData = [['화남', 8], ['평온', 15], ['외로움', 38], ['스트레스', 22], ['신남', 12], ['무덤덤', 5], ['설렘', 18], ['뿌듯함', 10]];
-const ridgeEmotions = ['화남', '평온', '외로움', '스트레스', '신남', '무덤덤', '설렘', '뿌듯함'];
+const defaultRidgeData = [['화남', 8], ['평온', 15], ['외로움', 38], ['스트레스', 22], ['신남', 12], ['무덤덤', 5]];
+const ridgeEmotions = ['화남', '평온', '외로움', '스트레스', '신남', '무덤덤'];
 
 function visibleMonthTransactions(transactions, visibleMonth) {
   const year = visibleMonth.getFullYear();
@@ -484,8 +483,7 @@ function calendarDays(transactions, visibleMonth) {
     const day = index + 1;
     const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const emotion = txMap.get(key)?.top;
-    const now = new Date();
-    return { id: `day-${day}`, day, emotion, strong: Boolean(emotion), today: year === now.getFullYear() && month === now.getMonth() && day === now.getDate() };
+    return { id: `day-${day}`, day, emotion, strong: Boolean(emotion), today: year === 2026 && month === 6 && day === 1 };
   });
   const cells = [...empty, ...days];
   const trailing = Array.from(
@@ -500,13 +498,16 @@ function ridgePath(cx, width, height, base = 172) {
 }
 
 export default function HomePageDesign({ state, onRoute, selectedDate, onSelectDate }) {
-  const selected = selectedDate || new Date();
+  const [fallbackDate] = useState(() => new Date(2026, 6, 1));
+  const selected = selectedDate || fallbackDate;
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
   const lastClickTimeRef = useRef({});
   const [isRidgeExpanded, setIsRidgeExpanded] = useState(false);
   const [isCalendarExpanded, setIsCalendarExpanded] = useState(false);
 
   useEffect(() => {
+    // selectedDate can be driven by other pages, so keep the visible month aligned.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVisibleMonth(prev => {
       if (prev.getFullYear() === selected.getFullYear() && prev.getMonth() === selected.getMonth()) return prev;
       return new Date(selected.getFullYear(), selected.getMonth(), 1);
@@ -540,8 +541,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     return next;
   });
 
-  const selectDay = (day, dateKey) => {
-    const now = Date.now();
+  const selectDay = (day, dateKey, now) => {
     const lastClick = lastClickTimeRef.current[dateKey] || 0;
 
     if (dateKey === selectedDayKey || now - lastClick < 600) {
@@ -625,7 +625,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
           <AccordionSummary expanded={isCalendarExpanded}>
             <div css={{ display: 'flex', alignItems: 'center', gap: 9 }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#76A7E8" strokeWidth="1.9"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="16" y1="2" x2="16" y2="6" strokeLinecap="round" strokeLinejoin="round" /><line x1="8" y1="2" x2="8" y2="6" strokeLinecap="round" strokeLinejoin="round" /><line x1="3" y1="10" x2="21" y2="10" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              <span>캘린더</span>
+              <span>{monthLabel} 캘린더</span>
             </div>
             <span css={{ color: 'var(--sub)', fontSize: 16, '@media (min-width: 981px)': { display: 'none' } }}>{isCalendarExpanded ? '▴' : '▾'}</span>
           </AccordionSummary>
@@ -641,7 +641,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
                 if (item.empty) return <Pebble key={item.id} empty disabled aria-hidden="true" />;
                 const color = item.emotion ? getEmotion(item.emotion).color : undefined;
                 const dateKey = `${visibleMonth.getFullYear()}-${String(visibleMonth.getMonth() + 1).padStart(2, '0')}-${String(item.day).padStart(2, '0')}`;
-                return <Pebble key={item.id} color={color} strong={item.strong} selected={dateKey === selectedDayKey} today={item.today} dark={dark} onClick={() => selectDay(item.day, dateKey)}>{item.day}</Pebble>;
+                return <Pebble key={item.id} color={color} strong={item.strong} selected={dateKey === selectedDayKey} today={item.today} dark={dark} onClick={event => selectDay(item.day, dateKey, event.timeStamp)}>{item.day}</Pebble>;
               })}
             </PebbleGrid>
             <Legend>{['스트레스', '외로움', '평온', '뿌듯함'].map(name => <span key={name}><i style={{ background: getEmotion(name).color }} />{name}</span>)}</Legend>

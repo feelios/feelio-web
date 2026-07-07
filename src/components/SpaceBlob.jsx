@@ -1,10 +1,10 @@
-import React, { useMemo, useRef } from 'react';
+import { useId, useMemo } from 'react';
 
 const SIL = "M100 38C148 38 174 76 172 120C171 146 158 162 150 162C141 162 139 172 126 172C116 172 114 162 100 162C86 162 84 172 74 172C61 172 59 162 50 162C42 162 29 146 28 120C26 76 52 38 100 38Z";
 const BODY = { light: "#F4F5FA", base: "#DDE0EA", dark: "#C2C7D4", ink: "#4a4a58" };
 
 export default function SpaceBlob({ size = 220, speaking = false, poked = false, onClick }) {
-  const id = useRef(`sb${Math.random().toString(36).slice(2, 7)}`).current;
+  const id = `sb${useId().replace(/:/g, '')}`;
   const sparkles = useMemo(() => ([
     { x: 30, y: 24, s: 8, d: "3.2s", delay: "0s" },
     { x: 168, y: 40, s: 6, d: "2.6s", delay: "0.6s" },

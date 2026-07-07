@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 
-export default function UniverseEasterEgg({ eggPct, calc, eggDistA, eggTimeA, eggDistB, eggTimeB, eggCurv }) {
+export default function UniverseEasterEgg({ eggPct, eggDistA, eggTimeA, eggDistB, eggTimeB, eggCurv }) {
   const { rings, mers, arcS, arcC, O, S, C } = useMemo(() => {
     var cx = 430, cy = 248, ty = 0.5, R0 = 95, D = 175;
     var proj = (r, th) => [cx + r * Math.cos(th), cy + r * Math.sin(th) * ty + D / (1 + Math.pow(r / R0, 2))];

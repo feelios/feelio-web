@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styled from '@emotion/styled';
 import { Global, css } from '@emotion/react';
 import UniversePlanet from '../components/UniversePlanet';
@@ -96,7 +96,6 @@ export default function UniversePageDc() {
   const [leverB, setLeverB] = useState(0.6);
   const [egg, setEgg] = useState(false);
   const [calc, setCalc] = useState(0);
-  const [departTo, setDepartTo] = useState("");
   const [blobPoke, setBlobPoke] = useState(false);
   const [narrativeIndex, setNarrativeIndex] = useState(0);
   
@@ -104,7 +103,6 @@ export default function UniversePageDc() {
   const stRef = useRef(null);
   const ivRef = useRef(null);
   const containerRef = useRef(null);
-  const scrollRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 980);
   const [isShortMobile, setIsShortMobile] = useState(window.innerHeight < 700);
@@ -171,13 +169,11 @@ export default function UniversePageDc() {
   const depart = (key) => {
     if (phase === "departing") return;
     if (tRef.current) clearTimeout(tRef.current);
-    setPhase("departing"); setDepartTo(key);
+    setPhase("departing");
     tRef.current = setTimeout(() => {
-      setPhase("result"); setSelected(key); setDepartTo("");
+      setPhase("result"); setSelected(key);
     }, 1150);
   };
-
-  const switchOther = () => depart(selected === "current" ? "reduced" : "current");
 
   const dragLever = (key, e) => {
     if (e.preventDefault) e.preventDefault();

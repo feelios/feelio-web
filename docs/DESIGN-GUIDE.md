@@ -70,8 +70,6 @@ src/data/aurorasDc.js
 | `--text` | 본문 텍스트 |
 | `--sub` | 보조 텍스트 |
 | `--ink` / `--on-ink` | 주요 버튼 배경 / 버튼 위 텍스트 |
-| `--muted`, `--soft` | 약한 강조 텍스트/요소 |
-| `--glass`, `--glass-strong` | 글래스모피즘 보조 효과 |
 | `--line` | 구분선·연한 테두리 |
 | `--modal-bg`, `--scrim` | 모달 배경·딤 |
 | `--shadow` | 카드 그림자 |
@@ -80,13 +78,10 @@ src/data/aurorasDc.js
 
 - **CSS-in-JS는 Emotion만 사용한다**: `@emotion/react`(css prop) + `@emotion/styled`
 - **금지**: Tailwind, Bootstrap, MUI/Chakra 등 UI 킷, styled-components, CSS Module 신규 도입
-- **Typography Scale**: `H1(32px)`, `H2(24px)`, `Body1(16px)`, `Caption(13px)` 등 일관된 텍스트 크기를 유지한다.
-- **Spacing Grid**: 모든 패딩과 마진은 4px 또는 8px 배수를 권장한다 (예: 4, 8, 12, 16, 24, 32px).
-- **Z-Index Layering**: 충돌 방지를 위해 `Background(0) < Card(1) < Modal(100) < Toast(200)` 계층을 준수한다.
 - 폰트: `Inter, 'Pretendard', system-ui` (theme.js 정의)
 - 카드 radius 큰 값(24~28px), backdrop blur — 기존 GlassCard를 재사용하고 새로 만들지 않는다
 - 모든 화면은 **라이트/다크 모드 양쪽에서 확인** 후 완료 처리 (모드는 CSS 변수로 자동 전환 — 변수만 쓰면 자동 대응)
-- **표준 Breakpoints**: 모바일은 980px 이하, 스몰 모바일은 560px 이하를 기준으로 미디어 쿼리를 작성한다 (예: `@media (max-width: 980px)`).
+- 반응형 기준: 820px (이하 모바일 — 사이드바 → 하단 탭)
 
 ## 6. 새 화면·컴포넌트를 만들 때
 
@@ -96,3 +91,12 @@ src/data/aurorasDc.js
 4. 문구 톤: 부드러운 반말체 유지 (예: "얼마나 썼어요?", "기록 저장됨") — 딱딱한 시스템 문구 금지
 5. **"가계부"라는 단어를 UI 문구·주석에 쓰지 않는다** (서비스 표현 규칙)
 
+## 7. 알려진 정리 대상 (디자인 관련 확정 작업 — 새로 발명하지 말 것)
+
+| 항목 | 내용 |
+|---|---|
+| 누수율 KPI 배지 제거 | `AnalysisPageDc.jsx` 상단 38% 배지 — 누수율은 제거 확정 기능 |
+| 감정 능선 8종 확장 | 능선 축이 6감정으로 고정된 것을 8감정 전체로 (팀 확정) |
+| 로그인 히어로 문구 | 표현 규칙 위반 단어 수정 (`LoginPage.jsx`) |
+| 데모 고정값 교체 | 캘린더 '오늘'(2026-07-01)·기록 기본 일시 → 실제 현재 시각 |
+| 모바일 프로필 진입 | 하단 탭에 프로필 진입 경로 추가 (디자인은 기존 탭 스타일 준수) |

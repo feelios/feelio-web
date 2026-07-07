@@ -1,4 +1,4 @@
-﻿* { box-sizing: border-box; }
+* { box-sizing: border-box; }
 
 :root {
   --ink: #f8f5ee;
@@ -7,6 +7,13 @@
   --glass: rgba(255, 255, 255, .105);
   --glass-strong: rgba(255, 255, 255, .16);
   --line: rgba(255, 255, 255, .18);
+  --blue: #5b8def;
+  --mint: #2fbfa6;
+  --coral: #ff7a6b;
+  --gold: #f5a623;
+  --pink: #f35fa8;
+  --violet: #8a6cff;
+  --danger: #f25555;
   --shadow: 0 28px 90px -38px rgba(0, 0, 0, .82);
 }
 
@@ -8996,6 +9003,6 @@ input, textarea {
 }
 
 
-/* ����� ��ũ�ѹ� ����� (����� ����) */
+/* 모바일 스크롤바 숨기기 (기능은 유지) */
 ::-webkit-scrollbar { display: none; }
 * { -ms-overflow-style: none; scrollbar-width: none; }

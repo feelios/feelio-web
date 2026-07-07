@@ -166,7 +166,6 @@ export default function TransactionDetailModal({ transaction, actions, onClose }
   });
 
   const isIncome = transaction.type === 'income';
-  const emo = getEmotion(mode === 'edit' ? form.emotion : transaction.emotion);
   const rows = [
     ['구분', isIncome ? '수입' : '지출'],
     ['카테고리', transaction.category],
