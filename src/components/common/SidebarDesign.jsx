@@ -19,7 +19,7 @@ const Aside = styled.aside`
   backdrop-filter: blur(30px) saturate(1.3);
   -webkit-backdrop-filter: blur(30px) saturate(1.3);
 
-  @media (max-width: 820px) {
+  @media (max-width: 980px) {
     display: none;
   }
 `;

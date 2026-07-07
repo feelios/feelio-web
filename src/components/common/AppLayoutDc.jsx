@@ -45,7 +45,7 @@ const Main = styled.main`
   min-height: 100dvh;
   padding: clamp(22px, 2.4vw, 32px) clamp(24px, 3vw, 54px) 42px 268px;
 
-  @media (max-width: 820px) {
+  @media (max-width: 980px) {
     padding: 22px 16px calc(96px + env(safe-area-inset-bottom));
   }
 `;
@@ -83,7 +83,7 @@ const IconButton = styled.button`
 `;
 
 const DarkModeToggle = styled(IconButton)`
-  @media (max-width: 820px) {
+  @media (max-width: 980px) {
     display: none;
   }
 `;
@@ -102,7 +102,7 @@ const MobileProfile = styled(IconButton)`
   font-size: 16px;
   border: 0;
   
-  @media (max-width: 820px) {
+  @media (max-width: 980px) {
     display: flex;
     align-items: center;
     justify-content: center;

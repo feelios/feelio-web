@@ -8,7 +8,7 @@ const Bar = styled.nav`
   bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 40;
   display: none;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(${routes.length}, 1fr);
   gap: 4px;
   padding: 8px;
   border-radius: 22px;
@@ -17,7 +17,7 @@ const Bar = styled.nav`
   box-shadow: var(--shadow);
   backdrop-filter: blur(28px);
 
-  @media (max-width: 820px) {
+  @media (max-width: 980px) {
     display: grid;
   }
 `;
