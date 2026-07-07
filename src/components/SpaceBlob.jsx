@@ -30,7 +30,7 @@ export default function SpaceBlob({ size = 220, speaking = false, poked = false,
         @keyframes sb-tw{0%,100%{opacity:.2;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
         @keyframes sb-dot{0%,100%{opacity:.2}50%{opacity:.9}}
         @keyframes sb-talk{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1.15)}}
-        @keyframes sb-poke{0%,100%{transform:scale(1,1) translateY(0)}30%{transform:scale(1.15,0.85) translateY(12px)}60%{transform:scale(0.9,1.1) translateY(-6px)}}
+        @keyframes sb-poke{0%,100%{transform:scale(1,1) translateY(0)}30%{transform:scale(1.25,0.75) translateY(18px)}60%{transform:scale(0.85,1.15) translateY(-8px)}}
       `}</style>
       <div style={{ position: "relative", width: S, height: S }}>
         <svg width="100%" height="100%" viewBox="0 0 200 200" style={{ display: "block", overflow: "visible" }}>
@@ -44,7 +44,7 @@ export default function SpaceBlob({ size = 220, speaking = false, poked = false,
           {dots.map((s, i) => (
             <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="#c9cfe0" style={{ animation: `sb-dot ${s.d}s ease-in-out ${s.delay}s infinite` }} />
           ))}
-          <g style={{ animation: poked ? "sb-poke 0.45s cubic-bezier(.2,.8,.2,1)" : "sb-float 6s ease-in-out infinite" }}>
+          <g style={{ animation: poked ? "sb-poke 0.45s cubic-bezier(.2,.8,.2,1)" : "sb-float 6s ease-in-out infinite", transformOrigin: "100px 176px" }}>
             <g style={{ animation: `${speaking ? "sb-speak 0.5s ease-in-out infinite" : "sb-breathe 4.5s ease-in-out infinite"}`, transformOrigin: "100px 176px" }}>
               <path d={SIL} fill="#E4E7F0" opacity="0.5" filter={`url(#${id}-halo)`} />
               <path d={SIL} fill={`url(#${id}-b)`} filter={`url(#${id}-soft)`} />
