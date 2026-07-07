@@ -12,7 +12,7 @@
 - **JSON 표기**: camelCase (DB snake_case ↔ 서버 매핑)
 - **Naming Rule**: RESTful, 리소스 경로는 kebab-case·복수형 명사
 - **Version 관리**: URI 버저닝으로 하위 호환 유지 (필요 시 `/api/v1/...` 도입)
-- 모든 개인 데이터는 **인증 주체의 user_id 기준으로만** 조회·변경 (클라이언트가 보낸 userId는 신뢰하지 않음)
+- 모든 개인 데이터는 **인증 주체의 user_id 기준으로만** 조회·변경 (클라;이언트가 보낸 userId는 신뢰하지 않음)
 
 ---
 
