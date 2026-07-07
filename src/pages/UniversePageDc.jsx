@@ -20,10 +20,10 @@ const globalStyles = css`
   @keyframes pu-blink{0%,100%{opacity:.35}50%{opacity:1}}
   @keyframes pu-arrive{from{opacity:0}to{opacity:1}}
   @keyframes pu-recoil{0%{transform:translate(0,0) scale(1)}20%{transform:translate(-16px,11px) scale(1.02,.985)}100%{transform:translate(0,0) scale(1)}}
-  @keyframes pu-fly-a{0%{transform:translate(580px,600px) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(330px,205px) scale(.32) rotate(-10deg);opacity:1}}
-  @keyframes pu-fly-a-m{0%{transform:translate(50vw,85vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(35vw,35vh) scale(.32) rotate(-10deg);opacity:1}}
-  @keyframes pu-fly-b{0%{transform:translate(580px,600px) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(830px,225px) scale(.32) rotate(10deg);opacity:1}}
-  @keyframes pu-fly-b-m{0%{transform:translate(50vw,85vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(65vw,35vh) scale(.32) rotate(10deg);opacity:1}}
+  @keyframes pu-fly-a{0%{transform:translate(580px,600px) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(330px,196px) scale(.32) rotate(-10deg);opacity:1}}
+  @keyframes pu-fly-a-m{0%{transform:translate(50vw,85vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(22vw,40vh) scale(.32) rotate(-10deg);opacity:1}}
+  @keyframes pu-fly-b{0%{transform:translate(580px,600px) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(830px,196px) scale(.32) rotate(10deg);opacity:1}}
+  @keyframes pu-fly-b-m{0%{transform:translate(50vw,85vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(78vw,40vh) scale(.32) rotate(10deg);opacity:1}}
   @keyframes pu-depart{0%{transform:translate(330px,430px) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(948px,344px) scale(.22) rotate(16deg);opacity:1}}
   @keyframes pu-depart-m{0%{transform:translate(25vw,25vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(80vw,15vh) scale(.22) rotate(16deg);opacity:1}}
   @keyframes pu-scan{0%{transform:scale(.4);opacity:.85}100%{transform:scale(3.2);opacity:0}}
@@ -237,9 +237,9 @@ export default function UniversePageDc() {
                 )}
 
                 <div style={{ flexGrow: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ position: "absolute", inset: 0, transition: "transform .6s cubic-bezier(.4,0,.2,1)", transform: phase === "flying" ? `scale(2.5) ${selected === "current" ? "translate(28%, 15%)" : "translate(-28%, -5%)"}` : phase === "result" ? "scale(0) opacity(0)" : "scale(1)" }}>
+                  <div style={{ position: "absolute", inset: 0 }}>
                     <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 3 }}>
-                      <div style={{ position: "relative", width: "100%", maxWidth: 400, height: orbitHeight + 120, pointerEvents: "none" }}>
+                      <div style={{ position: "relative", width: "100%", maxWidth: 400, height: orbitHeight + 120, pointerEvents: "none", transformOrigin: selected === "current" ? "22% 50%" : "78% 50%", transition: "transform .6s cubic-bezier(.4,0,.2,1)", transform: phase === "flying" ? `scale(1.8)` : phase === "result" ? "scale(0) opacity(0)" : "scale(1)" }}>
                         <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%) rotate(-8deg)", width: "82%", height: orbitHeight, border: "1px solid rgba(255,255,255,0.25)", borderRadius: "50%", pointerEvents: "none", zIndex: 3 }}></div>
                         
                         <div onClick={() => select("current")} style={{ position: "absolute", left: "22%", top: `calc(50% - ${orbitHeight/2}px + 8px)`, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
@@ -296,7 +296,7 @@ export default function UniversePageDc() {
                   </div>
                 )}
 
-                <div style={{ position: "absolute", inset: 0, zIndex: 3, transition: "transform .6s cubic-bezier(.4,0,.2,1)", transform: phase === "flying" ? `scale(2.5) ${selected === "current" ? "translate(10%, 20%)" : "translate(-30%, 15%)"}` : phase === "result" ? "scale(0) opacity(0)" : "scale(1)" }}>
+                <div style={{ position: "absolute", inset: 0, zIndex: 3, transformOrigin: selected === "current" ? "330px 196px" : "830px 196px", transition: "transform .6s cubic-bezier(.4,0,.2,1)", transform: phase === "flying" ? `scale(1.8)` : phase === "result" ? "scale(0) opacity(0)" : "scale(1)" }}>
                   <div onClick={() => select("current")} style={{ position: "absolute", left: 330, top: 196, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
                     <div style={{ position: "relative", width: 150, height: 150 }}>
                       <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 232, height: 232, borderRadius: "50%", background: "radial-gradient(circle,rgba(158,150,238,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4.4s ease-in-out infinite" }}></div>
