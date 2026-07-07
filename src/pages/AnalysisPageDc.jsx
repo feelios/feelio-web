@@ -3,6 +3,7 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
+import { theme } from '../styles/theme.js';
 
 const Page = styled.div`
   width: min(100%, 1420px);
@@ -10,6 +11,52 @@ const Page = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
+`;
+
+const TopNav = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+`;
+
+const MonthSelector = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(18px);
+
+  strong {
+    min-width: 100px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 900;
+  }
+`;
+
+const MonthButton = styled.button`
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sub);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all .2s ease;
+  opacity: ${props => props.disabled ? 0.3 : 1};
+  pointer-events: ${props => props.disabled ? 'none' : 'auto'};
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+  }
 `;
 
 const InsightRail = styled(GlassCard)`
@@ -20,7 +67,7 @@ const InsightRail = styled(GlassCard)`
   gap: 0;
   overflow: hidden;
 
-  @media (max-width: 960px) {
+  @media (max-width: 980px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -41,7 +88,7 @@ const InsightItem = styled.div`
     border-right: 0;
   }
 
-  @media (max-width: 960px) {
+  @media (max-width: 980px) {
     &:nth-of-type(2) {
       border-right: 0;
     }
@@ -81,20 +128,20 @@ const RiskSignal = styled.span`
   }
 
   i.green {
-    background: #83C9B0;
+    background: ${theme.emotions['평온'].color};
   }
 
   i.yellow {
-    background: #F2C766;
+    background: ${theme.emotions['뿌듯함'].color};
   }
 
   i.red {
-    background: #E87573;
+    background: ${theme.emotions['화남'].color};
   }
 
   i.active {
     opacity: 1;
-    box-shadow: 0 0 16px rgba(232, 117, 115, .74), 0 0 0 3px rgba(232, 117, 115, .16);
+    box-shadow: 0 0 16px ${theme.emotions['화남'].light}, 0 0 0 3px ${theme.emotions['화남'].light};
   }
 `;
 
@@ -103,7 +150,7 @@ const Duo = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 
-  @media (max-width: 900px) {
+  @media (max-width: 980px) {
     grid-template-columns: 1fr;
   }
 `;
@@ -127,15 +174,15 @@ const categoryData = [
 ];
 
 const aiInsights = [
-  { emotion: '외로움', percent: 61, amount: '113,000원', color: '#5b7db1', title: '새벽 1시, 외로우면 지갑이 샌다', desc: '자정~새벽 소비의 78%가 \'외로움\' 태그' },
-  { emotion: '불안', percent: 22, amount: '41,000원', color: '#a68b55', title: '월급날 다음 3일이 제일 위험해', desc: '불안 소비가 평소의 2.3배로 튐' },
-  { emotion: '신남', percent: 17, amount: '31,500원', color: '#b15b76', title: '기분이 들뜨면 지출도 들뜬다', desc: '신남 태그 날 하루 평균 지출 49,200원' }
+  { emotion: '외로움', percent: 61, amount: '113,000원', color: theme.emotions['외로움'].color, title: '새벽 1시, 외로우면 지갑이 샌다', desc: '자정~새벽 소비의 78%가 \'외로움\' 태그' },
+  { emotion: '스트레스', percent: 22, amount: '41,000원', color: theme.emotions['스트레스'].color, title: '월급날 다음 3일이 제일 위험해', desc: '스트레스 소비가 평소의 2.3배로 튐' },
+  { emotion: '신남', percent: 17, amount: '31,500원', color: theme.emotions['신남'].color, title: '기분이 들뜨면 지출도 들뜬다', desc: '신남 태그 날 하루 평균 지출 49,200원' }
 ];
 
 const aiQuickInsights = [
   { label: '위험 루트', value: '우울함 → 새벽 쇼핑', note: '반복 감지', color: 'var(--sub)' },
-  { label: '팩트 리포트', value: '택시비 48,000원', note: '스트레스 핑계', color: '#E87573', type: 'fact' },
-  { label: '소비 위험도', value: '위험', note: '스트레스 누적', color: '#E87573', type: 'risk' },
+  { label: '팩트 리포트', value: '택시비 48,000원', note: '스트레스 핑계', color: theme.emotions['화남'].color, type: 'fact' },
+  { label: '소비 위험도', value: '위험', note: '스트레스 누적', color: theme.emotions['화남'].color, type: 'risk' },
   { label: 'AI 맞춤 챌린지', value: '밤 10시 이후 0원', note: '12일 성공 · D-18', color: 'var(--sub)' }
 ];
 const emotionDist = [
@@ -154,9 +201,19 @@ const evidence = [
 
 export default function AnalysisPageDc({ state }) {
   const isDark = state?.mode === 'dark';
+  const [currentDate, setCurrentDate] = useState(() => new Date());
   const [flippedCards, setFlippedCards] = useState({});
   const [activeChartTab, setActiveChartTab] = useState('emotion');
   const [patternFlipped, setPatternFlipped] = useState(false);
+  const [activeMonthIndex, setActiveMonthIndex] = useState(monthly.length - 1);
+
+  const today = new Date();
+  const isCurrentMonth = currentDate.getFullYear() === today.getFullYear() && currentDate.getMonth() === today.getMonth();
+
+  const moveMonth = (delta) => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+  };
+  const monthLabel = `${currentDate.getFullYear()}년 ${currentDate.getMonth() + 1}월`;
 
   const toggleFlip = (emotion) => {
     setFlippedCards(prev => ({ ...prev, [emotion]: !prev[emotion] }));
@@ -166,28 +223,28 @@ export default function AnalysisPageDc({ state }) {
     category: {
       label: '배달', percent: 43, color: 'var(--text)', helper: '가장 많이 쓴 곳', focus: '배달 소비가 예산 흐름을 가장 크게 만들었어요',
       segments: [
-        { name: '배달', percent: 43, amount: '82,000원', color: '#A68BEA' },
-        { name: '카페', percent: 28, amount: '54,000원', color: '#F28AB7' },
-        { name: '쇼핑', percent: 21, amount: '39,000원', color: '#F28AB7' },
-        { name: '편의점', percent: 8, amount: '15,000원', color: '#83C9B0' }
+        { name: '배달', percent: 43, amount: '82,000원', color: theme.emotions['스트레스'].color },
+        { name: '카페', percent: 28, amount: '54,000원', color: theme.emotions['설렘'].color },
+        { name: '쇼핑', percent: 21, amount: '39,000원', color: theme.emotions['설렘'].color },
+        { name: '편의점', percent: 8, amount: '15,000원', color: theme.emotions['평온'].color }
       ]
     },
     time: {
       label: '밤', percent: 33, color: 'var(--text)', helper: '가장 몰린 시간', focus: '밤 시간대 소비가 반복되고 있어요',
       segments: [
-        { name: '밤', percent: 33, color: '#A68BEA' },
-        { name: '저녁', percent: 31, color: '#B4AAF2' },
-        { name: '점심', percent: 24, color: '#76A7E8' },
-        { name: '아침', percent: 12, color: '#83C9B0' }
+        { name: '밤', percent: 33, color: theme.emotions['스트레스'].color },
+        { name: '저녁', percent: 31, color: theme.emotions['스트레스'].color },
+        { name: '점심', percent: 24, color: theme.emotions['외로움'].color },
+        { name: '아침', percent: 12, color: theme.emotions['평온'].color }
       ]
     },
     emotion: {
-      label: '스트레스', percent: 43, color: '#A68BEA', helper: '핵심 소비 감정', focus: '스트레스가 이번 달 소비를 가장 많이 끌고 갔어요',
+      label: '스트레스', percent: 43, color: theme.emotions['스트레스'].color, helper: '핵심 소비 감정', focus: '스트레스가 이번 달 소비를 가장 많이 끌고 갔어요',
       segments: [
-        { name: '스트레스', percent: 43, color: '#A68BEA' },
-        { name: '외로움', percent: 28, color: '#76A7E8' },
-        { name: '설렘', percent: 21, color: '#F28AB7' },
-        { name: '평온', percent: 8, color: '#83C9B0' }
+        { name: '스트레스', percent: 43, color: theme.emotions['스트레스'].color },
+        { name: '외로움', percent: 28, color: theme.emotions['외로움'].color },
+        { name: '설렘', percent: 21, color: theme.emotions['설렘'].color },
+        { name: '평온', percent: 8, color: theme.emotions['평온'].color }
       ]
     }
   };
@@ -236,6 +293,13 @@ export default function AnalysisPageDc({ state }) {
 
   return (
     <Page>
+      <TopNav>
+        <MonthSelector>
+          <MonthButton type="button" onClick={() => moveMonth(-1)} aria-label="이전 달">‹</MonthButton>
+          <strong>{monthLabel}</strong>
+          <MonthButton type="button" onClick={() => moveMonth(1)} aria-label="다음 달" disabled={isCurrentMonth}>›</MonthButton>
+        </MonthSelector>
+      </TopNav>
       <InsightRail>
         {aiQuickInsights.map(item => (
           <InsightItem key={item.label}>
@@ -400,17 +464,24 @@ export default function AnalysisPageDc({ state }) {
               <p css={{ margin: 0, color: 'var(--sub)', fontSize: 12 }}>최근 7개월 흐름만 담백하게 보여줘요</p>
             </div>
             <div css={{ textAlign: 'right', flexShrink: 0 }}>
-              <div css={{ color: 'var(--text)', fontSize: 18, fontWeight: 950 }}>487,000원</div>
-              <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 850, marginTop: 4 }}>전월 대비 -2.6%</div>
+              <div css={{ color: 'var(--text)', fontSize: 18, fontWeight: 950 }}>
+                {(monthly[activeMonthIndex][1] * 1000).toLocaleString()}원
+              </div>
+              <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 850, marginTop: 4 }}>
+                {activeMonthIndex > 0 ? (() => {
+                  const diff = ((monthly[activeMonthIndex][1] - monthly[activeMonthIndex - 1][1]) / monthly[activeMonthIndex - 1][1] * 100).toFixed(1);
+                  return `전월 대비 ${diff > 0 ? '+' : ''}${diff}%`;
+                })() : '이전 데이터 없음'}
+              </div>
             </div>
           </div>
           <div css={{ display: 'grid', gap: 12 }}>
             <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map(([label, value], index) => {
-              const current = index === monthly.length - 1;
-              return <div key={label} css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0 }}>
-                <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 10, fontWeight: current ? 900 : 750, marginBottom: 6, opacity: current ? 1 : 0.58 }}>{(value / 100).toFixed(1)}만</span>
-                <div css={{ width: '100%', height: `${value / 505 * 100}%`, minHeight: 8, borderRadius: 8, background: current ? 'var(--text)' : 'var(--line)', opacity: current ? 0.86 : 0.72 }} />
-                <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 11, fontWeight: current ? 900 : 650, marginTop: 7 }}>{label}</span>
+              const current = index === activeMonthIndex;
+              return <div key={label} onClick={() => setActiveMonthIndex(current ? monthly.length - 1 : index)} css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0, cursor: 'pointer', transition: 'transform .2s ease', transform: current ? 'scale(1.05)' : 'scale(1)' }}>
+                <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 10, fontWeight: current ? 900 : 750, marginBottom: 6, opacity: current ? 1 : 0.58, transition: 'all .2s ease' }}>{(value / 100).toFixed(1)}만</span>
+                <div css={{ width: '100%', height: `${value / 505 * 100}%`, minHeight: 8, borderRadius: 8, background: current ? 'var(--text)' : 'var(--line)', opacity: current ? 0.86 : 0.72, transition: 'all .2s ease' }} />
+                <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 11, fontWeight: current ? 900 : 650, marginTop: 7, transition: 'all .2s ease' }}>{label}</span>
               </div>;
             })}</div>
             <div css={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--line)', color: 'var(--sub)', fontSize: 12, fontWeight: 800 }}>
@@ -480,17 +551,17 @@ export default function AnalysisPageDc({ state }) {
       <Card 
         css={{ 
           display: 'flex', flexDirection: 'column', minHeight: 390,
-          '@media (max-width: 900px)': { perspective: 1200, cursor: 'pointer', padding: 0 }
+          '@media (max-width: 980px)': { perspective: 1200, cursor: 'pointer', padding: 0 }
         }}
         onClick={() => {
-          if (window.innerWidth <= 900) {
+          if (window.innerWidth <= 980) {
             setPatternFlipped(!patternFlipped);
           }
         }}
       >
         <div css={{ 
           display: 'grid', gridTemplateColumns: 'minmax(280px, .9fr) 1fr', gap: 34, alignItems: 'stretch',
-          '@media (max-width: 900px)': {
+          '@media (max-width: 980px)': {
             display: 'block',
             position: 'relative',
             width: '100%',
@@ -502,7 +573,7 @@ export default function AnalysisPageDc({ state }) {
         }}>
           <div css={{ 
             display: 'flex', flexDirection: 'column', minWidth: 0,
-            '@media (max-width: 900px)': {
+            '@media (max-width: 980px)': {
               backfaceVisibility: 'hidden',
               padding: 24,
               minHeight: 390
@@ -543,14 +614,14 @@ export default function AnalysisPageDc({ state }) {
               <p css={{ margin: 0, color: 'var(--sub)', fontSize: 13, fontWeight: 750, lineHeight: 1.65 }}>스트레스 받은 밤, 배달로 마음을 달래고 있었어요. 이 조합만 먼저 알아채도 소비 흐름을 줄일 수 있어요.</p>
             </div>
             
-            <div css={{ display: 'none', '@media (max-width: 900px)': { display: 'block', textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--sub)', fontWeight: 800 } }}>
+            <div css={{ display: 'none', '@media (max-width: 980px)': { display: 'block', textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--sub)', fontWeight: 800 } }}>
               터치하여 소비 내역 보기 ↺
             </div>
           </div>
 
           <div css={{ 
             display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: '1px solid var(--line)', paddingLeft: 28,
-            '@media (max-width: 900px)': {
+            '@media (max-width: 980px)': {
               position: 'absolute', inset: 0,
               backfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)',
@@ -577,7 +648,7 @@ export default function AnalysisPageDc({ state }) {
               })}
             </div>
             
-            <div css={{ display: 'none', '@media (max-width: 900px)': { display: 'block', textAlign: 'center', marginTop: 12, fontSize: 12, color: 'var(--sub)', fontWeight: 800 } }}>
+            <div css={{ display: 'none', '@media (max-width: 980px)': { display: 'block', textAlign: 'center', marginTop: 12, fontSize: 12, color: 'var(--sub)', fontWeight: 800 } }}>
               돌아가기 ↺
             </div>
           </div>

@@ -107,6 +107,7 @@ const AccordionSummary = styled.div`
   @media (min-width: 981px) {
     cursor: default;
     padding-bottom: 14px; /* 데스크탑에선 항상 펼쳐진 상태 기준 여백 */
+    display: none;
   }
 `;
 
@@ -421,8 +422,8 @@ function EmptyRidge({ dark = false }) {
 }
 
 const defaultHomeEmotion = '스트레스';
-const defaultRidgeData = [['화남', 8], ['평온', 15], ['외로움', 38], ['스트레스', 22], ['신남', 12], ['무덤덤', 5]];
-const ridgeEmotions = ['화남', '평온', '외로움', '스트레스', '신남', '무덤덤'];
+const defaultRidgeData = [['화남', 8], ['평온', 15], ['외로움', 38], ['스트레스', 22], ['신남', 12], ['무덤덤', 5], ['설렘', 18], ['뿌듯함', 10]];
+const ridgeEmotions = ['화남', '평온', '외로움', '스트레스', '신남', '무덤덤', '설렘', '뿌듯함'];
 
 function visibleMonthTransactions(transactions, visibleMonth) {
   const year = visibleMonth.getFullYear();
@@ -483,7 +484,8 @@ function calendarDays(transactions, visibleMonth) {
     const day = index + 1;
     const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const emotion = txMap.get(key)?.top;
-    return { id: `day-${day}`, day, emotion, strong: Boolean(emotion), today: year === 2026 && month === 6 && day === 1 };
+    const now = new Date();
+    return { id: `day-${day}`, day, emotion, strong: Boolean(emotion), today: year === now.getFullYear() && month === now.getMonth() && day === now.getDate() };
   });
   const cells = [...empty, ...days];
   const trailing = Array.from(
@@ -498,7 +500,7 @@ function ridgePath(cx, width, height, base = 172) {
 }
 
 export default function HomePageDesign({ state, onRoute, selectedDate, onSelectDate }) {
-  const selected = selectedDate || new Date(2026, 6, 1);
+  const selected = selectedDate || new Date();
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
   const lastClickTimeRef = useRef({});
   const [isRidgeExpanded, setIsRidgeExpanded] = useState(false);
@@ -623,7 +625,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
           <AccordionSummary expanded={isCalendarExpanded}>
             <div css={{ display: 'flex', alignItems: 'center', gap: 9 }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#76A7E8" strokeWidth="1.9"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="16" y1="2" x2="16" y2="6" strokeLinecap="round" strokeLinejoin="round" /><line x1="8" y1="2" x2="8" y2="6" strokeLinecap="round" strokeLinejoin="round" /><line x1="3" y1="10" x2="21" y2="10" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              <span>{monthLabel} 캘린더</span>
+              <span>캘린더</span>
             </div>
             <span css={{ color: 'var(--sub)', fontSize: 16, '@media (min-width: 981px)': { display: 'none' } }}>{isCalendarExpanded ? '▴' : '▾'}</span>
           </AccordionSummary>

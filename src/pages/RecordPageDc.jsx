@@ -448,7 +448,6 @@ export default function RecordPageDc({ actions, onSaved }) {
             />
             <label css={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)', fontSize: 12.5, color: 'var(--sub)' }}>
               <input type="datetime-local" value={form.date} onChange={event => setField('date', event.target.value)} css={{ background: 'transparent', border: 0, color: 'var(--sub)', outline: 0, fontFamily: 'inherit' }} />
-              <span css={{ color: selected.color, fontWeight: 900 }}>· 지금</span>
             </label>
           </SideCard>
 

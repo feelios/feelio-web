@@ -11,7 +11,7 @@ const Page = styled.main`
   display: grid;
   grid-template-columns: 1.05fr .95fr;
 
-  @media (max-width: 900px) {
+  @media (max-width: 980px) {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
   }
@@ -30,7 +30,7 @@ const Hero = styled.section`
     letter-spacing: -.03em;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 980px) {
     min-height: auto;
     padding: 32px 24px 16px;
   }
@@ -61,7 +61,7 @@ const HeroContent = styled.div`
     line-height: 1.75;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 980px) {
     margin: 32px 0 16px;
     
     h1 {
@@ -89,13 +89,13 @@ const AuthPanel = styled.section`
   display: grid;
   place-items: center;
   padding: 28px;
-  background: linear-gradient(90deg, rgba(255,255,255,.16), rgba(255,255,255,.34));
+  background: linear-gradient(90deg, var(--glass), var(--glass-strong));
 
-  @media (max-width: 900px) {
+  @media (max-width: 980px) {
     min-height: auto;
     padding: 32px 24px 64px;
     align-items: start;
-    background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.24));
+    background: linear-gradient(180deg, var(--glass), var(--glass-strong));
   }
 `;
 
@@ -123,7 +123,7 @@ const Button = styled.button`
   border: ${({ solid }) => solid ? 0 : '1px solid var(--line)'};
   border-radius: 14px;
   margin-top: 12px;
-  background: ${({ tone }) => tone || 'rgba(255,255,255,.34)'};
+  background: ${({ tone }) => tone || 'var(--card)'};
   color: ${({ color }) => color || 'var(--text)'};
   font-size: 15px;
   font-weight: 800;
@@ -151,7 +151,7 @@ const Pills = styled.div`
     gap: 8px;
     padding: 9px 15px;
     border-radius: 999px;
-    background: rgba(255,255,255,.34);
+    background: var(--card);
     border: 1px solid var(--line);
     color: var(--sub);
     font-size: 13px;
@@ -185,7 +185,7 @@ const heroSlides = [
     accent: '#A68BEA',
     eyebrow: '스트레스였던 밤',
     title: '그 소비의 이유를 읽어드릴게요',
-    copy: 'feelio는 감정에 따라 반복되는 소비 패턴을 분석해, 나도 몰랐던 소비의 이유를 인사이트로 건네는 감정 가계부예요.'
+    copy: 'feelio는 감정에 따라 반복되는 소비 패턴을 분석해, 나도 몰랐던 소비의 이유를 인사이트로 건네는 감정 기록 서비스예요.'
   },
   {
     emotion: '외로움',
