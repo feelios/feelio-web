@@ -88,7 +88,7 @@ const U_DATA = {
 
 
 
-export default function UniversePageDc() {
+export default function UniversePage() {
   const [phase, setPhase] = useState("idle");
   const [selected, setSelected] = useState("");
   const [from, setFrom] = useState("");

@@ -1,10 +1,10 @@
 /** @jsxImportSource @emotion/react */
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
-import { mockTransactions } from '../data/mockTransactions.js';
 import { money, signedMoney } from '../utils/format.js';
+import { useTransactionsQuery } from '../hooks/queries/useTransactions.js';
 
 const Wrap = styled.div`
   width: min(100%, 1120px);
@@ -339,11 +339,23 @@ const sortOptions = [
 ];
 
 function toDate(item) {
-  return new Date(item.date);
+  return new Date(item.occurredAt ?? item.date);
+}
+
+function transactionDateKey(item) {
+  return item.occurredAt ?? item.date;
+}
+
+function categoryNameOf(item) {
+  return item.category?.name ?? item.category ?? '';
+}
+
+function emotionNameOf(item) {
+  return item.emotion?.name ?? item.emotion ?? '';
 }
 
 function groupLabel(item, view) {
-  if (view === '감정별') return item.emotion || '감정 없음';
+  if (view === '감정별') return emotionNameOf(item) || '감정 없음';
   const date = toDate(item);
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
@@ -354,39 +366,28 @@ function groupLabel(item, view) {
 }
 
 function groupKey(item, view) {
-  if (view === '감정별') return item.emotion || '';
+  if (view === '감정별') return emotionNameOf(item);
   const date = toDate(item);
   if (view === '월별') return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-  return item.date;
+  return transactionDateKey(item);
 }
 
 function signedGroupTotal(items) {
-  const total = items.reduce((sum, item) => sum + (item.type === 'income' ? item.amount : -item.amount), 0);
+  const total = items.reduce((sum, item) => sum + (item.type === 'INCOME' || item.type === 'income' ? item.amount : -item.amount), 0);
   return `${total >= 0 ? '+' : '-'}${money(Math.abs(total))}`;
 }
 
 function sortTransactions(items, sort) {
   return [...items].sort((a, b) => {
     if (sort === 'date-asc') return toDate(a) - toDate(b);
-    if (sort === 'category-asc') return String(a.category || '').localeCompare(String(b.category || ''), 'ko') || (toDate(b) - toDate(a));
-    if (sort === 'category-desc') return String(b.category || '').localeCompare(String(a.category || ''), 'ko') || (toDate(b) - toDate(a));
+    if (sort === 'category-asc') return categoryNameOf(a).localeCompare(categoryNameOf(b), 'ko') || (toDate(b) - toDate(a));
+    if (sort === 'category-desc') return categoryNameOf(b).localeCompare(categoryNameOf(a), 'ko') || (toDate(b) - toDate(a));
     if (sort === 'amount-desc') return b.amount - a.amount || (toDate(b) - toDate(a));
     if (sort === 'amount-asc') return a.amount - b.amount || (toDate(b) - toDate(a));
     return toDate(b) - toDate(a);
   });
 }
 
-function samePeriod(item, year, month, day) {
-  const date = toDate(item);
-  const itemYear = date.getFullYear();
-  const itemMonth = date.getMonth() + 1;
-  const itemDay = date.getDate();
-
-  if (String(itemYear) !== String(year)) return false;
-  if (month !== 'all' && String(itemMonth) !== String(month)) return false;
-  if (day && String(itemDay) !== String(day)) return false;
-  return true;
-}
 
 function monthTitle(year, month) {
   if (month === 'all') return `${year}년 전체`;
@@ -397,13 +398,12 @@ function padDatePart(value) {
   return String(value).padStart(2, '0');
 }
 
-export default function TransactionsPageDesign({ state, onSelect }) {
-  const sourceTransactions = state.transactions.length ? state.transactions : mockTransactions;
-  const [view, setView] = useState('일별');
-  const [query, setQuery] = useState('');
-  const today = new Date();
+export default function TransactionsPage({ onSelect }) {
+  const today = useMemo(() => new Date(), []);
   const [year, setYear] = useState(String(today.getFullYear()));
   const [month, setMonth] = useState(String(today.getMonth() + 1));
+  const [view, setView] = useState('일별');
+  const [query, setQuery] = useState('');
   const [day, setDay] = useState('');
   const [sort, setSort] = useState('date-desc');
   const [categoryFilters, setCategoryFilters] = useState([]);
@@ -411,16 +411,29 @@ export default function TransactionsPageDesign({ state, onSelect }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [openSelect, setOpenSelect] = useState('');
 
-  const categories = useMemo(() => [...new Set(sourceTransactions.map(item => item.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), [sourceTransactions]);
-  const emotions = useMemo(() => [...new Set(sourceTransactions.map(item => item.emotion).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), [sourceTransactions]);
+  // API 계약서 §6: year 필수, month 선택. 필터 params 구성
+  const apiFilters = useMemo(() => {
+    const params = { year: Number(year) };
+    if (month !== 'all') params.month = Number(month);
+    if (day) params.day = Number(day);
+    if (query.trim()) params.query = query.trim();
+    params.sort = sort.replace('-', '_');
+    return params;
+  }, [year, month, day, query, sort]);
 
-  const moveMonth = (offset) => {
+  const { data: apiData, isLoading, isError } = useTransactionsQuery(apiFilters);
+  const sourceTransactions = useMemo(() => apiData?.transactions ?? [], [apiData]);
+
+  const categories = useMemo(() => [...new Set(sourceTransactions.map(categoryNameOf).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), [sourceTransactions]);
+  const emotions = useMemo(() => [...new Set(sourceTransactions.map(emotionNameOf).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), [sourceTransactions]);
+
+  const moveMonth = useCallback((offset) => {
     const base = new Date(Number(year), month === 'all' ? today.getMonth() : Number(month) - 1, 1);
     base.setMonth(base.getMonth() + offset);
     setYear(String(base.getFullYear()));
     setMonth(String(base.getMonth() + 1));
     setDay('');
-  };
+  }, [month, today, year]);
 
   const yearPickerValue = `${year}-01-01`;
   const monthDayPickerValue = `${year}-${padDatePart(month === 'all' ? today.getMonth() + 1 : month)}-${padDatePart(day || 1)}`;
@@ -437,18 +450,20 @@ export default function TransactionsPageDesign({ state, onSelect }) {
     setDay(String(nextDate.getDate()));
   };
 
-  const toggleFilter = (value, selected, setSelected) => {
+  const toggleFilter = useCallback((value, selected, setSelected) => {
     setSelected(selected.includes(value)
       ? selected.filter(item => item !== value)
       : [...selected, value]);
-  };
+  }, []);
 
+  // API 응답의 카테고리/감정은 객체 형태 {name, ...} — 로컬 필터에서 name 필드 기준으로 비교
   const filtered = sourceTransactions.filter(item => {
-    if (categoryFilters.length && !categoryFilters.includes(item.category)) return false;
-    if (emotionFilters.length && !emotionFilters.includes(item.emotion)) return false;
-    if (!samePeriod(item, year, month, day)) return false;
+    const itemCategory = categoryNameOf(item);
+    const itemEmotion = emotionNameOf(item);
+    if (categoryFilters.length && !categoryFilters.includes(itemCategory)) return false;
+    if (emotionFilters.length && !emotionFilters.includes(itemEmotion)) return false;
     if (query.trim()) {
-      const haystack = `${item.category} ${item.memo}`.toLowerCase();
+      const haystack = `${itemCategory} ${item.memo ?? ''}`.toLowerCase();
       if (!haystack.includes(query.trim().toLowerCase())) return false;
     }
     return true;
@@ -479,6 +494,27 @@ export default function TransactionsPageDesign({ state, onSelect }) {
 
   }, [sortedFiltered, view, sort]);
 
+  if (isLoading) return <Wrap><div css={{ textAlign: 'center', padding: '3rem', color: 'var(--sub)', fontWeight: 800 }}>거래 내역을 불러오는 중이에요...</div></Wrap>;
+  if (isError) return <Wrap><div css={{ textAlign: 'center', padding: '3rem', color: '#E87573', fontWeight: 800 }}>데이터를 불러오는데 실패했어요. 잠시 후 다시 시도해주세요.</div></Wrap>;
+
+  const hasTransactions = groups.some(group => group.items.length);
+  if (!hasTransactions) {
+    return (
+      <Wrap>
+        <PageHeader>
+          <MonthLine>
+            <MonthButton type="button" onClick={() => moveMonth(-1)} aria-label="이전달">&lt;</MonthButton>
+            <strong>{monthTitle(year, month)}</strong>
+            <MonthButton type="button" onClick={() => moveMonth(1)} aria-label="다음달">&gt;</MonthButton>
+          </MonthLine>
+        </PageHeader>
+        <GlassCard css={{ padding: '2rem 1.25rem', textAlign: 'center', color: 'var(--sub)' }}>
+          <div css={{ fontWeight: 900, marginBottom: 6 }}>표시할 거래가 없어요.</div>
+          <div css={{ fontSize: 13 }}>필터를 바꾸거나 다른 날짜를 선택해 보세요.</div>
+        </GlassCard>
+      </Wrap>
+    );
+  }
 
   return (
     <Wrap>
@@ -612,12 +648,18 @@ export default function TransactionsPageDesign({ state, onSelect }) {
           </div>
           <GlassCard padding={0}>
             {group.items.map(item => {
-              const emo = getEmotion(item.emotion);
+              const emotionName = emotionNameOf(item);
+              const categoryName = categoryNameOf(item);
+              const situationNames = Array.isArray(item.situations)
+                ? item.situations.map(s => s.name ?? s).join(', ')
+                : (item.situation ?? '');
+              const emo = getEmotion(emotionName);
+              const itemKey = item.transactionId ?? item.id;
               return (
-                <Row key={item.id} onClick={() => onSelect(item)}>
+                <Row key={itemKey} onClick={() => onSelect(item)}>
                   <span css={{ width: 40, height: 40, borderRadius: 12, display: 'grid', placeItems: 'center', background: emo.light }}><i css={{ width: 15, height: 15, borderRadius: '50%', background: emo.color }} /></span>
-                  <span css={{ minWidth: 0 }}><strong>{item.category}</strong><small css={{ display: 'block', color: 'var(--sub)', marginTop: 3 }}>{item.emotion} · {item.situation} · {item.memo}</small></span>
-                  <b css={{ color: item.type === 'income' ? '#3E9578' : 'var(--text)' }}>{signedMoney(item)}</b>
+                  <span css={{ minWidth: 0 }}><strong>{categoryName}</strong><small css={{ display: 'block', color: 'var(--sub)', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{emotionName} · {situationNames} · {item.memo}</small></span>
+                  <b css={{ color: item.type === 'INCOME' || item.type === 'income' ? '#3E9578' : 'var(--text)' }}>{signedMoney(item)}</b>
                 </Row>
               );
             })}

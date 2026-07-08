@@ -17,6 +17,14 @@ export function GlobalStyles() {
         }
         button, input, textarea { font: inherit; }
         button { color: inherit; }
+        button:disabled {
+          cursor: not-allowed;
+          opacity: .72;
+        }
+        button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+          outline: 2px solid rgba(158, 150, 238, .7);
+          outline-offset: 2px;
+        }
         input, textarea { color: var(--text); }
         input::placeholder, textarea::placeholder { color: var(--sub); opacity: .72; }
         ::-webkit-scrollbar { width: 9px; height: 9px; }
