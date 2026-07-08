@@ -182,6 +182,9 @@ export function useFeelioStore() {
     clearToast() {
       setState(prev => ({ ...prev, toast: '' }));
     },
+    showToast(message) {
+      setState(prev => ({ ...prev, toast: message }));
+    },
     resetData() {
       setState(prev => ({ ...prev, transactions: [], toast: '모든 기록을 초기화했어요' }));
     }
