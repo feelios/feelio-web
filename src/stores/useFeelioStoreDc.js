@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { authAPI } from '../api/auth.js';
 import { mockGoals } from '../data/mockGoals.js';
 import { mockTransactions } from '../data/mockTransactions.js';
 
@@ -7,6 +8,8 @@ const STORAGE_KEY = 'feelio-dc-react-state-v4-temp-seed';
 const initialState = {
   isLoggedIn: false,
   onboardingDone: false,
+  accessToken: null,
+  refreshToken: null,
   mode: 'light',
   aurora: '블루',
   user: { nickname: '서연', provider: 'Google' },
@@ -31,16 +34,63 @@ export function useFeelioStore() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
+  // client.js에서 발생하는 상태 동기화 이벤트를 수신하여 React state에 반영합니다.
+  useEffect(() => {
+    const handleSync = (e) => {
+      setState(prev => ({ ...prev, ...e.detail }));
+    };
+    window.addEventListener('feelio-store-sync', handleSync);
+    return () => window.removeEventListener('feelio-store-sync', handleSync);
+  }, []);
+
   const actions = useMemo(() => ({
-    login(provider = 'Google') {
-      setState(prev => ({
-        ...prev,
-        isLoggedIn: true,
-        user: { ...prev.user, provider },
-        goals: mockGoals,
-        transactions: mockTransactions,
-        toast: ''
-      }));
+    login: async (provider = 'Google', providerToken) => {
+      try {
+        let tokenToUse = providerToken;
+        // 개발 환경에서만 더미 토큰 허용, 프로덕션에서는 로그인 중단 및 결과 반환
+        if (!tokenToUse) {
+          if (import.meta.env.DEV) {
+            tokenToUse = 'dummy-token';
+            console.warn('⚠️ [DEV ONLY] Using dummy token for login');
+          } else {
+            console.error('Security Error: providerToken is required for login in production.');
+            setState(prev => ({ ...prev, toast: '로그인에 필요한 인증 정보가 없습니다.' }));
+            return { success: false, reason: 'MISSING_PROVIDER_TOKEN' };
+          }
+        }
+        
+        const data = await authAPI.login(provider, tokenToUse);
+        setState(prev => ({
+          ...prev,
+          isLoggedIn: true,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          user: data.user,
+          onboardingDone: data.user.onboardingDone,
+          mode: data.user.themeMode ? data.user.themeMode.toLowerCase() : prev.mode,
+          aurora: data.user.auroraTheme || prev.aurora,
+          toast: '로그인되었습니다.'
+        }));
+        return { success: true };
+      } catch (error) {
+        console.error('Login failed', error);
+        setState(prev => ({ ...prev, toast: '로그인에 실패했습니다.' }));
+        return { success: false, error };
+      }
+    },
+    fetchMe: async () => {
+      try {
+        const user = await authAPI.getMe();
+        setState(prev => ({
+          ...prev,
+          user,
+          onboardingDone: user.onboardingDone,
+          mode: user.themeMode ? user.themeMode.toLowerCase() : prev.mode,
+          aurora: user.auroraTheme || prev.aurora
+        }));
+      } catch (error) {
+        console.error('Failed to fetch user profile', error);
+      }
     },
     completeOnboarding(goalPatch) {
       setState(prev => ({
@@ -49,8 +99,24 @@ export function useFeelioStore() {
         goals: goalPatch ? [{ ...prev.goals[0], ...goalPatch }] : prev.goals
       }));
     },
-    logout() {
-      setState(prev => ({ ...prev, isLoggedIn: false, onboardingDone: false }));
+    logout: async () => {
+      try {
+        await authAPI.logout();
+      } catch (error) {
+        console.error('Logout API failed, but clearing local state anyway', error);
+      } finally {
+        setState(prev => ({ 
+          ...prev, 
+          isLoggedIn: false, 
+          onboardingDone: false,
+          accessToken: null,
+          refreshToken: null,
+          user: { nickname: '', provider: '' }
+        }));
+      }
+    },
+    setTokens(accessToken, refreshToken) {
+      setState(prev => ({ ...prev, accessToken, refreshToken }));
     },
     toggleMode() {
       setState(prev => ({ ...prev, mode: prev.mode === 'dark' ? 'light' : 'dark' }));
