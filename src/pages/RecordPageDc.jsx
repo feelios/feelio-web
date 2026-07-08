@@ -4,11 +4,20 @@ import styled from '@emotion/styled';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
+import { useMetadata } from '../hooks/queries/useMetadata.js';
+import { useCreateTransactionMutation } from '../hooks/queries/useTransactions.js';
 
 const emotions = ['신남', '설렘', '뿌듯함', '스트레스', '외로움', '화남', '평온', '무덤덤'];
 const defaultIncomeCategories = ['월급', '금융소득', '용돈', '더치페이', '환급금'];
 const defaultExpenseCategories = ['식비', '배달', '마트/편의점', '패션/미용', '주거/통신', '문화/취미', '구독료', '생활용품', '사회생활', '보험', '세금', '차량/교통', '저축'];
 const defaultSituations = ['퇴근 후', '혼자 있음', '친구와', '보상', '습관', '이동 중', '아침', '밤'];
+
+function categoriesForType(categories, type) {
+  const transactionType = type.toUpperCase();
+  return Array.isArray(categories)
+    ? categories.filter(category => !category?.type || category.type === transactionType)
+    : (type === 'income' ? categories?.income ?? [] : categories?.expense ?? []);
+}
 
 const Page = styled.div`
   width: min(100%, 1080px);
@@ -201,6 +210,9 @@ export default function RecordPageDc({ actions, onSaved }) {
   const [addingTag, setAddingTag] = useState(null);
   const [addingText, setAddingText] = useState('');
 
+  const { data } = useMetadata();
+  const mutation = useCreateTransactionMutation();
+
   const dragItemRef = useRef(null);
   const dragOverItemRef = useRef(null);
   const [form, setForm] = useState({
@@ -304,18 +316,51 @@ export default function RecordPageDc({ actions, onSaved }) {
   }));
 
   const save = () => {
-    if (!canSave) return;
-    actions.addTransaction({
-      type: form.type,
+    if (!canSave || mutation.isPending) return;
+
+    // 카테고리와 감정의 ID를 찾아서 서버로 전송
+    const catList = categoriesForType(data?.categories, form.type);
+    const matchedCat = catList?.find(c => c.name === form.category);
+    
+    if (!matchedCat) {
+      actions.showToast('카테고리 정보를 확인할 수 없습니다.');
+      return;
+    }
+
+    const matchedEmotion = data?.emotions?.find(e => e.name === form.emotion);
+    if (!matchedEmotion) {
+      actions.showToast('감정 정보를 확인할 수 없습니다.');
+      return;
+    }
+
+    mutation.mutate({
+      type: form.type.toUpperCase(),
       amount: Number(form.amount),
-      category: form.category,
-      emotion: form.emotion,
-      situation: form.situation[0] || '기록',
-      memo: form.memo || '감정 기록',
-      date: form.date
+      categoryId: matchedCat.categoryId,
+      emotionId: matchedEmotion.emotionId,
+      situationIds: [], // 과거 버전 호환성을 위해 빈 배열 전송
+      memo: form.memo || null,
+      occurredAt: new Date(form.date).toISOString()
+    }, {
+      onSuccess: () => {
+        // 백엔드 저장 성공 시 프론트엔드 로컬 상태도 업데이트 (이전 UI 호환성)
+        actions.addTransaction({
+          type: form.type,
+          amount: Number(form.amount),
+          category: form.category,
+          emotion: form.emotion,
+          situation: form.situation[0] || '기록',
+          memo: form.memo || '감정 기록',
+          date: form.date
+        });
+        actions.showToast('기록 저장됨');
+        onSaved?.(form.date);
+        setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '' }));
+      },
+      onError: (error) => {
+        actions.showToast(error.response?.data?.error?.message || '기록 저장에 실패했습니다.');
+      }
     });
-    onSaved?.(form.date);
-    setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '' }));
   };
 
   return (

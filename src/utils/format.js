@@ -3,7 +3,7 @@ export function money(value) {
 }
 
 export function signedMoney(item) {
-  const sign = item.type === 'income' ? '+' : '-';
+  const sign = item.type === 'INCOME' || item.type === 'income' ? '+' : '-';
   return `${sign}${money(item.amount)}`;
 }
 

@@ -4,7 +4,7 @@ import styled from '@emotion/styled';
 import { GlobalStyles } from '../styles/globalStyles.jsx';
 import { theme } from '../styles/theme.js';
 import { driftA, driftB } from '../styles/animations.js';
-import { useFeelioStore } from '../stores/useFeelioStoreDc.js';
+import { useFeelioStore } from '../stores/useFeelioStore.js';
 import { AppLayoutDc } from '../components/common/AppLayoutDc.jsx';
 import { Toast } from '../components/common/Toast.jsx';
 import ProfileModalDc from '../components/profile/ProfileModalDc.jsx';
@@ -16,6 +16,7 @@ import RecordPageDc from '../pages/RecordPageDc.jsx';
 import TransactionsPageDesign from '../pages/TransactionsPageDesign.jsx';
 import AnalysisPageDc from '../pages/AnalysisPageDc.jsx';
 import UniversePageDc from '../pages/UniversePageDc.jsx';
+import AuthCallbackPage from '../pages/AuthCallbackPage.jsx';
 import { getAurora } from '../data/aurorasDc.js';
 
 const Root = styled.div`
@@ -60,6 +61,13 @@ const titles = {
 export default function App() {
   const { state, actions } = useFeelioStore();
   const [route, setRoute] = useState('home');
+
+  // 콜백 라우트 처리 (가장 먼저 가로채기)
+  const isCallback = window.location.pathname.startsWith('/auth/callback');
+  if (isCallback) {
+    return <AuthCallbackPage />;
+  }
+
   const [homeDate, setHomeDate] = useState(() => new Date(2026, 6, 1));
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState(null);
