@@ -11,8 +11,21 @@ export const emotions = [
   { id: 'neutral', name: '무덤덤', ...emotionPalette.무덤덤 }
 ];
 
-export const categories = ['식비', '카페', '교통', '쇼핑', '문화', '건강', '월급', '용돈'];
-export const situations = ['퇴근 후', '혼자 있을 때', '친구와', '보상', '습관', '이동 중', '아침', '밤'];
+// 카테고리 기준은 API-CONTRACT §2 (EXPENSE·INCOME). 실제 목록은 서버 GET /api/meta 사용 권장.
+export const categories = [
+  { name: '식비', type: 'EXPENSE' },
+  { name: '배달', type: 'EXPENSE' },
+  { name: '카페', type: 'EXPENSE' },
+  { name: '교통', type: 'EXPENSE' },
+  { name: '쇼핑', type: 'EXPENSE' },
+  { name: '문화', type: 'EXPENSE' },
+  { name: '건강', type: 'EXPENSE' },
+  { name: '기타', type: 'EXPENSE' },
+  { name: '급여', type: 'INCOME' },
+  { name: '용돈', type: 'INCOME' },
+  { name: '기타', type: 'INCOME' }
+];
+// 상황(situations) 기능은 팀 결정으로 제거됨 (API-CONTRACT §2 참조)
 
 export function getEmotion(name = '평온') {
   return emotionPalette[name] || emotionPalette.평온;
