@@ -1,22 +1,22 @@
 /** @jsxImportSource @emotion/react */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 import { GlobalStyles } from '../styles/globalStyles.jsx';
 import { theme } from '../styles/theme.js';
 import { driftA, driftB } from '../styles/animations.js';
-import { useFeelioStore } from '../stores/useFeelioStoreDc.js';
-import { AppLayoutDc } from '../components/common/AppLayoutDc.jsx';
+import { useFeelioStore } from '../stores/useFeelioStore.js';
+import { AppLayout } from '../components/common/AppLayout.jsx';
 import { Toast } from '../components/common/Toast.jsx';
-import ProfileModalDc from '../components/profile/ProfileModalDc.jsx';
+import ProfileModal from '../components/profile/ProfileModal.jsx';
 import TransactionDetailModal from '../components/transactions/TransactionDetailModal.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
 import OnboardingPage from '../pages/OnboardingPage.jsx';
-import HomePageDesign from '../pages/HomePageDesign.jsx';
+import HomePage from '../pages/HomePage.jsx';
 import RecordPage from '../pages/RecordPage.jsx';
-import TransactionsPageDesign from '../pages/TransactionsPageDesign.jsx';
-import AnalysisPageDc from '../pages/AnalysisPageDc.jsx';
-import UniversePageDc from '../pages/UniversePageDc.jsx';
-import { getAurora } from '../data/aurorasDc.js';
+import TransactionsPage from '../pages/TransactionsPage.jsx';
+import AnalysisPage from '../pages/AnalysisPage.jsx';
+import UniversePage from '../pages/UniversePage.jsx';
+import { getAurora } from '../data/auroras.js';
 
 const Root = styled.div`
   --bg-1: ${({ mode }) => mode === 'dark' ? '#12141e' : '#f6f2eb'};
@@ -65,15 +65,15 @@ export default function App() {
   const [selectedTxn, setSelectedTxn] = useState(null);
   const colors = getAurora(state.aurora).colors;
 
-  const content = {
-    home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={homeDate} onSelectDate={setHomeDate} />,
+  const content = useMemo(() => ({
+    home: <HomePage state={state} onRoute={setRoute} selectedDate={homeDate} onSelectDate={setHomeDate} />,
     record: <RecordPage state={state} actions={actions} onSaved={(date) => {
       setHomeDate(new Date(date));
     }} />,
-    transactions: <TransactionsPageDesign state={state} onSelect={setSelectedTxn} />,
-    analysis: <AnalysisPageDc state={state} />,
-    universe: <UniversePageDc state={state} />
-  }[route];
+    transactions: <TransactionsPage onSelect={setSelectedTxn} />,
+    analysis: <AnalysisPage state={state} />,
+    universe: <UniversePage state={state} />
+  })[route], [actions, homeDate, route, state]);
 
   return (
     <Root mode={state.mode}>
@@ -92,7 +92,7 @@ export default function App() {
         <OnboardingPage onComplete={actions.completeOnboarding} />
       )}
       {state.isLoggedIn && state.onboardingDone && (
-        <AppLayoutDc
+        <AppLayout
           route={route}
           title={titles[route]}
           state={state}
@@ -101,10 +101,10 @@ export default function App() {
           onProfile={() => setProfileOpen(true)}
         >
           {content}
-        </AppLayoutDc>
+        </AppLayout>
       )}
-      {profileOpen && <ProfileModalDc state={state} actions={actions} onClose={() => setProfileOpen(false)} />}
-      {selectedTxn && <TransactionDetailModal transaction={selectedTxn} actions={actions} onClose={() => setSelectedTxn(null)} />}
+      {profileOpen && <ProfileModal state={state} actions={actions} onClose={() => setProfileOpen(false)} />}
+      {selectedTxn && <TransactionDetailModal key={selectedTxn.transactionId ?? selectedTxn.id ?? 'transaction-modal'} transaction={selectedTxn} actions={actions} onClose={() => setSelectedTxn(null)} />}
       <Toast message={state.toast} onDone={actions.clearToast} />
     </Root>
   );

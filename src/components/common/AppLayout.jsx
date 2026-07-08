@@ -3,7 +3,7 @@ import { theme } from '../../styles/theme.js';
 import { driftA, driftB } from '../../styles/animations.js';
 import { SidebarDesign } from './SidebarDesign.jsx';
 import { BottomNav } from './BottomNav.jsx';
-import { getAurora } from '../../data/aurorasDc.js';
+import { getAurora } from '../../data/auroras.js';
 
 const Shell = styled.div`
   --bg-1: ${({ mode }) => mode === 'dark' ? '#12141e' : '#f6f2eb'};
@@ -101,7 +101,7 @@ const MobileProfile = styled(IconButton)`
   font-weight: 900;
   font-size: 16px;
   border: 0;
-  
+
   @media (max-width: 820px) {
     display: flex;
     align-items: center;
@@ -109,7 +109,7 @@ const MobileProfile = styled(IconButton)`
   }
 `;
 
-export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, children }) {
+export function AppLayout({ route, title, state, actions, onRoute, onProfile, children }) {
   const colors = getAurora(state.aurora).colors;
   const now = new Date();
   const liveDate = now.toLocaleDateString('ko-KR', {

@@ -145,7 +145,7 @@ const evidence = [
   ['6월 22일', '배달', '스트레스', '혼자 있음', '₩18,000']
 ];
 
-export default function AnalysisPageDc({ state }) {
+export default function AnalysisPage({ state }) {
   const isDark = state?.mode === 'dark';
   const [flippedCards, setFlippedCards] = useState({});
   const [activeChartTab, setActiveChartTab] = useState('emotion');

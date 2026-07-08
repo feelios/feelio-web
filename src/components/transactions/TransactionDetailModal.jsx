@@ -1,10 +1,13 @@
 /** @jsxImportSource @emotion/react */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 import { Modal } from '../common/Modal.jsx';
 import { EmotionBlob } from '../common/EmotionBlob.jsx';
 import { getEmotion } from '../../data/emotions.js';
 import { money, signedMoney } from '../../utils/format.js';
+import { useUpdateTransactionMutation, useDeleteTransactionMutation } from '../../hooks/queries/useTransactions.js';
+import { useMetadata } from '../../hooks/queries/useMetadata.js';
+import { categoriesForType } from '../../utils/transactionCategories.js';
 
 const Wrap = styled.div`
   padding: 26px 28px;
@@ -90,11 +93,12 @@ const Button = styled.button`
   border-radius: 14px;
   padding: 14px;
   border: ${({ danger, primary }) => primary || danger ? 0 : '1px solid var(--line)'};
-  background: ${({ primary, danger }) => primary ? 'var(--ink)' : danger ? '#E87573' : 'var(--card)'};
-  color: ${({ primary, danger }) => primary ? 'var(--on-ink)' : danger ? '#fff' : '#E87573'};
+  background: ${({ primary, danger, disabled }) => disabled ? 'var(--card-strong)' : primary ? 'var(--ink)' : danger ? '#E87573' : 'var(--card)'};
+  color: ${({ primary, danger, disabled }) => disabled ? 'var(--text)' : primary ? 'var(--on-ink)' : danger ? '#fff' : '#E87573'};
   font-size: 14.5px;
   font-weight: 900;
-  cursor: pointer;
+  cursor: ${({ disabled }) => disabled ? 'default' : 'pointer'};
+  opacity: ${({ disabled }) => disabled ? .78 : 1};
 `;
 
 const FieldGrid = styled.div`
@@ -155,37 +159,90 @@ function dateLabel(value) {
 }
 
 export default function TransactionDetailModal({ transaction, actions, onClose }) {
+  const updateMutation = useUpdateTransactionMutation();
+  const deleteMutation = useDeleteTransactionMutation();
+  const { data: metadata } = useMetadata();
+
+  // API 응답에서 category/emotion은 객체 형태 — 표시용 name 추출
+  const categoryName = transaction.category?.name ?? transaction.category;
+  const emotionName = transaction.emotion?.name ?? transaction.emotion;
+  const situationNames = Array.isArray(transaction.situations)
+    ? transaction.situations.map(s => s.name ?? s).join(', ')
+    : (transaction.situation ?? '');
+  const occurredAt = transaction.occurredAt ?? transaction.date ?? '';
+
   const [mode, setMode] = useState('detail');
   const [form, setForm] = useState({
     amount: String(transaction.amount),
-    category: transaction.category,
-    emotion: transaction.emotion,
-    situation: transaction.situation,
-    memo: transaction.memo,
-    date: transaction.date.slice(0, 16)
+    category: categoryName,
+    emotion: emotionName,
+    memo: transaction.memo ?? '',
+    date: occurredAt.slice(0, 16)
   });
 
-  const isIncome = transaction.type === 'income';
-  const rows = [
+  const isIncome = transaction.type === 'INCOME' || transaction.type === 'income';
+  const transactionId = transaction.transactionId ?? transaction.id;
+
+  const rows = useMemo(() => [
     ['구분', isIncome ? '수입' : '지출'],
-    ['카테고리', transaction.category],
-    ['감정', transaction.emotion],
-    ['상황', transaction.situation],
+    ['카테고리', categoryName],
+    ['감정', emotionName],
+    ['상황', situationNames],
     ['메모', transaction.memo],
-    ['날짜', dateLabel(transaction.date)]
-  ];
+    ['날짜', dateLabel(occurredAt)]
+  ], [categoryName, emotionName, isIncome, occurredAt, situationNames, transaction.memo]);
+
+  const isBusy = updateMutation.isPending || deleteMutation.isPending;
 
   const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
   const save = () => {
-    actions.updateTransaction(transaction.id, {
-      amount: Number(form.amount.replace(/\D/g, '')) || transaction.amount,
-      category: form.category,
-      emotion: form.emotion,
-      situation: form.situation,
-      memo: form.memo,
-      date: form.date
+    if (isBusy) return;
+    // API 계약서 §6: PUT /transactions/{transactionId} — src/api 경유 호출
+    // 수정 시 situationIds는 UI에서 선택하지 않으므로 기존값 유지(빈 배열)
+    const transactionType = isIncome ? 'INCOME' : 'EXPENSE';
+    const matchedCategory = categoriesForType(metadata?.categories, transactionType).find(category => category.name === form.category);
+    const matchedEmotion = metadata?.emotions?.find(emotion => emotion.name === form.emotion);
+    const categoryId = form.category === categoryName
+      ? transaction.category?.categoryId ?? matchedCategory?.categoryId
+      : matchedCategory?.categoryId;
+    const emotionId = form.emotion === emotionName
+      ? transaction.emotion?.emotionId ?? matchedEmotion?.emotionId
+      : matchedEmotion?.emotionId;
+    const normalizedAmount = form.amount.replace(/[^\d]/g, '');
+    const parsedAmount = Number(normalizedAmount);
+
+    if (!normalizedAmount || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+      actions?.showToast('유효한 금액을 입력해주세요.');
+      return;
+    }
+
+    if (!categoryId) {
+      actions?.showToast('카테고리 정보를 확인할 수 없습니다.');
+      return;
+    }
+    if (!emotionId) {
+      actions?.showToast('감정 정보를 확인할 수 없습니다.');
+      return;
+    }
+
+    updateMutation.mutate({ transactionId, data: {
+      type: transactionType,
+      amount: parsedAmount,
+      categoryId,
+      emotionId,
+      situationIds: (transaction.situations ?? []).map(s => s.situationId ?? s),
+      memo: form.memo || null,
+      occurredAt: new Date(form.date).toISOString()
+    }}, {
+      onSuccess: () => {
+        actions?.showToast('기록 수정됨');
+        setMode('detail');
+        onClose();
+      },
+      onError: (err) => {
+        actions?.showToast(err.response?.data?.error?.message || '수정에 실패했어요.');
+      }
     });
-    setMode('detail');
   };
 
   return (
@@ -204,8 +261,20 @@ export default function TransactionDetailModal({ transaction, actions, onClose }
           </Hero>
           <DetailBox>{rows.map(([label, value]) => <Row key={label}><span>{label}</span><b>{value}</b></Row>)}</DetailBox>
           <Actions>
-            <Button type="button" primary onClick={() => setMode('edit')}>수정</Button>
-            <Button type="button" onClick={() => { actions.removeTransaction(transaction.id); onClose(); }}>삭제</Button>
+            <Button type="button" primary onClick={() => setMode('edit')} disabled={isBusy}>수정</Button>
+            <Button type="button" onClick={() => {
+              if (isBusy) return;
+              // API 계약서 §6: DELETE /transactions/{transactionId}
+              deleteMutation.mutate(transactionId, {
+                onSuccess: () => {
+                  actions?.showToast('기록 삭제됨');
+                  onClose();
+                },
+                onError: (err) => {
+                  actions?.showToast(err.response?.data?.error?.message || '삭제에 실패했어요.');
+                }
+              });
+            }} disabled={isBusy}>삭제</Button>
           </Actions>
         </Wrap>
       ) : (
@@ -229,10 +298,9 @@ export default function TransactionDetailModal({ transaction, actions, onClose }
               })}
             </EmotionGrid>
           </div>
-          <Field css={{ marginBottom: 16 }}>상황<input value={form.situation} onChange={event => setField('situation', event.target.value)} /></Field>
           <Field css={{ marginBottom: 16 }}>메모<input value={form.memo} onChange={event => setField('memo', event.target.value)} /></Field>
           <Field css={{ marginBottom: 22 }}>날짜<input type="datetime-local" value={form.date} onChange={event => setField('date', event.target.value)} /></Field>
-          <Button type="button" primary onClick={save}>저장</Button>
+          <Button type="button" primary onClick={save} disabled={isBusy}>저장</Button>
         </Wrap>
       )}
     </Modal>

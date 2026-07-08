@@ -16,7 +16,7 @@ function updateStoreState(patch) {
     const currentState = getStoreState() || {};
     const newState = { ...currentState, ...patch };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-    // 상태 동기화를 위해 커스텀 이벤트 발생 (useFeelioStoreDc.js 에서 수신)
+    // 상태 동기화를 위해 커스텀 이벤트 발생 (useFeelioStore.js 에서 수신)
     window.dispatchEvent(new CustomEvent('feelio-store-sync', { detail: patch }));
   } catch (err) {
     console.error('Failed to update store state', err);

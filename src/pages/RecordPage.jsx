@@ -6,9 +6,24 @@ import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
 
 const emotions = ['신남', '설렘', '뿌듯함', '스트레스', '외로움', '화남', '평온', '무덤덤'];
-const defaultIncomeCategories = ['월급', '금융소득', '용돈', '더치페이', '환급금'];
-const defaultExpenseCategories = ['식비', '배달', '마트/편의점', '패션/미용', '주거/통신', '문화/취미', '구독료', '생활용품', '사회생활', '보험', '세금', '차량/교통', '저축'];
-const defaultSituations = ['퇴근 후', '혼자 있음', '친구와', '보상', '습관', '이동 중', '아침', '밤'];
+
+function normalizeCategory(category) {
+  if (typeof category === 'string') {
+    return { name: category, categoryId: `default-${category}` };
+  }
+
+  if (!category || typeof category !== 'object') {
+    return null;
+  }
+
+  return {
+    name: category.name ?? category.categoryName ?? category.label ?? '',
+    categoryId: category.categoryId ?? category.id ?? `default-${category.name ?? category.categoryName ?? ''}`
+  };
+}
+
+const defaultIncomeCategories = ['월급', '금융소득', '용돈', '더치페이', '환급금'].map(normalizeCategory);
+const defaultExpenseCategories = ['식비', '배달', '마트/편의점', '패션/미용', '주거/통신', '문화/취미', '구독료', '생활용품', '사회생활', '보험', '세금', '차량/교통', '저축'].map(normalizeCategory);
 
 const Page = styled.div`
   width: min(100%, 1080px);
@@ -206,9 +221,10 @@ const ErrorStateMessage = styled(StateMessage)`
 
 const LoadingStateMessage = styled(StateMessage)``;
 
-import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { transactionsAPI } from '../api/transactions.js';
 import { useMetadata } from '../hooks/queries/useMetadata.js';
+import { useCreateTransactionMutation } from '../hooks/queries/useTransactions.js';
+
+
 
 function debounce(func, wait) {
   let timeout;
@@ -222,16 +238,24 @@ function debounce(func, wait) {
   };
 }
 
+function categoriesForType(categories, type) {
+  const transactionType = type.toUpperCase();
+  const source = Array.isArray(categories)
+    ? categories.filter(category => !category?.type || category.type === transactionType)
+    : (type === 'income' ? categories?.income ?? [] : categories?.expense ?? []);
+
+  return (Array.isArray(source) ? source : [])
+    .map(normalizeCategory)
+    .filter(Boolean);
+}
+
 export default function RecordPage({ actions, onSaved }) {
-  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useMetadata();
   const dataInitialized = useRef(false);
 
   const [customExpenseCategories, setCustomExpenseCategories] = useState(defaultExpenseCategories);
   const [customIncomeCategories, setCustomIncomeCategories] = useState(defaultIncomeCategories);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
-  const [customSituations, setCustomSituations] = useState(defaultSituations);
-  const [isEditingSituation, setIsEditingSituation] = useState(false);
   const [addingTag, setAddingTag] = useState(null);
   const [addingText, setAddingText] = useState('');
 
@@ -242,7 +266,6 @@ export default function RecordPage({ actions, onSaved }) {
     amount: '',
     category: null,
     emotion: null,
-    situation: [],
     memo: '',
     date: '2026-07-01T21:30'
   });
@@ -251,12 +274,117 @@ export default function RecordPage({ actions, onSaved }) {
   const setCustomCategories = form.type === 'income' ? setCustomIncomeCategories : setCustomExpenseCategories;
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 560);
 
+  const activeEmotions = data?.emotions || emotions;
+  const selected = getEmotion(form.emotion || '스트레스');
+  const canSave = form.amount && form.emotion && form.category;
+
+  const startAdding = useCallback((type) => {
+    setAddingTag(type);
+    setAddingText('');
+  }, []);
+
+  const handleAddSubmit = useCallback((e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const name = addingText.trim();
+    if (!name) {
+      setAddingTag(null);
+      return;
+    }
+
+    if (addingTag === 'category') {
+      const normalizedName = name.slice(0, 5);
+      const exists = customCategories.some(item => item.name === normalizedName);
+      if (exists) {
+        actions.showToast('이미 있는 카테고리입니다.');
+        return;
+      }
+      setCustomCategories([...customCategories, { name: normalizedName, categoryId: `custom-${Date.now()}` }]);
+    }
+    setAddingTag(null);
+  }, [addingText, addingTag, customCategories, setCustomCategories, actions]);
+
+  const handleRemoveCategory = (cat) => {
+    const targetName = typeof cat === 'string' ? cat : cat?.name;
+    setCustomCategories(customCategories.filter(c => c.name !== targetName));
+    if (form.category === targetName) setField('category', null);
+  };
+
+  const handleDragStart = (e, index) => {
+    dragItemRef.current = index;
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnter = (index) => {
+    dragOverItemRef.current = index;
+  };
+
+  const handleDropCategory = () => {
+    if (dragItemRef.current === null || dragOverItemRef.current === null) return;
+    if (dragItemRef.current !== dragOverItemRef.current) {
+      const newCats = [...customCategories];
+      const [dragItem] = newCats.splice(dragItemRef.current, 1);
+      newCats.splice(dragOverItemRef.current, 0, dragItem);
+      setCustomCategories(newCats);
+    }
+    dragItemRef.current = null;
+    dragOverItemRef.current = null;
+  };
+
+  const setField = useCallback((key, value) => setForm(prev => ({ ...prev, [key]: value })), []);
+
+  const mutation = useCreateTransactionMutation();
+
+  const save = useCallback(() => {
+    if (!canSave || mutation.isPending) return;
+
+    const normalizedAmount = form.amount.replace(/[^\d]/g, '');
+    const parsedAmount = Number(normalizedAmount);
+    if (!normalizedAmount || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+      actions.showToast('유효한 금액을 입력해주세요.');
+      return;
+    }
+
+    // 카테고리와 감정의 ID를 찾아서 서버로 전송
+    const catList = categoriesForType(data?.categories, form.type);
+    const matchedCat = catList?.find(c => c.name === form.category);
+    if (!matchedCat) {
+      actions.showToast('카테고리 정보를 확인할 수 없습니다.');
+      return;
+    }
+
+    const matchedEmotion = data?.emotions?.find(e => e.name === form.emotion);
+    if (!matchedEmotion) {
+      actions.showToast('감정 정보를 확인할 수 없습니다.');
+      return;
+    }
+
+    mutation.mutate({
+      type: form.type.toUpperCase(),
+      amount: parsedAmount,
+      categoryId: matchedCat.categoryId,
+      emotionId: matchedEmotion.emotionId,
+      situationIds: [],
+      memo: form.memo || null, // 빈 문자열은 null로 처리
+      occurredAt: new Date(form.date).toISOString() // 올바른 ISO 포맷
+    }, {
+      onSuccess: () => {
+        actions.showToast('감정 기록 저장됨 ✨');
+        onSaved?.(form.date);
+        setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, memo: '' }));
+      },
+      onError: (error) => {
+        actions.showToast(error.response?.data?.error?.message || '기록 저장에 실패했습니다.');
+      }
+    });
+  }, [canSave, form, mutation, data, actions, onSaved]);
+
   // API로부터 데이터를 성공적으로 가져오면 로컬 상태 초기화 (최초 1회만)
   useEffect(() => {
     if (data && !dataInitialized.current) {
-      setCustomExpenseCategories(data.categories?.expense || defaultExpenseCategories);
-      setCustomIncomeCategories(data.categories?.income || defaultIncomeCategories);
-      setCustomSituations(data.situations || defaultSituations);
+      const expenseCategories = categoriesForType(data.categories, 'expense');
+      const incomeCategories = categoriesForType(data.categories, 'income');
+      setCustomExpenseCategories(expenseCategories.length ? expenseCategories : defaultExpenseCategories);
+      setCustomIncomeCategories(incomeCategories.length ? incomeCategories : defaultIncomeCategories);
       dataInitialized.current = true;
     }
   }, [data]);
@@ -284,127 +412,6 @@ export default function RecordPage({ actions, onSaved }) {
     );
   }
 
-  const activeEmotions = data?.emotions || emotions;
-  const selected = getEmotion(form.emotion || '스트레스');
-  const canSave = form.amount && form.emotion && form.category;
-
-  const startAdding = useCallback((type) => {
-    setAddingTag(type);
-    setAddingText('');
-  }, []);
-
-  const handleAddSubmit = useCallback((e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    const name = addingText.trim();
-    if (!name) {
-      setAddingTag(null);
-      return;
-    }
-
-    if (addingTag === 'category') {
-      if (customCategories.includes(name)) { 
-        actions.showToast('이미 있는 카테고리입니다.');
-        return; 
-      }
-      setCustomCategories([...customCategories, name.slice(0, 5)]);
-    } else if (addingTag === 'situation') {
-      if (customSituations.includes(name)) { 
-        actions.showToast('이미 있는 태그입니다.');
-        return; 
-      }
-      setCustomSituations([...customSituations, name.slice(0, 5)]);
-    }
-    setAddingTag(null);
-  }, [addingText, addingTag, customCategories, customSituations, setCustomCategories, actions]);
-
-  const handleRemoveCategory = (cat) => {
-    setCustomCategories(customCategories.filter(c => c !== cat));
-    if (form.category === cat) setField('category', null);
-  };
-
-  const handleDragStart = (e, index) => {
-    dragItemRef.current = index;
-    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragEnter = (index) => {
-    dragOverItemRef.current = index;
-  };
-
-  const handleDropCategory = () => {
-    if (dragItemRef.current === null || dragOverItemRef.current === null) return;
-    if (dragItemRef.current !== dragOverItemRef.current) {
-      const newCats = [...customCategories];
-      const [dragItem] = newCats.splice(dragItemRef.current, 1);
-      newCats.splice(dragOverItemRef.current, 0, dragItem);
-      setCustomCategories(newCats);
-    }
-    dragItemRef.current = null;
-    dragOverItemRef.current = null;
-  };
-
-  const handleDropSituation = () => {
-    if (dragItemRef.current === null || dragOverItemRef.current === null) return;
-    if (dragItemRef.current !== dragOverItemRef.current) {
-      const newSits = [...customSituations];
-      const [dragItem] = newSits.splice(dragItemRef.current, 1);
-      newSits.splice(dragOverItemRef.current, 0, dragItem);
-      setCustomSituations(newSits);
-    }
-    dragItemRef.current = null;
-    dragOverItemRef.current = null;
-  };
-
-
-
-  const handleRemoveSituation = useCallback((sit) => {
-    setCustomSituations(customSituations.filter(s => s !== sit));
-    if (form.situation.includes(sit)) {
-      setForm(prev => ({ ...prev, situation: prev.situation.filter(item => item !== sit) }));
-    }
-  }, [customSituations, form.situation]);
-
-  const setField = useCallback((key, value) => setForm(prev => ({ ...prev, [key]: value })), []);
-  const toggleSituation = (value) => setForm(prev => ({
-    ...prev,
-    situation: prev.situation.includes(value)
-      ? prev.situation.filter(item => item !== value)
-      : [...prev.situation, value]
-  }));
-
-  const mutation = useMutation({
-    mutationFn: (txData) => transactionsAPI.createTransaction(txData),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['transactions']);
-      actions.showToast('감정 기록 저장됨 ✨');
-      onSaved?.(form.date);
-      setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '' }));
-    },
-    onError: (error) => {
-      actions.showToast(error.response?.data?.error?.message || '기록 저장에 실패했습니다.');
-    }
-  });
-
-  const save = useCallback(() => {
-    if (!canSave || mutation.isPending) return;
-    
-    // 카테고리와 감정의 ID를 찾아서 서버로 전송
-    const catList = form.type === 'income' ? data?.categories?.income : data?.categories?.expense;
-    const matchedCat = catList?.find(c => c.name === form.category);
-    const categoryId = matchedCat ? matchedCat.categoryId : 1; // 매칭 실패시 기본 ID 1
-
-    const matchedEmotion = data?.emotions?.find(e => e.name === form.emotion);
-    const emotionId = matchedEmotion ? matchedEmotion.emotionId : 1; // 기본 ID 1
-
-    mutation.mutate({
-      type: form.type.toUpperCase(),
-      amount: Number(form.amount),
-      categoryId,
-      emotionId,
-      memo: form.memo || null, // 빈 문자열은 null로 처리
-      occurredAt: new Date(form.date).toISOString() // 올바른 ISO 포맷
-    });
-  }, [canSave, form, mutation, data]);
 
   return (
     <Page>
@@ -462,9 +469,9 @@ export default function RecordPage({ actions, onSaved }) {
               <button type="button" onClick={() => setIsEditingCategory(!isEditingCategory)} css={{ background: 'transparent', border: 0, color: isEditingCategory ? 'var(--text)' : 'var(--sub)', cursor: 'pointer', fontSize: 16 }}>✎</button>
             </div>
             <ChipRow>
-              {customCategories.filter(c => c !== '저축').map((item) => {
-                const name = typeof item === 'string' ? item : item.name;
-                const index = customCategories.indexOf(item);
+              {customCategories.filter(c => c.name !== '저축').map((item) => {
+                const name = item.name;
+                const index = customCategories.findIndex(c => c.categoryId === item.categoryId);
                 return isEditingCategory ? (
                   <Chip 
                     key={name} color={selected.color} active 
@@ -499,7 +506,7 @@ export default function RecordPage({ actions, onSaved }) {
               )}
             </ChipRow>
 
-            {customCategories.includes('저축') && (
+            {customCategories.some(c => c.name === '저축') && (
               <div css={{ marginTop: 'auto', paddingTop: 24 }}>
                 <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                   <span css={{ color: '#8a837a', fontSize: 11, fontWeight: 800 }}>적금</span>
@@ -524,8 +531,8 @@ export default function RecordPage({ actions, onSaved }) {
                     <Chip 
                       color={selected.color} active 
                       draggable 
-                      onDragStart={(e) => handleDragStart(e, customCategories.indexOf('저축'))}
-                      onDragEnter={() => handleDragEnter(customCategories.indexOf('저축'))}
+                      onDragStart={(e) => handleDragStart(e, customCategories.findIndex(c => c.name === '저축'))}
+                      onDragEnter={() => handleDragEnter(customCategories.findIndex(c => c.name === '저축'))}
                       onDragEnd={handleDropCategory}
                       onDragOver={(e) => e.preventDefault()}
                       css={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', cursor: 'grab', '&:active': { cursor: 'grabbing' } }}
