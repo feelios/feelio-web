@@ -16,6 +16,7 @@ import RecordPage from '../pages/RecordPage.jsx';
 import TransactionsPage from '../pages/TransactionsPage.jsx';
 import AnalysisPage from '../pages/AnalysisPage.jsx';
 import UniversePage from '../pages/UniversePage.jsx';
+import AuthCallbackPage from '../pages/AuthCallbackPage.jsx';
 import { getAurora } from '../data/auroras.js';
 
 const Root = styled.div`
@@ -60,6 +61,12 @@ const titles = {
 export default function App() {
   const { state, actions } = useFeelioStore();
   const [route, setRoute] = useState('home');
+  
+  // 콜백 라우트 처리 (가장 먼저 가로채기)
+  const isCallback = window.location.pathname.startsWith('/auth/callback');
+  if (isCallback) {
+    return <AuthCallbackPage />;
+  }
   const [homeDate, setHomeDate] = useState(() => new Date(2026, 6, 1));
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState(null);

@@ -43,21 +43,29 @@ export function useFeelioStore() {
   }, []);
 
   const actions = useMemo(() => ({
-    login: async (provider = 'Google', providerToken) => {
+    login: (provider) => {
+      // 프론트엔드가 돌아올 콜백 주소 (각 소셜 개발자 콘솔에 등록한 URI와 정확히 일치해야 함)
+      const REDIRECT_URI = `${window.location.origin}/auth/callback`;
+      
+      if (provider === 'Google') {
+        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&state=GOOGLE`;
+        window.location.href = authUrl;
+      } 
+      else if (provider === 'Kakao') {
+        const clientId = import.meta.env.VITE_KAKAO_CLIENT_ID;
+        const authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&response_type=code&state=KAKAO`;
+        window.location.href = authUrl;
+      }
+      else if (provider === 'Naver') {
+        const clientId = import.meta.env.VITE_NAVER_CLIENT_ID;
+        const authUrl = `https://nid.naver.com/oauth2.0/authorize?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&response_type=code&state=NAVER`;
+        window.location.href = authUrl;
+      }
+    },
+    handleCallbackLogin: async (provider, code, redirectUri) => {
       try {
-        let tokenToUse = providerToken;
-        if (!tokenToUse) {
-          if (import.meta.env.DEV) {
-            tokenToUse = 'dummy-token';
-            console.warn('⚠️ [DEV ONLY] Using dummy token for login');
-          } else {
-            console.error('Security Error: providerToken is required for login in production.');
-            setState(prev => ({ ...prev, toast: '로그인에 필요한 인증 정보가 없습니다.' }));
-            return { success: false, reason: 'MISSING_PROVIDER_TOKEN' };
-          }
-        }
-
-        const data = await authAPI.login(provider, tokenToUse);
+        const data = await authAPI.login(provider, code, redirectUri);
         setState(prev => ({
           ...prev,
           isLoggedIn: true,
@@ -71,7 +79,7 @@ export function useFeelioStore() {
         }));
         return { success: true };
       } catch (error) {
-        console.error('Login failed', error);
+        console.error('Callback login failed', error);
         setState(prev => ({ ...prev, toast: '로그인에 실패했습니다.' }));
         return { success: false, error };
       }
