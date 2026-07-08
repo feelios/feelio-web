@@ -12,7 +12,7 @@ import TransactionDetailModal from '../components/transactions/TransactionDetail
 import LoginPage from '../pages/LoginPage.jsx';
 import OnboardingPage from '../pages/OnboardingPage.jsx';
 import HomePageDesign from '../pages/HomePageDesign.jsx';
-import RecordPageDc from '../pages/RecordPageDc.jsx';
+import RecordPage from '../pages/RecordPage.jsx';
 import TransactionsPageDesign from '../pages/TransactionsPageDesign.jsx';
 import AnalysisPageDc from '../pages/AnalysisPageDc.jsx';
 import UniversePageDc from '../pages/UniversePageDc.jsx';
@@ -67,7 +67,7 @@ export default function App() {
 
   const content = {
     home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={homeDate} onSelectDate={setHomeDate} />,
-    record: <RecordPageDc state={state} actions={actions} onSaved={(date) => {
+    record: <RecordPage state={state} actions={actions} onSaved={(date) => {
       setHomeDate(new Date(date));
     }} />,
     transactions: <TransactionsPageDesign state={state} onSelect={setSelectedTxn} />,

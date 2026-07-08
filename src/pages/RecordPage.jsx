@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
@@ -192,7 +192,41 @@ const AddingInput = styled.input`
   }
 `;
 
-export default function RecordPageDc({ actions, onSaved }) {
+const StateMessage = styled.div`
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: ${({ error }) => error ? 'var(--sub)' : 'var(--sub)'}; // or use a dedicated error color if defined
+  font-weight: 500;
+`;
+
+const ErrorStateMessage = styled(StateMessage)`
+  color: var(--sub);
+  color: #E87573; /* Optional: if no global error token exists, keep hex or add var(--error) */
+`;
+
+const LoadingStateMessage = styled(StateMessage)``;
+
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { transactionsAPI } from '../api/transactions.js';
+import { useMetadata } from '../hooks/queries/useMetadata.js';
+
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+export default function RecordPage({ actions, onSaved }) {
+  const queryClient = useQueryClient();
+  const { data, isLoading, isError } = useMetadata();
+  const dataInitialized = useRef(false);
+
   const [customExpenseCategories, setCustomExpenseCategories] = useState(defaultExpenseCategories);
   const [customIncomeCategories, setCustomIncomeCategories] = useState(defaultIncomeCategories);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -217,20 +251,49 @@ export default function RecordPageDc({ actions, onSaved }) {
   const setCustomCategories = form.type === 'income' ? setCustomIncomeCategories : setCustomExpenseCategories;
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 560);
 
+  // API로부터 데이터를 성공적으로 가져오면 로컬 상태 초기화 (최초 1회만)
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 560);
+    if (data && !dataInitialized.current) {
+      setCustomExpenseCategories(data.categories?.expense || defaultExpenseCategories);
+      setCustomIncomeCategories(data.categories?.income || defaultIncomeCategories);
+      setCustomSituations(data.situations || defaultSituations);
+      dataInitialized.current = true;
+    }
+  }, [data]);
+
+  // debounce 적용
+  useEffect(() => {
+    const handleResize = debounce(() => setIsMobile(window.innerWidth <= 560), 200);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  if (isLoading) {
+    return (
+      <Page>
+        <LoadingStateMessage>기록 폼을 준비 중입니다...</LoadingStateMessage>
+      </Page>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Page>
+        <ErrorStateMessage>데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.</ErrorStateMessage>
+      </Page>
+    );
+  }
+
+  const activeEmotions = data?.emotions || emotions;
   const selected = getEmotion(form.emotion || '스트레스');
   const canSave = form.amount && form.emotion && form.category;
 
-  const startAdding = (type) => {
+  const startAdding = useCallback((type) => {
     setAddingTag(type);
     setAddingText('');
-  };
+  }, []);
 
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = useCallback((e) => {
     if (e && e.preventDefault) e.preventDefault();
     const name = addingText.trim();
     if (!name) {
@@ -239,14 +302,20 @@ export default function RecordPageDc({ actions, onSaved }) {
     }
 
     if (addingTag === 'category') {
-      if (customCategories.includes(name)) { alert('이미 있는 카테고리입니다.'); return; }
+      if (customCategories.includes(name)) { 
+        actions.showToast('이미 있는 카테고리입니다.');
+        return; 
+      }
       setCustomCategories([...customCategories, name.slice(0, 5)]);
     } else if (addingTag === 'situation') {
-      if (customSituations.includes(name)) { alert('이미 있는 태그입니다.'); return; }
+      if (customSituations.includes(name)) { 
+        actions.showToast('이미 있는 태그입니다.');
+        return; 
+      }
       setCustomSituations([...customSituations, name.slice(0, 5)]);
     }
     setAddingTag(null);
-  };
+  }, [addingText, addingTag, customCategories, customSituations, setCustomCategories, actions]);
 
   const handleRemoveCategory = (cat) => {
     setCustomCategories(customCategories.filter(c => c !== cat));
@@ -288,14 +357,14 @@ export default function RecordPageDc({ actions, onSaved }) {
 
 
 
-  const handleRemoveSituation = (sit) => {
+  const handleRemoveSituation = useCallback((sit) => {
     setCustomSituations(customSituations.filter(s => s !== sit));
     if (form.situation.includes(sit)) {
       setForm(prev => ({ ...prev, situation: prev.situation.filter(item => item !== sit) }));
     }
-  };
+  }, [customSituations, form.situation]);
 
-  const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
+  const setField = useCallback((key, value) => setForm(prev => ({ ...prev, [key]: value })), []);
   const toggleSituation = (value) => setForm(prev => ({
     ...prev,
     situation: prev.situation.includes(value)
@@ -303,20 +372,39 @@ export default function RecordPageDc({ actions, onSaved }) {
       : [...prev.situation, value]
   }));
 
-  const save = () => {
-    if (!canSave) return;
-    actions.addTransaction({
-      type: form.type,
+  const mutation = useMutation({
+    mutationFn: (txData) => transactionsAPI.createTransaction(txData),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['transactions']);
+      actions.showToast('감정 기록 저장됨 ✨');
+      onSaved?.(form.date);
+      setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '' }));
+    },
+    onError: (error) => {
+      actions.showToast(error.response?.data?.error?.message || '기록 저장에 실패했습니다.');
+    }
+  });
+
+  const save = useCallback(() => {
+    if (!canSave || mutation.isPending) return;
+    
+    // 카테고리와 감정의 ID를 찾아서 서버로 전송
+    const catList = form.type === 'income' ? data?.categories?.income : data?.categories?.expense;
+    const matchedCat = catList?.find(c => c.name === form.category);
+    const categoryId = matchedCat ? matchedCat.categoryId : 1; // 매칭 실패시 기본 ID 1
+
+    const matchedEmotion = data?.emotions?.find(e => e.name === form.emotion);
+    const emotionId = matchedEmotion ? matchedEmotion.emotionId : 1; // 기본 ID 1
+
+    mutation.mutate({
+      type: form.type.toUpperCase(),
       amount: Number(form.amount),
-      category: form.category,
-      emotion: form.emotion,
-      situation: form.situation[0] || '기록',
-      memo: form.memo || '감정 기록',
-      date: form.date
+      categoryId,
+      emotionId,
+      memo: form.memo || null, // 빈 문자열은 null로 처리
+      occurredAt: new Date(form.date).toISOString() // 올바른 ISO 포맷
     });
-    onSaved?.(form.date);
-    setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '' }));
-  };
+  }, [canSave, form, mutation, data]);
 
   return (
     <Page>
@@ -353,7 +441,8 @@ export default function RecordPageDc({ actions, onSaved }) {
               {form.emotion && <span css={{ color: selected.color }}> · {form.emotion}</span>}
             </div>
             <BlobGrid>
-              {emotions.map(name => {
+              {activeEmotions.map(item => {
+                const name = typeof item === 'string' ? item : item.name;
                 const active = form.emotion === name;
                 return (
                   <BlobChoice key={name} active={active} dim={form.emotion && !active} onClick={() => setField('emotion', active ? null : name)}>
@@ -374,22 +463,24 @@ export default function RecordPageDc({ actions, onSaved }) {
             </div>
             <ChipRow>
               {customCategories.filter(c => c !== '저축').map((item) => {
+                const name = typeof item === 'string' ? item : item.name;
                 const index = customCategories.indexOf(item);
                 return isEditingCategory ? (
                   <Chip 
-                    key={item} color={selected.color} active 
+                    key={name} color={selected.color} active 
                     draggable 
                     onDragStart={(e) => handleDragStart(e, index)}
                     onDragEnter={() => handleDragEnter(index)}
                     onDragEnd={handleDropCategory}
                     onDragOver={(e) => e.preventDefault()}
                     css={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', cursor: 'grab', '&:active': { cursor: 'grabbing' } }}
+                    aria-label={`${name} 카테고리 재정렬`}
                   >
-                    <span>{item}</span>
-                    <span onClick={() => handleRemoveCategory(item)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>
+                    <span>{name}</span>
+                    <span onClick={() => handleRemoveCategory(item)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }} aria-label="삭제">×</span>
                   </Chip>
                 ) : (
-                  <Chip key={item} color={selected.color} active={form.category === item} onClick={() => setField('category', form.category === item ? null : item)}>{item}</Chip>
+                  <Chip key={name} color={selected.color} active={form.category === name} onClick={() => setField('category', form.category === name ? null : name)}>{name}</Chip>
                 );
               })}
               {!isEditingCategory && addingTag !== 'category' && <Chip color={selected.color} onClick={() => startAdding('category')}>+</Chip>}
@@ -463,8 +554,8 @@ export default function RecordPageDc({ actions, onSaved }) {
             </label>
           </SideCard>
 
-          <SaveButton disabled={!canSave} onClick={save}>
-            {canSave ? '감정 기록 저장하기' : '금액·감정·카테고리를 골라주세요'}
+          <SaveButton disabled={!canSave || mutation.isPending} onClick={save}>
+            {mutation.isPending ? '저장 중...' : (canSave ? '감정 기록 저장하기' : '금액·감정·카테고리를 골라주세요')}
           </SaveButton>
         </Side>
       </Grid>
