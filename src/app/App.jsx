@@ -1,23 +1,23 @@
 /** @jsxImportSource @emotion/react */
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlobalStyles } from '../styles/globalStyles.jsx';
 import { theme } from '../styles/theme.js';
 import { driftA, driftB } from '../styles/animations.js';
 import { useFeelioStore } from '../stores/useFeelioStore.js';
-import { AppLayout } from '../components/common/AppLayout.jsx';
+import { AppLayoutDc } from '../components/common/AppLayoutDc.jsx';
 import { Toast } from '../components/common/Toast.jsx';
-import ProfileModal from '../components/profile/ProfileModal.jsx';
+import ProfileModalDc from '../components/profile/ProfileModalDc.jsx';
 import TransactionDetailModal from '../components/transactions/TransactionDetailModal.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
 import OnboardingPage from '../pages/OnboardingPage.jsx';
-import HomePage from '../pages/HomePage.jsx';
-import RecordPage from '../pages/RecordPage.jsx';
-import TransactionsPage from '../pages/TransactionsPage.jsx';
-import AnalysisPage from '../pages/AnalysisPage.jsx';
-import UniversePage from '../pages/UniversePage.jsx';
+import HomePageDesign from '../pages/HomePageDesign.jsx';
+import RecordPageDc from '../pages/RecordPageDc.jsx';
+import TransactionsPageDesign from '../pages/TransactionsPageDesign.jsx';
+import AnalysisPageDc from '../pages/AnalysisPageDc.jsx';
+import UniversePageDc from '../pages/UniversePageDc.jsx';
 import AuthCallbackPage from '../pages/AuthCallbackPage.jsx';
-import { getAurora } from '../data/auroras.js';
+import { getAurora } from '../data/aurorasDc.js';
 
 const Root = styled.div`
   --bg-1: ${({ mode }) => mode === 'dark' ? '#12141e' : '#f6f2eb'};
@@ -61,26 +61,27 @@ const titles = {
 export default function App() {
   const { state, actions } = useFeelioStore();
   const [route, setRoute] = useState('home');
-  
+
   // 콜백 라우트 처리 (가장 먼저 가로채기)
   const isCallback = window.location.pathname.startsWith('/auth/callback');
   if (isCallback) {
     return <AuthCallbackPage />;
   }
+
   const [homeDate, setHomeDate] = useState(() => new Date(2026, 6, 1));
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState(null);
   const colors = getAurora(state.aurora).colors;
 
-  const content = useMemo(() => ({
-    home: <HomePage state={state} onRoute={setRoute} selectedDate={homeDate} onSelectDate={setHomeDate} />,
-    record: <RecordPage state={state} actions={actions} onSaved={(date) => {
+  const content = {
+    home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={homeDate} onSelectDate={setHomeDate} />,
+    record: <RecordPageDc state={state} actions={actions} onSaved={(date) => {
       setHomeDate(new Date(date));
     }} />,
-    transactions: <TransactionsPage onSelect={setSelectedTxn} />,
-    analysis: <AnalysisPage state={state} />,
-    universe: <UniversePage state={state} />
-  })[route], [actions, homeDate, route, state]);
+    transactions: <TransactionsPageDesign state={state} onSelect={setSelectedTxn} />,
+    analysis: <AnalysisPageDc state={state} />,
+    universe: <UniversePageDc state={state} />
+  }[route];
 
   return (
     <Root mode={state.mode}>
@@ -99,7 +100,7 @@ export default function App() {
         <OnboardingPage onComplete={actions.completeOnboarding} />
       )}
       {state.isLoggedIn && state.onboardingDone && (
-        <AppLayout
+        <AppLayoutDc
           route={route}
           title={titles[route]}
           state={state}
@@ -108,10 +109,10 @@ export default function App() {
           onProfile={() => setProfileOpen(true)}
         >
           {content}
-        </AppLayout>
+        </AppLayoutDc>
       )}
-      {profileOpen && <ProfileModal state={state} actions={actions} onClose={() => setProfileOpen(false)} />}
-      {selectedTxn && <TransactionDetailModal key={selectedTxn.transactionId ?? selectedTxn.id ?? 'transaction-modal'} transaction={selectedTxn} actions={actions} onClose={() => setSelectedTxn(null)} />}
+      {profileOpen && <ProfileModalDc state={state} actions={actions} onClose={() => setProfileOpen(false)} />}
+      {selectedTxn && <TransactionDetailModal transaction={selectedTxn} actions={actions} onClose={() => setSelectedTxn(null)} />}
       <Toast message={state.toast} onDone={actions.clearToast} />
     </Root>
   );

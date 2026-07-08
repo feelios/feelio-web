@@ -1,29 +1,23 @@
 /** @jsxImportSource @emotion/react */
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
+import { useMetadata } from '../hooks/queries/useMetadata.js';
+import { useCreateTransactionMutation } from '../hooks/queries/useTransactions.js';
 
 const emotions = ['신남', '설렘', '뿌듯함', '스트레스', '외로움', '화남', '평온', '무덤덤'];
+const defaultIncomeCategories = ['월급', '금융소득', '용돈', '더치페이', '환급금'];
+const defaultExpenseCategories = ['식비', '배달', '마트/편의점', '패션/미용', '주거/통신', '문화/취미', '구독료', '생활용품', '사회생활', '보험', '세금', '차량/교통', '저축'];
+const defaultSituations = ['퇴근 후', '혼자 있음', '친구와', '보상', '습관', '이동 중', '아침', '밤'];
 
-function normalizeCategory(category) {
-  if (typeof category === 'string') {
-    return { name: category, categoryId: `default-${category}` };
-  }
-
-  if (!category || typeof category !== 'object') {
-    return null;
-  }
-
-  return {
-    name: category.name ?? category.categoryName ?? category.label ?? '',
-    categoryId: category.categoryId ?? category.id ?? `default-${category.name ?? category.categoryName ?? ''}`
-  };
+function categoriesForType(categories, type) {
+  const transactionType = type.toUpperCase();
+  return Array.isArray(categories)
+    ? categories.filter(category => !category?.type || category.type === transactionType)
+    : (type === 'income' ? categories?.income ?? [] : categories?.expense ?? []);
 }
-
-const defaultIncomeCategories = ['월급', '금융소득', '용돈', '더치페이', '환급금'].map(normalizeCategory);
-const defaultExpenseCategories = ['식비', '배달', '마트/편의점', '패션/미용', '주거/통신', '문화/취미', '구독료', '생활용품', '사회생활', '보험', '세금', '차량/교통', '저축'].map(normalizeCategory);
 
 const Page = styled.div`
   width: min(100%, 1080px);
@@ -207,57 +201,17 @@ const AddingInput = styled.input`
   }
 `;
 
-const StateMessage = styled.div`
-  padding: 2.5rem 1rem;
-  text-align: center;
-  color: ${({ error }) => error ? 'var(--sub)' : 'var(--sub)'}; // or use a dedicated error color if defined
-  font-weight: 500;
-`;
-
-const ErrorStateMessage = styled(StateMessage)`
-  color: var(--sub);
-  color: #E87573; /* Optional: if no global error token exists, keep hex or add var(--error) */
-`;
-
-const LoadingStateMessage = styled(StateMessage)``;
-
-import { useMetadata } from '../hooks/queries/useMetadata.js';
-import { useCreateTransactionMutation } from '../hooks/queries/useTransactions.js';
-
-
-
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
-
-function categoriesForType(categories, type) {
-  const transactionType = type.toUpperCase();
-  const source = Array.isArray(categories)
-    ? categories.filter(category => !category?.type || category.type === transactionType)
-    : (type === 'income' ? categories?.income ?? [] : categories?.expense ?? []);
-
-  return (Array.isArray(source) ? source : [])
-    .map(normalizeCategory)
-    .filter(Boolean);
-}
-
-export default function RecordPage({ actions, onSaved }) {
-  const { data, isLoading, isError } = useMetadata();
-  const dataInitialized = useRef(false);
-
+export default function RecordPageDc({ actions, onSaved }) {
   const [customExpenseCategories, setCustomExpenseCategories] = useState(defaultExpenseCategories);
   const [customIncomeCategories, setCustomIncomeCategories] = useState(defaultIncomeCategories);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
+  const [customSituations, setCustomSituations] = useState(defaultSituations);
+  const [isEditingSituation, setIsEditingSituation] = useState(false);
   const [addingTag, setAddingTag] = useState(null);
   const [addingText, setAddingText] = useState('');
+
+  const { data } = useMetadata();
+  const mutation = useCreateTransactionMutation();
 
   const dragItemRef = useRef(null);
   const dragOverItemRef = useRef(null);
@@ -266,6 +220,7 @@ export default function RecordPage({ actions, onSaved }) {
     amount: '',
     category: null,
     emotion: null,
+    situation: [],
     memo: '',
     date: '2026-07-01T21:30'
   });
@@ -274,16 +229,20 @@ export default function RecordPage({ actions, onSaved }) {
   const setCustomCategories = form.type === 'income' ? setCustomIncomeCategories : setCustomExpenseCategories;
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 560);
 
-  const activeEmotions = data?.emotions || emotions;
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 560);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const selected = getEmotion(form.emotion || '스트레스');
   const canSave = form.amount && form.emotion && form.category;
 
-  const startAdding = useCallback((type) => {
+  const startAdding = (type) => {
     setAddingTag(type);
     setAddingText('');
-  }, []);
+  };
 
-  const handleAddSubmit = useCallback((e) => {
+  const handleAddSubmit = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const name = addingText.trim();
     if (!name) {
@@ -292,21 +251,18 @@ export default function RecordPage({ actions, onSaved }) {
     }
 
     if (addingTag === 'category') {
-      const normalizedName = name.slice(0, 5);
-      const exists = customCategories.some(item => item.name === normalizedName);
-      if (exists) {
-        actions.showToast('이미 있는 카테고리입니다.');
-        return;
-      }
-      setCustomCategories([...customCategories, { name: normalizedName, categoryId: `custom-${Date.now()}` }]);
+      if (customCategories.includes(name)) { alert('이미 있는 카테고리입니다.'); return; }
+      setCustomCategories([...customCategories, name.slice(0, 5)]);
+    } else if (addingTag === 'situation') {
+      if (customSituations.includes(name)) { alert('이미 있는 태그입니다.'); return; }
+      setCustomSituations([...customSituations, name.slice(0, 5)]);
     }
     setAddingTag(null);
-  }, [addingText, addingTag, customCategories, setCustomCategories, actions]);
+  };
 
   const handleRemoveCategory = (cat) => {
-    const targetName = typeof cat === 'string' ? cat : cat?.name;
-    setCustomCategories(customCategories.filter(c => c.name !== targetName));
-    if (form.category === targetName) setField('category', null);
+    setCustomCategories(customCategories.filter(c => c !== cat));
+    if (form.category === cat) setField('category', null);
   };
 
   const handleDragStart = (e, index) => {
@@ -330,23 +286,42 @@ export default function RecordPage({ actions, onSaved }) {
     dragOverItemRef.current = null;
   };
 
-  const setField = useCallback((key, value) => setForm(prev => ({ ...prev, [key]: value })), []);
-
-  const mutation = useCreateTransactionMutation();
-
-  const save = useCallback(() => {
-    if (!canSave || mutation.isPending) return;
-
-    const normalizedAmount = form.amount.replace(/[^\d]/g, '');
-    const parsedAmount = Number(normalizedAmount);
-    if (!normalizedAmount || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
-      actions.showToast('유효한 금액을 입력해주세요.');
-      return;
+  const handleDropSituation = () => {
+    if (dragItemRef.current === null || dragOverItemRef.current === null) return;
+    if (dragItemRef.current !== dragOverItemRef.current) {
+      const newSits = [...customSituations];
+      const [dragItem] = newSits.splice(dragItemRef.current, 1);
+      newSits.splice(dragOverItemRef.current, 0, dragItem);
+      setCustomSituations(newSits);
     }
+    dragItemRef.current = null;
+    dragOverItemRef.current = null;
+  };
+
+
+
+  const handleRemoveSituation = (sit) => {
+    setCustomSituations(customSituations.filter(s => s !== sit));
+    if (form.situation.includes(sit)) {
+      setForm(prev => ({ ...prev, situation: prev.situation.filter(item => item !== sit) }));
+    }
+  };
+
+  const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
+  const toggleSituation = (value) => setForm(prev => ({
+    ...prev,
+    situation: prev.situation.includes(value)
+      ? prev.situation.filter(item => item !== value)
+      : [...prev.situation, value]
+  }));
+
+  const save = () => {
+    if (!canSave || mutation.isPending) return;
 
     // 카테고리와 감정의 ID를 찾아서 서버로 전송
     const catList = categoriesForType(data?.categories, form.type);
     const matchedCat = catList?.find(c => c.name === form.category);
+    
     if (!matchedCat) {
       actions.showToast('카테고리 정보를 확인할 수 없습니다.');
       return;
@@ -360,58 +335,33 @@ export default function RecordPage({ actions, onSaved }) {
 
     mutation.mutate({
       type: form.type.toUpperCase(),
-      amount: parsedAmount,
+      amount: Number(form.amount),
       categoryId: matchedCat.categoryId,
       emotionId: matchedEmotion.emotionId,
-      situationIds: [],
-      memo: form.memo || null, // 빈 문자열은 null로 처리
-      occurredAt: new Date(form.date).toISOString() // 올바른 ISO 포맷
+      situationIds: [], // 과거 버전 호환성을 위해 빈 배열 전송
+      memo: form.memo || null,
+      occurredAt: new Date(form.date).toISOString()
     }, {
       onSuccess: () => {
-        actions.showToast('감정 기록 저장됨 ✨');
+        // 백엔드 저장 성공 시 프론트엔드 로컬 상태도 업데이트 (이전 UI 호환성)
+        actions.addTransaction({
+          type: form.type,
+          amount: Number(form.amount),
+          category: form.category,
+          emotion: form.emotion,
+          situation: form.situation[0] || '기록',
+          memo: form.memo || '감정 기록',
+          date: form.date
+        });
+        actions.showToast('기록 저장됨');
         onSaved?.(form.date);
-        setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, memo: '' }));
+        setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '' }));
       },
       onError: (error) => {
         actions.showToast(error.response?.data?.error?.message || '기록 저장에 실패했습니다.');
       }
     });
-  }, [canSave, form, mutation, data, actions, onSaved]);
-
-  // API로부터 데이터를 성공적으로 가져오면 로컬 상태 초기화 (최초 1회만)
-  useEffect(() => {
-    if (data && !dataInitialized.current) {
-      const expenseCategories = categoriesForType(data.categories, 'expense');
-      const incomeCategories = categoriesForType(data.categories, 'income');
-      setCustomExpenseCategories(expenseCategories.length ? expenseCategories : defaultExpenseCategories);
-      setCustomIncomeCategories(incomeCategories.length ? incomeCategories : defaultIncomeCategories);
-      dataInitialized.current = true;
-    }
-  }, [data]);
-
-  // debounce 적용
-  useEffect(() => {
-    const handleResize = debounce(() => setIsMobile(window.innerWidth <= 560), 200);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  if (isLoading) {
-    return (
-      <Page>
-        <LoadingStateMessage>기록 폼을 준비 중입니다...</LoadingStateMessage>
-      </Page>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Page>
-        <ErrorStateMessage>데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.</ErrorStateMessage>
-      </Page>
-    );
-  }
-
+  };
 
   return (
     <Page>
@@ -448,8 +398,7 @@ export default function RecordPage({ actions, onSaved }) {
               {form.emotion && <span css={{ color: selected.color }}> · {form.emotion}</span>}
             </div>
             <BlobGrid>
-              {activeEmotions.map(item => {
-                const name = typeof item === 'string' ? item : item.name;
+              {emotions.map(name => {
                 const active = form.emotion === name;
                 return (
                   <BlobChoice key={name} active={active} dim={form.emotion && !active} onClick={() => setField('emotion', active ? null : name)}>
@@ -469,25 +418,23 @@ export default function RecordPage({ actions, onSaved }) {
               <button type="button" onClick={() => setIsEditingCategory(!isEditingCategory)} css={{ background: 'transparent', border: 0, color: isEditingCategory ? 'var(--text)' : 'var(--sub)', cursor: 'pointer', fontSize: 16 }}>✎</button>
             </div>
             <ChipRow>
-              {customCategories.filter(c => c.name !== '저축').map((item) => {
-                const name = item.name;
-                const index = customCategories.findIndex(c => c.categoryId === item.categoryId);
+              {customCategories.filter(c => c !== '저축').map((item) => {
+                const index = customCategories.indexOf(item);
                 return isEditingCategory ? (
                   <Chip 
-                    key={name} color={selected.color} active 
+                    key={item} color={selected.color} active 
                     draggable 
                     onDragStart={(e) => handleDragStart(e, index)}
                     onDragEnter={() => handleDragEnter(index)}
                     onDragEnd={handleDropCategory}
                     onDragOver={(e) => e.preventDefault()}
                     css={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', cursor: 'grab', '&:active': { cursor: 'grabbing' } }}
-                    aria-label={`${name} 카테고리 재정렬`}
                   >
-                    <span>{name}</span>
-                    <span onClick={() => handleRemoveCategory(item)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }} aria-label="삭제">×</span>
+                    <span>{item}</span>
+                    <span onClick={() => handleRemoveCategory(item)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>
                   </Chip>
                 ) : (
-                  <Chip key={name} color={selected.color} active={form.category === name} onClick={() => setField('category', form.category === name ? null : name)}>{name}</Chip>
+                  <Chip key={item} color={selected.color} active={form.category === item} onClick={() => setField('category', form.category === item ? null : item)}>{item}</Chip>
                 );
               })}
               {!isEditingCategory && addingTag !== 'category' && <Chip color={selected.color} onClick={() => startAdding('category')}>+</Chip>}
@@ -506,7 +453,7 @@ export default function RecordPage({ actions, onSaved }) {
               )}
             </ChipRow>
 
-            {customCategories.some(c => c.name === '저축') && (
+            {customCategories.includes('저축') && (
               <div css={{ marginTop: 'auto', paddingTop: 24 }}>
                 <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                   <span css={{ color: '#8a837a', fontSize: 11, fontWeight: 800 }}>적금</span>
@@ -531,8 +478,8 @@ export default function RecordPage({ actions, onSaved }) {
                     <Chip 
                       color={selected.color} active 
                       draggable 
-                      onDragStart={(e) => handleDragStart(e, customCategories.findIndex(c => c.name === '저축'))}
-                      onDragEnter={() => handleDragEnter(customCategories.findIndex(c => c.name === '저축'))}
+                      onDragStart={(e) => handleDragStart(e, customCategories.indexOf('저축'))}
+                      onDragEnter={() => handleDragEnter(customCategories.indexOf('저축'))}
                       onDragEnd={handleDropCategory}
                       onDragOver={(e) => e.preventDefault()}
                       css={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', cursor: 'grab', '&:active': { cursor: 'grabbing' } }}
@@ -561,8 +508,8 @@ export default function RecordPage({ actions, onSaved }) {
             </label>
           </SideCard>
 
-          <SaveButton disabled={!canSave || mutation.isPending} onClick={save}>
-            {mutation.isPending ? '저장 중...' : (canSave ? '감정 기록 저장하기' : '금액·감정·카테고리를 골라주세요')}
+          <SaveButton disabled={!canSave} onClick={save}>
+            {canSave ? '감정 기록 저장하기' : '금액·감정·카테고리를 골라주세요'}
           </SaveButton>
         </Side>
       </Grid>

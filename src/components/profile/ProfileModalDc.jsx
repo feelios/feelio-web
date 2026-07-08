@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 import { Modal } from '../common/Modal.jsx';
 import { EmotionBlob } from '../common/EmotionBlob.jsx';
-import { auroras } from '../../data/auroras.js';
+import { auroras } from '../../data/aurorasDc.js';
 import { money, percent } from '../../utils/format.js';
 
 const Screen = styled.div`
@@ -271,7 +271,7 @@ function Back({ title, children }) {
   );
 }
 
-export default function ProfileModal({ state, actions, onClose }) {
+export default function ProfileModalDc({ state, actions, onClose }) {
   const [view, setView] = useState('profile');
   const [nickname, setNickname] = useState(cleanName(state.user.nickname));
   const [editIndex, setEditIndex] = useState(-1);

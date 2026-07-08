@@ -497,8 +497,7 @@ function ridgePath(cx, width, height, base = 172) {
   return `M ${(cx - width).toFixed(1)} ${base} C ${(cx - width * .42).toFixed(1)} ${base} ${(cx - width * .32).toFixed(1)} ${(base - height).toFixed(1)} ${cx.toFixed(1)} ${(base - height).toFixed(1)} C ${(cx + width * .32).toFixed(1)} ${(base - height).toFixed(1)} ${(cx + width * .42).toFixed(1)} ${base} ${(cx + width).toFixed(1)} ${base} Z`;
 }
 
-export default function HomePage({ state, onRoute, selectedDate, onSelectDate }) {
-  const resolvedState = state ?? { transactions: [], goals: [], mode: 'light' };
+export default function HomePageDesign({ state, onRoute, selectedDate, onSelectDate }) {
   const [fallbackDate] = useState(() => new Date(2026, 6, 1));
   const selected = selectedDate || fallbackDate;
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
@@ -515,22 +514,22 @@ export default function HomePage({ state, onRoute, selectedDate, onSelectDate })
     });
   }, [selected]);
 
-  const monthlyTransactions = visibleMonthTransactions(resolvedState.transactions, visibleMonth);
+  const monthlyTransactions = visibleMonthTransactions(state.transactions, visibleMonth);
   const monthlyEmotionTransactions = monthlyTransactions.filter(item => item.type === 'expense' && item.emotion);
-  const hasAnyTransactions = resolvedState.transactions.length > 0;
+  const hasAnyTransactions = state.transactions.length > 0;
   const hasMonthlyTransactions = monthlyTransactions.length > 0;
-  const dailyTransactions = visibleDayTransactions(resolvedState.transactions, selected);
+  const dailyTransactions = visibleDayTransactions(state.transactions, selected);
   const dailyEmotionTransactions = dailyTransactions.filter(item => item.emotion);
   const hasDailyEmotion = dailyEmotionTransactions.length > 0;
   const hasEnoughRidgeData = monthlyEmotionTransactions.length >= 5;
   const displayEmotion = hasDailyEmotion
     ? dominantEmotion(dailyEmotionTransactions)
-    : dominantEmotion(resolvedState.transactions, defaultHomeEmotion);
+    : dominantEmotion(state.transactions, defaultHomeEmotion);
   const topMeta = getEmotion(displayEmotion);
-  const goal = resolvedState.goals[0];
+  const goal = state.goals[0];
   const goalPct = percent(goal.current, goal.target);
-  const dark = resolvedState.mode === 'dark';
-  const days = calendarDays(resolvedState.transactions, visibleMonth);
+  const dark = state.mode === 'dark';
+  const days = calendarDays(state.transactions, visibleMonth);
   const selectedDayKey = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, '0')}-${String(selected.getDate()).padStart(2, '0')}`;
   const ridgeData = hasEnoughRidgeData ? emotionRidge(monthlyEmotionTransactions) : defaultRidgeData;
   const ridgePeak = ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0]);
