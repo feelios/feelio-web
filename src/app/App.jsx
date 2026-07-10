@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { GlobalStyles } from '../styles/globalStyles.jsx';
 import { theme } from '../styles/theme.js';
@@ -16,7 +16,6 @@ import RecordPageDc from '../pages/RecordPageDc.jsx';
 import TransactionsPageDesign from '../pages/TransactionsPageDesign.jsx';
 import AnalysisPageDc from '../pages/AnalysisPageDc.jsx';
 import UniversePageDc from '../pages/UniversePageDc.jsx';
-import AuthCallbackPage from '../pages/AuthCallbackPage.jsx';
 import { getAurora } from '../data/aurorasDc.js';
 
 const Root = styled.div`
@@ -61,16 +60,29 @@ const titles = {
 export default function App() {
   const { state, actions } = useFeelioStore();
   const [route, setRoute] = useState('home');
+  const [isInitializing, setIsInitializing] = useState(true);
 
-  // 콜백 라우트 처리 (가장 먼저 가로채기)
-  const isCallback = window.location.pathname.startsWith('/auth/callback');
-  if (isCallback) {
-    return <AuthCallbackPage />;
-  }
 
   const [homeDate, setHomeDate] = useState(() => new Date(2026, 6, 1));
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState(null);
+
+  useEffect(() => {
+    const init = async () => {
+      await actions.fetchMe();
+      setIsInitializing(false);
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (isInitializing) {
+    return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
+  }
+
+
+
+
   const colors = getAurora(state.aurora).colors;
 
   const content = {

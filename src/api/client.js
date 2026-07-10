@@ -29,17 +29,12 @@ const client = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
-// Request Interceptor: Access Token 자동 주입
+// Request Interceptor: 토큰 주입 로직 제거 (쿠키로 자동 전송됨)
 client.interceptors.request.use(
-  (config) => {
-    const state = getStoreState();
-    if (state?.accessToken) {
-      config.headers.Authorization = `Bearer ${state.accessToken}`;
-    }
-    return config;
-  },
+  (config) => config,
   (error) => Promise.reject(error)
 );
 
