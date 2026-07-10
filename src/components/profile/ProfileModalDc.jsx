@@ -364,6 +364,11 @@ export default function ProfileModalDc({ state, actions, onClose }) {
   }
 
   async function deleteGoal(goalId) {
+    if (goals.length <= 1) {
+      actions.showToast('최소 하나의 목표는 남겨두어야 합니다.');
+      return;
+    }
+
     try {
       await deleteGoalMutation.mutateAsync(goalId);
       actions.showToast('목표가 삭제되었어요');
