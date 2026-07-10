@@ -6,18 +6,12 @@ import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
 import { useMetadata } from '../hooks/queries/useMetadata.js';
 import { useCreateTransactionMutation } from '../hooks/queries/useTransactions.js';
-
-const emotions = ['신남', '설렘', '뿌듯함', '스트레스', '외로움', '화남', '평온', '무덤덤'];
-const defaultIncomeCategories = ['월급', '금융소득', '용돈', '더치페이', '환급금'];
-const defaultExpenseCategories = ['식비', '배달', '마트/편의점', '패션/미용', '주거/통신', '문화/취미', '구독료', '생활용품', '사회생활', '보험', '세금', '차량/교통', '저축'];
-const defaultSituations = ['퇴근 후', '혼자 있음', '친구와', '보상', '습관', '이동 중', '아침', '밤'];
-
-function categoriesForType(categories, type) {
-  const transactionType = type.toUpperCase();
-  return Array.isArray(categories)
-    ? categories.filter(category => !category?.type || category.type === transactionType)
-    : (type === 'income' ? categories?.income ?? [] : categories?.expense ?? []);
-}
+import {
+  useCategoriesQuery,
+  useCreateCategoryMutation,
+  useDeleteCategoryMutation,
+  useUpdateCategoryOrderMutation
+} from '../hooks/queries/useCategories.js';
 
 const Page = styled.div`
   width: min(100%, 1080px);
@@ -202,18 +196,10 @@ const AddingInput = styled.input`
 `;
 
 export default function RecordPageDc({ actions, onSaved }) {
-  const [customExpenseCategories, setCustomExpenseCategories] = useState(defaultExpenseCategories);
-  const [customIncomeCategories, setCustomIncomeCategories] = useState(defaultIncomeCategories);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
-  const [customSituations, setCustomSituations] = useState(defaultSituations);
   const [addingTag, setAddingTag] = useState(null);
   const [addingText, setAddingText] = useState('');
 
-  const { data } = useMetadata();
-  const mutation = useCreateTransactionMutation();
-
-  const dragItemRef = useRef(null);
-  const dragOverItemRef = useRef(null);
   const [form, setForm] = useState({
     type: 'expense',
     amount: '',
@@ -224,8 +210,20 @@ export default function RecordPageDc({ actions, onSaved }) {
     date: '2026-07-01T21:30'
   });
 
-  const customCategories = form.type === 'income' ? customIncomeCategories : customExpenseCategories;
-  const setCustomCategories = form.type === 'income' ? setCustomIncomeCategories : setCustomExpenseCategories;
+  const { data: metaData } = useMetadata();
+  const emotions = metaData?.emotions || [];
+
+  const { data: categoryData } = useCategoriesQuery(form.type.toUpperCase());
+  const customCategories = categoryData?.categories || [];
+
+  const createCategoryMutation = useCreateCategoryMutation();
+  const deleteCategoryMutation = useDeleteCategoryMutation();
+  const updateCategoryOrderMutation = useUpdateCategoryOrderMutation();
+  const mutation = useCreateTransactionMutation();
+
+  const dragItemRef = useRef(null);
+  const dragOverItemRef = useRef(null);
+
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 560);
 
   useEffect(() => {
@@ -250,18 +248,16 @@ export default function RecordPageDc({ actions, onSaved }) {
     }
 
     if (addingTag === 'category') {
-      if (customCategories.includes(name)) { alert('이미 있는 카테고리입니다.'); return; }
-      setCustomCategories([...customCategories, name.slice(0, 5)]);
-    } else if (addingTag === 'situation') {
-      if (customSituations.includes(name)) { alert('이미 있는 태그입니다.'); return; }
-      setCustomSituations([...customSituations, name.slice(0, 5)]);
+      if (customCategories.some(c => c.name === name)) { alert('이미 있는 카테고리입니다.'); return; }
+      createCategoryMutation.mutate({ name: name.slice(0, 5), type: form.type.toUpperCase() });
     }
     setAddingTag(null);
   };
 
   const handleRemoveCategory = (cat) => {
-    setCustomCategories(customCategories.filter(c => c !== cat));
-    if (form.category === cat) setField('category', null);
+    if (!cat.isCustom) return;
+    deleteCategoryMutation.mutate({ categoryId: cat.categoryId, type: form.type.toUpperCase() });
+    if (form.category === cat.name) setField('category', null);
   };
 
   const handleDragStart = (e, index) => {
@@ -279,31 +275,26 @@ export default function RecordPageDc({ actions, onSaved }) {
       const newCats = [...customCategories];
       const [dragItem] = newCats.splice(dragItemRef.current, 1);
       newCats.splice(dragOverItemRef.current, 0, dragItem);
-      setCustomCategories(newCats);
+      
+      const orders = newCats.map((c, idx) => ({ categoryId: c.categoryId, isCustom: c.isCustom, sortOrder: idx + 1 }));
+      updateCategoryOrderMutation.mutate({ type: form.type.toUpperCase(), orders });
     }
     dragItemRef.current = null;
     dragOverItemRef.current = null;
   };
-
-
-
-
 
   const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
 
   const save = () => {
     if (!canSave || mutation.isPending) return;
 
-    // 카테고리와 감정의 ID를 찾아서 서버로 전송
-    const catList = categoriesForType(data?.categories, form.type);
-    const matchedCat = catList?.find(c => c.name === form.category);
-    
+    const matchedCat = customCategories.find(c => c.name === form.category);
     if (!matchedCat) {
       actions.showToast('카테고리 정보를 확인할 수 없습니다.');
       return;
     }
 
-    const matchedEmotion = data?.emotions?.find(e => e.name === form.emotion);
+    const matchedEmotion = emotions.find(e => e.name === form.emotion);
     if (!matchedEmotion) {
       actions.showToast('감정 정보를 확인할 수 없습니다.');
       return;
@@ -314,12 +305,11 @@ export default function RecordPageDc({ actions, onSaved }) {
       amount: Number(form.amount),
       categoryId: matchedCat.categoryId,
       emotionId: matchedEmotion.emotionId,
-      situationIds: [], // 과거 버전 호환성을 위해 빈 배열 전송
+      situationIds: [],
       memo: form.memo || null,
       occurredAt: new Date(form.date).toISOString()
     }, {
       onSuccess: () => {
-        // 백엔드 저장 성공 시 프론트엔드 로컬 상태도 업데이트 (이전 UI 호환성)
         actions.addTransaction({
           type: form.type,
           amount: Number(form.amount),
@@ -338,6 +328,10 @@ export default function RecordPageDc({ actions, onSaved }) {
       }
     });
   };
+
+  const hasSaving = customCategories.some(c => c.name === '저축');
+  const savingCatIndex = customCategories.findIndex(c => c.name === '저축');
+  const savingCat = customCategories[savingCatIndex];
 
   return (
     <Page>
@@ -374,10 +368,11 @@ export default function RecordPageDc({ actions, onSaved }) {
               {form.emotion && <span css={{ color: selected.color }}> · {form.emotion}</span>}
             </div>
             <BlobGrid>
-              {emotions.map(name => {
+              {emotions.map(emotionItem => {
+                const name = emotionItem.name;
                 const active = form.emotion === name;
                 return (
-                  <BlobChoice key={name} active={active} dim={form.emotion && !active} onClick={() => setField('emotion', active ? null : name)}>
+                  <BlobChoice key={emotionItem.emotionId} active={active} dim={form.emotion && !active} onClick={() => setField('emotion', active ? null : name)}>
                     <EmotionBlob emotion={name} size={isMobile ? (active ? 74 : 60) : (active ? 122 : 92)} interactive={false} />
                     <span css={{ fontSize: isMobile ? 12 : 14 }}>{name}</span>
                   </BlobChoice>
@@ -394,11 +389,10 @@ export default function RecordPageDc({ actions, onSaved }) {
               <button type="button" onClick={() => setIsEditingCategory(!isEditingCategory)} css={{ background: 'transparent', border: 0, color: isEditingCategory ? 'var(--text)' : 'var(--sub)', cursor: 'pointer', fontSize: 16 }}>✎</button>
             </div>
             <ChipRow>
-              {customCategories.filter(c => c !== '저축').map((item) => {
-                const index = customCategories.indexOf(item);
+              {customCategories.filter(c => c.name !== '저축').map((item, index) => {
                 return isEditingCategory ? (
                   <Chip 
-                    key={item} color={selected.color} active 
+                    key={item.categoryId} color={selected.color} active 
                     draggable 
                     onDragStart={(e) => handleDragStart(e, index)}
                     onDragEnter={() => handleDragEnter(index)}
@@ -406,11 +400,11 @@ export default function RecordPageDc({ actions, onSaved }) {
                     onDragOver={(e) => e.preventDefault()}
                     css={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', cursor: 'grab', '&:active': { cursor: 'grabbing' } }}
                   >
-                    <span>{item}</span>
-                    <span onClick={() => handleRemoveCategory(item)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>
+                    <span>{item.name}</span>
+                    {item.isCustom && <span onClick={() => handleRemoveCategory(item)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>}
                   </Chip>
                 ) : (
-                  <Chip key={item} color={selected.color} active={form.category === item} onClick={() => setField('category', form.category === item ? null : item)}>{item}</Chip>
+                  <Chip key={item.categoryId} color={selected.color} active={form.category === item.name} onClick={() => setField('category', form.category === item.name ? null : item.name)}>{item.name}</Chip>
                 );
               })}
               {!isEditingCategory && addingTag !== 'category' && <Chip color={selected.color} onClick={() => startAdding('category')}>+</Chip>}
@@ -429,7 +423,7 @@ export default function RecordPageDc({ actions, onSaved }) {
               )}
             </ChipRow>
 
-            {customCategories.includes('저축') && (
+            {hasSaving && (
               <div css={{ marginTop: 'auto', paddingTop: 24 }}>
                 <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                   <span css={{ color: '#8a837a', fontSize: 11, fontWeight: 800 }}>적금</span>
@@ -454,14 +448,14 @@ export default function RecordPageDc({ actions, onSaved }) {
                     <Chip 
                       color={selected.color} active 
                       draggable 
-                      onDragStart={(e) => handleDragStart(e, customCategories.indexOf('저축'))}
-                      onDragEnter={() => handleDragEnter(customCategories.indexOf('저축'))}
+                      onDragStart={(e) => handleDragStart(e, savingCatIndex)}
+                      onDragEnter={() => handleDragEnter(savingCatIndex)}
                       onDragEnd={handleDropCategory}
                       onDragOver={(e) => e.preventDefault()}
                       css={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', cursor: 'grab', '&:active': { cursor: 'grabbing' } }}
                     >
                       <span>저축</span>
-                      <span onClick={() => handleRemoveCategory('저축')} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>
+                      {savingCat?.isCustom && <span onClick={() => handleRemoveCategory(savingCat)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>}
                     </Chip>
                   ) : (
                     <Chip color={selected.color} active={form.category === '저축'} onClick={() => setField('category', form.category === '저축' ? null : '저축')}>저축</Chip>
