@@ -515,21 +515,22 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   }, [selected]);
 
   const monthlyTransactions = visibleMonthTransactions(state.transactions, visibleMonth);
-  const monthlyEmotionTransactions = monthlyTransactions.filter(item => item.type === 'expense' && item.emotion);
+  // 감정/AI 분석 시 '저축' 카테고리는 제외
+  const monthlyEmotionTransactions = monthlyTransactions.filter(item => item.type === 'expense' && item.emotion && item.category !== '저축');
   const hasAnyTransactions = state.transactions.length > 0;
   const hasMonthlyTransactions = monthlyTransactions.length > 0;
   const dailyTransactions = visibleDayTransactions(state.transactions, selected);
-  const dailyEmotionTransactions = dailyTransactions.filter(item => item.emotion);
+  const dailyEmotionTransactions = dailyTransactions.filter(item => item.emotion && item.category !== '저축');
   const hasDailyEmotion = dailyEmotionTransactions.length > 0;
   const hasEnoughRidgeData = monthlyEmotionTransactions.length >= 5;
   const displayEmotion = hasDailyEmotion
     ? dominantEmotion(dailyEmotionTransactions)
-    : dominantEmotion(state.transactions, defaultHomeEmotion);
+    : dominantEmotion(state.transactions.filter(item => item.category !== '저축'), defaultHomeEmotion);
   const topMeta = getEmotion(displayEmotion);
   const goal = state.goals[0];
   const goalPct = percent(goal.current, goal.target);
   const dark = state.mode === 'dark';
-  const days = calendarDays(state.transactions, visibleMonth);
+  const days = calendarDays(state.transactions.filter(item => item.category !== '저축'), visibleMonth);
   const selectedDayKey = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, '0')}-${String(selected.getDate()).padStart(2, '0')}`;
   const ridgeData = hasEnoughRidgeData ? emotionRidge(monthlyEmotionTransactions) : defaultRidgeData;
   const ridgePeak = ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0]);

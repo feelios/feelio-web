@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { authAPI } from '../api/auth.js';
 import { mockGoals } from '../data/mockGoals.js';
-import { mockTransactions } from '../data/mockTransactions.js';
 
 const STORAGE_KEY = 'feelio-dc-react-state-v4-temp-seed';
 
@@ -12,7 +11,7 @@ const initialState = {
   aurora: '블루',
   user: { nickname: '서연', provider: 'Google' },
   goals: mockGoals,
-  transactions: mockTransactions,
+  transactions: [],
   toast: ''
 };
 
@@ -130,27 +129,6 @@ export function useFeelioStore() {
         newGoals.unshift(targetGoal);
         return { ...prev, goals: newGoals, toast: '대표 목표로 변경되었어요' };
       });
-    },
-    addTransaction(transaction) {
-      setState(prev => ({
-        ...prev,
-        transactions: [{ id: `t-${Date.now()}`, ...transaction }, ...prev.transactions],
-        toast: '기록 저장됨'
-      }));
-    },
-    updateTransaction(id, patch) {
-      setState(prev => ({
-        ...prev,
-        transactions: prev.transactions.map(item => item.id === id ? { ...item, ...patch } : item),
-        toast: '기록 수정됨'
-      }));
-    },
-    removeTransaction(id) {
-      setState(prev => ({
-        ...prev,
-        transactions: prev.transactions.filter(item => item.id !== id),
-        toast: '기록 삭제됨'
-      }));
     },
     clearToast() {
       setState(prev => ({ ...prev, toast: '' }));
