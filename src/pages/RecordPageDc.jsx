@@ -310,15 +310,6 @@ export default function RecordPageDc({ actions, onSaved }) {
       occurredAt: new Date(form.date).toISOString()
     }, {
       onSuccess: () => {
-        actions.addTransaction({
-          type: form.type,
-          amount: Number(form.amount),
-          category: form.category,
-          emotion: form.emotion,
-          situation: form.situation[0] || '기록',
-          memo: form.memo || '감정 기록',
-          date: form.date
-        });
         actions.showToast('기록 저장됨');
         onSaved?.(form.date);
         setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '' }));
@@ -423,7 +414,7 @@ export default function RecordPageDc({ actions, onSaved }) {
               )}
             </ChipRow>
 
-            {hasSaving && (
+            {hasSaving ? (
               <div css={{ marginTop: 'auto', paddingTop: 24 }}>
                 <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                   <span css={{ color: '#8a837a', fontSize: 11, fontWeight: 800 }}>적금</span>
@@ -462,6 +453,18 @@ export default function RecordPageDc({ actions, onSaved }) {
                   )}
                 </div>
               </div>
+            ) : (
+              form.type === 'expense' && (
+                <div css={{ marginTop: 'auto', paddingTop: 24 }}>
+                  <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span css={{ color: '#8a837a', fontSize: 11, fontWeight: 800 }}>적금</span>
+                  </div>
+                  <div css={{ height: 1, background: 'var(--line)', marginBottom: 14 }} />
+                  <div css={{ display: 'flex' }}>
+                    <Chip color={selected.color} onClick={() => createCategoryMutation.mutate({ name: '저축', type: 'EXPENSE' })}>+ 저축 카테고리 추가하기</Chip>
+                  </div>
+                </div>
+              )
             )}
           </SideCard>
 
