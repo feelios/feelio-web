@@ -7,14 +7,19 @@ export const transactionsAPI = {
     return response.data.data;
   },
 
+  getTransaction: async (transactionId) => {
+    const response = await client.get(`/transactions/${transactionId}`);
+    return response.data.data;
+  },
+
   createTransaction: async (data) => {
-    // data: { type, amount, categoryId, emotionId, situationIds, memo, occurredAt }
+    // data: { type, amount, categoryId, emotionId, memo, occurredAt }
     const response = await client.post('/transactions', data);
     return response.data.data;
   },
 
   updateTransaction: async (transactionId, data) => {
-    // data: { type, amount, categoryId, emotionId, situationIds, memo, occurredAt }
+    // data: { type, amount, categoryId, emotionId, memo, occurredAt }
     const response = await client.put(`/transactions/${transactionId}`, data);
     return response.data.data;
   },

@@ -10,6 +10,16 @@ export const useTransactionsQuery = (filters) => {
   });
 };
 
+export const useTransactionDetailQuery = (transactionId, initialData) => {
+  return useQuery({
+    queryKey: ['tx', 'detail', transactionId],
+    queryFn: () => transactionsAPI.getTransaction(transactionId),
+    enabled: !!transactionId,
+    initialData,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
 // 2. 캐시 일괄 무효화 유틸리티 함수
 const invalidateRelatedQueries = (queryClient) => {
   [

@@ -1,10 +1,12 @@
 /** @jsxImportSource @emotion/react */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Modal } from '../common/Modal.jsx';
 import { EmotionBlob } from '../common/EmotionBlob.jsx';
 import { getEmotion } from '../../data/emotions.js';
 import { money, signedMoney } from '../../utils/format.js';
+import { useMetadata } from '../../hooks/queries/useMetadata.js';
+import { useTransactionDetailQuery, useUpdateTransactionMutation, useDeleteTransactionMutation } from '../../hooks/queries/useTransactions.js';
 
 const Wrap = styled.div`
   padding: 26px 28px;
@@ -141,8 +143,6 @@ const EmotionChoice = styled.button`
   cursor: pointer;
 `;
 
-const emotions = ['신남', '설렘', '뿌듯함', '스트레스', '외로움', '화남', '평온', '무덤덤'];
-
 function dateLabel(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -154,38 +154,68 @@ function dateLabel(value) {
   return `${month}월 ${day}일 (${weekdays[date.getDay()]}) ${hour}:${minute}`;
 }
 
-export default function TransactionDetailModal({ transaction, actions, onClose }) {
+export default function TransactionDetailModal({ transaction: initialTxn, actions, onClose }) {
+  const { data: metaData } = useMetadata();
+  const categories = metaData?.categories || [];
+  const emotions = metaData?.emotions || [];
+
+  const { data: transaction } = useTransactionDetailQuery(initialTxn.transactionId, initialTxn);
+  const updateTx = useUpdateTransactionMutation();
+  const deleteTx = useDeleteTransactionMutation();
+
   const [mode, setMode] = useState('detail');
   const [form, setForm] = useState({
-    amount: String(transaction.amount),
-    category: transaction.category,
-    emotion: transaction.emotion,
-    situation: transaction.situation,
-    memo: transaction.memo,
-    date: transaction.date.slice(0, 16)
+    amount: String(transaction?.amount || 0),
+    categoryId: transaction?.category?.categoryId || '',
+    emotionId: transaction?.emotion?.emotionId || '',
+    memo: transaction?.memo || '',
+    date: transaction?.occurredAt ? transaction.occurredAt.slice(0, 16) : ''
   });
 
-  const isIncome = transaction.type === 'income';
+  useEffect(() => {
+    if (transaction && mode === 'detail') {
+      setForm({
+        amount: String(transaction.amount),
+        categoryId: transaction.category?.categoryId || '',
+        emotionId: transaction.emotion?.emotionId || '',
+        memo: transaction.memo || '',
+        date: transaction.occurredAt ? transaction.occurredAt.slice(0, 16) : ''
+      });
+    }
+  }, [transaction, mode]);
+
+  if (!transaction) return null;
+
+  const isIncome = transaction.type === 'INCOME';
   const rows = [
     ['구분', isIncome ? '수입' : '지출'],
-    ['카테고리', transaction.category],
-    ['감정', transaction.emotion],
-    ['상황', transaction.situation],
+    ['카테고리', transaction.category?.name],
+    ['감정', transaction.emotion?.name],
     ['메모', transaction.memo],
-    ['날짜', dateLabel(transaction.date)]
+    ['날짜', dateLabel(transaction.occurredAt)]
   ];
 
   const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
-  const save = () => {
-    actions.updateTransaction(transaction.id, {
-      amount: Number(form.amount.replace(/\D/g, '')) || transaction.amount,
-      category: form.category,
-      emotion: form.emotion,
-      situation: form.situation,
-      memo: form.memo,
-      date: form.date
+  const save = async () => {
+    await updateTx.mutateAsync({
+      transactionId: transaction.transactionId,
+      data: {
+        type: transaction.type, // 기존 type 유지
+        amount: Number(form.amount.replace(/\D/g, '')) || transaction.amount,
+        categoryId: Number(form.categoryId),
+        emotionId: Number(form.emotionId),
+        memo: form.memo,
+        occurredAt: form.date ? new Date(form.date).toISOString() : transaction.occurredAt
+      }
     });
     setMode('detail');
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      await deleteTx.mutateAsync(transaction.transactionId);
+      onClose();
+    }
   };
 
   return (
@@ -198,14 +228,14 @@ export default function TransactionDetailModal({ transaction, actions, onClose }
           </Head>
           <Hero>
             <div css={{ width: 76, height: 76, margin: '0 auto 8px', display: 'grid', placeItems: 'center' }}>
-              <EmotionBlob emotion={transaction.emotion} size={76} interactive={false} />
+              <EmotionBlob emotion={transaction.emotion?.name || '평온'} size={76} interactive={false} />
             </div>
             <Amount income={isIncome}>{signedMoney(transaction)}</Amount>
           </Hero>
           <DetailBox>{rows.map(([label, value]) => <Row key={label}><span>{label}</span><b>{value}</b></Row>)}</DetailBox>
           <Actions>
             <Button type="button" primary onClick={() => setMode('edit')}>수정</Button>
-            <Button type="button" onClick={() => { actions.removeTransaction(transaction.id); onClose(); }}>삭제</Button>
+            <Button type="button" onClick={handleDelete}>삭제</Button>
           </Actions>
         </Wrap>
       ) : (
@@ -218,21 +248,36 @@ export default function TransactionDetailModal({ transaction, actions, onClose }
           </Head>
           <FieldGrid>
             <Field>금액<input value={money(Number(form.amount.replace(/\D/g, '')) || 0)} onChange={event => setField('amount', event.target.value.replace(/\D/g, ''))} /></Field>
-            <Field>카테고리<input value={form.category} onChange={event => setField('category', event.target.value)} /></Field>
+            <Field>카테고리
+              <select value={form.categoryId} onChange={event => setField('categoryId', event.target.value)}>
+                <option value="" disabled>선택</option>
+                {categories.filter(c => c.type === transaction.type || !c.type).map(c => (
+                  <option key={c.categoryId} value={c.categoryId}>{c.name}</option>
+                ))}
+              </select>
+            </Field>
           </FieldGrid>
           <div css={{ marginBottom: 16 }}>
             <div css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 900 }}>감정</div>
             <EmotionGrid>
-              {emotions.map(name => {
-                const item = getEmotion(name);
-                return <EmotionChoice key={name} type="button" active={form.emotion === name} color={item.color} onClick={() => setField('emotion', name)}><EmotionBlob emotion={name} size={34} interactive={false} /></EmotionChoice>;
+              {emotions.map(item => {
+                return (
+                  <EmotionChoice 
+                    key={item.emotionId} 
+                    type="button" 
+                    active={Number(form.emotionId) === item.emotionId} 
+                    color={item.color} 
+                    onClick={() => setField('emotionId', item.emotionId)}
+                  >
+                    <EmotionBlob emotion={item.name} size={34} interactive={false} />
+                  </EmotionChoice>
+                );
               })}
             </EmotionGrid>
           </div>
-          <Field css={{ marginBottom: 16 }}>상황<input value={form.situation} onChange={event => setField('situation', event.target.value)} /></Field>
           <Field css={{ marginBottom: 16 }}>메모<input value={form.memo} onChange={event => setField('memo', event.target.value)} /></Field>
           <Field css={{ marginBottom: 22 }}>날짜<input type="datetime-local" value={form.date} onChange={event => setField('date', event.target.value)} /></Field>
-          <Button type="button" primary onClick={save}>저장</Button>
+          <Button type="button" primary onClick={save} disabled={updateTx.isPending}>저장</Button>
         </Wrap>
       )}
     </Modal>
