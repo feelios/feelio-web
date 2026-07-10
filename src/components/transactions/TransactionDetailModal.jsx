@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Modal } from '../common/Modal.jsx';
 import { EmotionBlob } from '../common/EmotionBlob.jsx';
-import { getEmotion } from '../../data/emotions.js';
 import { money, signedMoney } from '../../utils/format.js';
 import { useMetadata } from '../../hooks/queries/useMetadata.js';
 import { useTransactionDetailQuery, useUpdateTransactionMutation, useDeleteTransactionMutation } from '../../hooks/queries/useTransactions.js';
@@ -154,7 +153,7 @@ function dateLabel(value) {
   return `${month}월 ${day}일 (${weekdays[date.getDay()]}) ${hour}:${minute}`;
 }
 
-export default function TransactionDetailModal({ transaction: initialTxn, actions, onClose }) {
+export default function TransactionDetailModal({ transaction: initialTxn, onClose }) {
   const { data: metaData } = useMetadata();
   const categories = metaData?.categories || [];
   const emotions = metaData?.emotions || [];
@@ -174,6 +173,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, action
 
   useEffect(() => {
     if (transaction && mode === 'detail') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
         amount: String(transaction.amount),
         categoryId: transaction.category?.categoryId || '',

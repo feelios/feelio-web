@@ -157,6 +157,7 @@ export default function OnboardingPage({ onComplete }) {
         
         onComplete();
       } catch (err) {
+        console.error(err);
         alert('온보딩 처리 중 오류가 발생했습니다. 다시 시도해 주세요.');
       }
       return;
