@@ -8,8 +8,6 @@ const STORAGE_KEY = 'feelio-dc-react-state-v4-temp-seed';
 const initialState = {
   isLoggedIn: false,
   onboardingDone: false,
-  accessToken: null,
-  refreshToken: null,
   mode: 'light',
   aurora: '블루',
   user: { nickname: '서연', provider: 'Google' },
@@ -81,14 +79,9 @@ export function useFeelioStore() {
           ...prev,
           isLoggedIn: false,
           onboardingDone: false,
-          accessToken: null,
-          refreshToken: null,
           user: { nickname: '', provider: '' }
         }));
       }
-    },
-    setTokens(accessToken, refreshToken) {
-      setState(prev => ({ ...prev, accessToken, refreshToken }));
     },
     toggleMode() {
       setState(prev => ({ ...prev, mode: prev.mode === 'dark' ? 'light' : 'dark' }));
