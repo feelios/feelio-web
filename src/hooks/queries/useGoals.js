@@ -9,13 +9,17 @@ export const useGoalsQuery = () => {
   });
 };
 
+const invalidateRelatedQueries = (queryClient) => {
+  queryClient.invalidateQueries({ queryKey: ['goals'] });
+  queryClient.invalidateQueries({ queryKey: ['universe'] });
+};
+
 export const useCreateGoalMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data) => goalsAPI.createGoal(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['goals'] });
-      queryClient.invalidateQueries({ queryKey: ['universe'] });
+      invalidateRelatedQueries(queryClient);
     }
   });
 };
@@ -25,9 +29,18 @@ export const useUpdateGoalMutation = () => {
   return useMutation({
     mutationFn: ({ goalId, data }) => goalsAPI.updateGoal(goalId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['goals'] });
-      queryClient.invalidateQueries({ queryKey: ['universe'] });
+      invalidateRelatedQueries(queryClient);
     }
+  });
+};
+
+export const useToggleMainGoalMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ goalId, data }) => goalsAPI.updateGoal(goalId, data),
+    onSuccess: () => {
+      invalidateRelatedQueries(queryClient);
+    },
   });
 };
 
@@ -36,8 +49,7 @@ export const useDeleteGoalMutation = () => {
   return useMutation({
     mutationFn: (goalId) => goalsAPI.deleteGoal(goalId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['goals'] });
-      queryClient.invalidateQueries({ queryKey: ['universe'] });
+      invalidateRelatedQueries(queryClient);
     }
   });
 };

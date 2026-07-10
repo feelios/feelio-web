@@ -5,6 +5,14 @@ import { Modal } from '../common/Modal.jsx';
 import { EmotionBlob } from '../common/EmotionBlob.jsx';
 import { auroras } from '../../data/aurorasDc.js';
 import { money, percent } from '../../utils/format.js';
+import GoalForm from './GoalForm.jsx';
+import {
+  useCreateGoalMutation,
+  useDeleteGoalMutation,
+  useGoalsQuery,
+  useToggleMainGoalMutation,
+  useUpdateGoalMutation,
+} from '../../hooks/queries/useGoals.js';
 
 const Screen = styled.div`
   min-height: 100%;
@@ -274,25 +282,100 @@ function Back({ title, children }) {
 export default function ProfileModalDc({ state, actions, onClose }) {
   const [view, setView] = useState('profile');
   const [nickname, setNickname] = useState(cleanName(state.user.nickname));
-  const [editIndex, setEditIndex] = useState(-1);
+  const [editingGoalId, setEditingGoalId] = useState(null);
   const [goalForm, setGoalForm] = useState({ name: '', target: '', current: '', period: '' });
   const [noti, setNoti] = useState({ record: true, weekly: true, goal: false });
-  const goal = useMemo(() => state.goals[0] || { name: '제주도 여행', current: 0, target: 1 }, [state.goals]);
-  const goalPct = percent(goal.current, goal.target);
+  const { data: goalsData, isError: isGoalsError, isLoading: isGoalsLoading } = useGoalsQuery();
+  const createGoalMutation = useCreateGoalMutation();
+  const updateGoalMutation = useUpdateGoalMutation();
+  const deleteGoalMutation = useDeleteGoalMutation();
+  const toggleMainGoalMutation = useToggleMainGoalMutation();
+  const goals = goalsData?.goals ?? [];
+  const goal = useMemo(
+    () => goals.find(item => item.isMain) || goals[0] || { name: '제주도 여행', currentAmount: 0, targetAmount: 1 },
+    [goals],
+  );
+  const goalPct = percent(goal.currentAmount, goal.targetAmount);
   const provider = state.user.provider || 'Google';
   const email = state.user.email || 'seoyeon@feelio.app';
   const visibleAurora = auroras.find(item => item.id === state.aurora) || auroras[0];
 
   const menu = [
     ['profileEdit', '프로필 수정', nickname],
-    ['goals', '목표 관리', `${state.goals.length}개`],
+    ['goals', '목표 관리', `${goals.length}개`],
     ['noti', '알림 설정', ''],
     ['aurora', '화면 · 오로라', visibleAurora.name],
     ['data', '데이터 관리', ''],
     ['account', '계정 관리', '']
   ];
 
-  const goalCards = useMemo(() => state.goals.length ? state.goals : [goal], [state.goals, goal]);
+  const isGoalMutationPending = createGoalMutation.isPending
+    || updateGoalMutation.isPending
+    || deleteGoalMutation.isPending
+    || toggleMainGoalMutation.isPending;
+
+  const toGoalPayload = (form, isMain) => ({
+    name: form.name.trim(),
+    targetAmount: Number(form.target),
+    currentAmount: Number(form.current) || 0,
+    dueDate: form.period || undefined,
+    isMain,
+  });
+
+  async function saveGoal() {
+    if (!goalForm.name.trim() || Number(goalForm.target) <= 0) return;
+
+    try {
+      if (editingGoalId === null) {
+        await createGoalMutation.mutateAsync(toGoalPayload(goalForm, goals.length === 0));
+      } else {
+        const editingGoal = goals.find(item => item.goalId === editingGoalId);
+        await updateGoalMutation.mutateAsync({
+          goalId: editingGoalId,
+          data: toGoalPayload(goalForm, editingGoal?.isMain ?? false),
+        });
+      }
+      actions.showToast(editingGoalId === null ? '목표가 추가되었어요' : '목표가 수정되었어요');
+      setView('goals');
+    } catch {
+      actions.showToast('목표 저장에 실패했어요. 다시 시도해 주세요.');
+    }
+  }
+
+  async function toggleMainGoal(item) {
+    if (item.isMain) return;
+
+    try {
+      await toggleMainGoalMutation.mutateAsync({
+        goalId: item.goalId,
+        data: {
+          name: item.name,
+          targetAmount: item.targetAmount,
+          currentAmount: item.currentAmount,
+          startDate: item.startDate,
+          dueDate: item.dueDate,
+          isMain: true,
+        },
+      });
+      actions.showToast('대표 목표로 변경되었어요');
+    } catch {
+      actions.showToast('대표 목표 설정에 실패했어요. 다시 시도해 주세요.');
+    }
+  }
+
+  async function deleteGoal(goalId) {
+    if (goals.length <= 1) {
+      actions.showToast('최소 하나의 목표는 남겨두어야 합니다.');
+      return;
+    }
+
+    try {
+      await deleteGoalMutation.mutateAsync(goalId);
+      actions.showToast('목표가 삭제되었어요');
+    } catch {
+      actions.showToast('목표 삭제에 실패했어요. 다시 시도해 주세요.');
+    }
+  }
 
   function saveProfile() {
     actions.updateUser({ nickname });
@@ -365,40 +448,40 @@ export default function ProfileModalDc({ state, actions, onClose }) {
             <button type="button" onClick={() => setView('profile')}>‹</button>
             <PillButton type="button" onClick={() => {
               setGoalForm({ name: '', target: '', current: '', period: '' });
-              setEditIndex(-1);
+              setEditingGoalId(null);
               setView('goalEdit');
             }}>+ 추가</PillButton>
           </Back>
           <div css={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {goalCards.map((item, index) => {
-              const pct = percent(item.current, item.target);
+            {isGoalsLoading && <GoalCard>목표를 불러오는 중이에요.</GoalCard>}
+            {isGoalsError && <GoalCard>목표를 불러오지 못했어요. 다시 시도해 주세요.</GoalCard>}
+            {!isGoalsLoading && !isGoalsError && goals.map(item => {
+              const pct = percent(item.currentAmount, item.targetAmount);
               return (
                 <GoalCard 
-                  key={`${item.name}-${index}`}
-                  onClick={() => actions.setPrimaryGoal(index)}
-                  css={{ cursor: 'pointer', transition: 'background 0.2s', '&:hover': { background: 'rgba(255,255,255,0.08)' } }}
+                  key={item.goalId}
+                  onClick={() => toggleMainGoal(item)}
+                  css={{ cursor: item.isMain || isGoalMutationPending ? 'default' : 'pointer', transition: 'background 0.2s', '&:hover': { background: 'rgba(255,255,255,0.08)' } }}
                 >
                   <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <span css={{ fontSize: 15, fontWeight: 700 }}>{item.name}</span>
-                    {index === 0 && <span css={{ fontSize: 10.5, fontWeight: 700, color: '#3E9578', background: '#83C9B033', padding: '2px 8px', borderRadius: 99 }}>대표</span>}
+                    {item.isMain && <span css={{ fontSize: 10.5, fontWeight: 700, color: '#3E9578', background: '#83C9B033', padding: '2px 8px', borderRadius: 99 }}>대표</span>}
                   </div>
                   <div css={{ height: 8, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
                     <div css={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#FF9F6E,#F28AB7)' }} />
                   </div>
                   <div css={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--sub)', marginTop: 7 }}>
-                    <span>{money(item.current)} / {money(item.target)}</span>
+                    <span>{money(item.currentAmount)} / {money(item.targetAmount)}</span>
                     <span>{pct}%</span>
                   </div>
-                  {item.period && <div css={{ fontSize: 12, color: 'var(--sub)', marginTop: 6, fontWeight: 700 }}>마감 날짜: {item.period}</div>}
+                  {item.dueDate && <div css={{ fontSize: 12, color: 'var(--sub)', marginTop: 6, fontWeight: 700 }}>마감 날짜: {item.dueDate}</div>}
                   <div css={{ display: 'flex', gap: 8, marginTop: 12 }} onClick={e => e.stopPropagation()}>
                     <SmallAction type="button" onClick={() => {
-                      setGoalForm({ name: item.name, target: item.target, current: item.current, period: item.period || '' });
-                      setEditIndex(index);
+                      setGoalForm({ name: item.name, target: item.targetAmount, current: item.currentAmount, period: item.dueDate || '' });
+                      setEditingGoalId(item.goalId);
                       setView('goalEdit');
                     }}>수정</SmallAction>
-                    <SmallAction type="button" danger disabled={goalCards.length <= 1} onClick={() => {
-                      if (goalCards.length > 1) actions.removeGoal(index);
-                    }} css={{ opacity: goalCards.length <= 1 ? 0.3 : 1 }}>삭제</SmallAction>
+                    <SmallAction type="button" danger disabled={isGoalMutationPending} onClick={() => deleteGoal(item.goalId)}>삭제</SmallAction>
                   </div>
                 </GoalCard>
               );
@@ -409,26 +492,15 @@ export default function ProfileModalDc({ state, actions, onClose }) {
 
       {view === 'goalEdit' && (
         <Screen>
-          <Back title={editIndex === -1 ? "새 목표 추가" : "목표 수정"}>
+          <Back title={editingGoalId === null ? "새 목표 추가" : "목표 수정"}>
             <button type="button" onClick={() => setView('goals')}>‹</button>
           </Back>
-          <FieldLabel>목표 이름</FieldLabel>
-          <Field placeholder="예: 맥북 프로 구매" value={goalForm.name} onChange={e => setGoalForm({...goalForm, name: e.target.value})} />
-          <FieldLabel>목표 금액 (원)</FieldLabel>
-          <Field type="number" placeholder="예: 3000000" value={goalForm.target || ''} onChange={e => setGoalForm({...goalForm, target: Number(e.target.value) || 0})} />
-          <FieldLabel>현재 모은 돈 (원)</FieldLabel>
-          <Field type="number" placeholder="예: 500000" value={goalForm.current || ''} onChange={e => setGoalForm({...goalForm, current: Number(e.target.value) || 0})} />
-          <FieldLabel>마감 날짜</FieldLabel>
-          <Field type="date" value={goalForm.period} onChange={e => setGoalForm({...goalForm, period: e.target.value})} />
-          <PrimaryButton type="button" onClick={() => {
-            if (!goalForm.name || !goalForm.target) return;
-            if (editIndex === -1) {
-              actions.addGoal(goalForm);
-            } else {
-              actions.updateGoal(editIndex, goalForm);
-            }
-            setView('goals');
-          }}>저장</PrimaryButton>
+          <GoalForm
+            goalForm={goalForm}
+            setGoalForm={setGoalForm}
+            onSubmit={saveGoal}
+            disabled={isGoalMutationPending}
+          />
         </Screen>
       )}
 
