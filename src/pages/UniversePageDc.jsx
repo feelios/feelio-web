@@ -1,11 +1,14 @@
 /** @jsxImportSource @emotion/react */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import styled from '@emotion/styled';
 import { Global, css } from '@emotion/react';
 import UniversePlanet from '../components/UniversePlanet';
 import SpaceBlob from '../components/SpaceBlob';
 import UniverseConsole from '../components/UniverseConsole';
 import UniverseEasterEgg from '../components/UniverseEasterEgg';
+
+import { useGoalsQuery } from '../hooks/queries/useGoals';
+import { useUniverseQuery } from '../hooks/queries/useUniverse';
 
 const globalStyles = css`
   html, body {
@@ -65,30 +68,63 @@ const PageWrapper = styled.div`
   animation: pu-unfold 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards, pu-flicker 1.2s ease-out forwards;
 `;
 
-const U_DATA = {
-  current: {
-    tag: "현재 우주", title: "지금처럼 소비한 나", metricLabel: "이번 달 감정소비", metric: "-182,000원", accent: "#9E96EE",
-    narratives: [
-      "외로운 밤의 배달이 지금 속도로 이어지면, 제주도 여행 목표까지 4개월이 더 걸려요.",
-      "충동적인 지출은 잠시 위안을 주지만, 장기적인 목표를 멀어지게 만들고 있어요.",
-      "가끔은 밖으로 나가 가벼운 산책을 해보는 건 어떨까요? 기분이 한결 나아질 거예요!"
-    ],
-    goalNote: "제주도 여행 · 4개월 지연", emotionTag: "외로움 · 스트레스"
-  },
-  reduced: {
-    tag: "다른 우주", title: "감정소비를 줄인 나", metricLabel: "매달 아낄 수 있는 금액", metric: "+62,000원", accent: "#82E2C2",
-    narratives: [
-      "외로운 밤의 배달을 절반만 줄이면, 목표에 이만큼씩 더 가까워져요.",
-      "불필요한 소비를 줄인 당신! 제주도의 푸른 바다가 한 뼘 더 가까워졌네요.",
-      "자신의 감정을 잘 다스리는 지금의 모습, 우주에서 가장 반짝이고 있어요! ✨"
-    ],
-    goalNote: "제주도 여행 · 더 가까이", emotionTag: "평온 · 뿌듯함"
-  }
-};
-
-
-
 export default function UniversePageDc() {
+  const { data: goalsData } = useGoalsQuery();
+  const goalsList = goalsData?.goals || [];
+  const mainGoal = goalsList.find(g => g.isMain) || goalsList[0] || null;
+  
+  const { data: universeData, isLoading: isUniverseLoading } = useUniverseQuery(mainGoal?.goalId);
+
+  const U_DATA = useMemo(() => {
+    if (!universeData) return null;
+    
+    const goal = universeData.goal;
+    const focus = universeData.focusEmotion;
+    const current = universeData.scenarios.find(s => s.key === 'CURRENT');
+    const reduced = universeData.scenarios.find(s => s.key === 'REDUCED');
+
+    const formatMoney = (val) => val.toLocaleString() + "원";
+
+    let currentNote = `${goal.name} · `;
+    currentNote += current.monthsToGoal ? `${current.monthsToGoal}개월 예상` : "도달 불가";
+
+    let reducedNote = `${goal.name} · `;
+    if (reduced.monthsToGoal) {
+      if (current.monthsToGoal && current.monthsToGoal > reduced.monthsToGoal) {
+        reducedNote += `${current.monthsToGoal - reduced.monthsToGoal}개월 단축!`;
+      } else {
+        reducedNote += `${reduced.monthsToGoal}개월 예상`;
+      }
+    } else {
+      reducedNote += "도달 불가";
+    }
+
+    const savedAmount = reduced.monthlySaving - current.monthlySaving;
+
+    return {
+      current: {
+        tag: "현재 우주",
+        title: current.title,
+        metricLabel: focus ? `이번 달 ${focus.name} 소비` : "이번 달 지출",
+        metric: `-${formatMoney(focus ? focus.monthlyAmount : current.monthlyExpense)}`,
+        accent: focus ? focus.color : "#9E96EE",
+        narratives: [ current.narration ],
+        goalNote: currentNote,
+        emotionTag: focus ? focus.name : "감정"
+      },
+      reduced: {
+        tag: "다른 우주",
+        title: reduced.title,
+        metricLabel: "매달 아낄 수 있는 금액",
+        metric: `+${formatMoney(savedAmount)}`,
+        accent: "#82E2C2",
+        narratives: [ reduced.narration ],
+        goalNote: reducedNote,
+        emotionTag: "평온 · 뿌듯함"
+      }
+    };
+  }, [universeData]);
+
   const [phase, setPhase] = useState("idle");
   const [selected, setSelected] = useState("");
   const [from, setFrom] = useState("");
@@ -127,7 +163,7 @@ export default function UniversePageDc() {
     });
     if (containerRef.current) ob.observe(containerRef.current);
     return () => ob.disconnect();
-  }, []);
+  }, [U_DATA, mainGoal]);
 
   const reset = () => {
     if (tRef.current) clearTimeout(tRef.current);
@@ -145,7 +181,7 @@ export default function UniversePageDc() {
     setBlobPoke(true);
     setTimeout(() => setBlobPoke(false), 450);
     
-    if (selected && U_DATA[selected]) {
+    if (selected && U_DATA && U_DATA[selected]) {
       const u = U_DATA[selected];
       setNarrativeIndex(prev => (prev + 1) % u.narratives.length);
     }
@@ -196,6 +232,29 @@ export default function UniversePageDc() {
       if (ivRef.current) clearInterval(ivRef.current);
     };
   }, []);
+
+  if (!mainGoal) {
+    return (
+      <Container>
+        <div style={{ color: "#fff", textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🚀</div>
+          <h2 style={{ color: "#fff", marginBottom: 12, fontSize: 24 }}>설정된 목표가 없어요</h2>
+          <p style={{ color: "#aaa" }}>목표를 먼저 추가하고 평행우주 시뮬레이션을 시작해 보세요!</p>
+        </div>
+      </Container>
+    );
+  }
+
+  if (isUniverseLoading || !U_DATA) {
+    return (
+      <Container>
+        <div style={{ color: "#fff", textAlign: "center" }}>
+          <div style={{ animation: "pu-spin 2s linear infinite", display: "inline-block", fontSize: 32, marginBottom: 16 }}>💫</div>
+          <p style={{ color: "#aaa", fontSize: 16 }}>평행우주 데이터를 탐색하는 중...</p>
+        </div>
+      </Container>
+    );
+  }
 
   const parked = phase !== "idle";
   const u = U_DATA[selected] || null;

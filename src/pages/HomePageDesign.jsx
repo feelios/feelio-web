@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useEffect, useId, useMemo, useState, useRef } from 'react';
+import { useId, useMemo, useState, useRef } from 'react';
 import styled from '@emotion/styled';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
@@ -498,13 +498,13 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const [isRidgeExpanded, setIsRidgeExpanded] = useState(false);
   const [isCalendarExpanded, setIsCalendarExpanded] = useState(false);
 
-  useEffect(() => {
-    // selectedDate can be driven by other pages, so keep the visible month aligned.
-    setVisibleMonth(prev => {
-      if (prev.getFullYear() === selected.getFullYear() && prev.getMonth() === selected.getMonth()) return prev;
-      return new Date(selected.getFullYear(), selected.getMonth(), 1);
-    });
-  }, [selected]);
+  const [prevSelected, setPrevSelected] = useState(selected);
+  if (selected !== prevSelected) {
+    setPrevSelected(selected);
+    if (visibleMonth.getFullYear() !== selected.getFullYear() || visibleMonth.getMonth() !== selected.getMonth()) {
+      setVisibleMonth(new Date(selected.getFullYear(), selected.getMonth(), 1));
+    }
+  }
 
   // Fetch calendar summary data from API
   const { data: calendarData } = useCalendarSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
