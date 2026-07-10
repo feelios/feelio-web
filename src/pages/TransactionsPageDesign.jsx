@@ -3,8 +3,10 @@ import { useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
-import { mockTransactions } from '../data/mockTransactions.js';
 import { money, signedMoney } from '../utils/format.js';
+import { useDebounce } from '../hooks/useDebounce.js';
+import { useTransactionsQuery } from '../hooks/queries/useTransactions.js';
+import { useMetadata } from '../hooks/queries/useMetadata.js';
 
 const Wrap = styled.div`
   width: min(100%, 1120px);
@@ -339,11 +341,11 @@ const sortOptions = [
 ];
 
 function toDate(item) {
-  return new Date(item.date);
+  return new Date(item.occurredAt);
 }
 
 function groupLabel(item, view) {
-  if (view === '감정별') return item.emotion || '감정 없음';
+  if (view === '감정별') return item.emotion?.name || '감정 없음';
   const date = toDate(item);
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
@@ -354,38 +356,15 @@ function groupLabel(item, view) {
 }
 
 function groupKey(item, view) {
-  if (view === '감정별') return item.emotion || '';
+  if (view === '감정별') return item.emotion?.name || '';
   const date = toDate(item);
   if (view === '월별') return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-  return item.date;
+  return item.occurredAt.split('T')[0];
 }
 
 function signedGroupTotal(items) {
-  const total = items.reduce((sum, item) => sum + (item.type === 'income' ? item.amount : -item.amount), 0);
+  const total = items.reduce((sum, item) => sum + (item.type === 'INCOME' ? item.amount : -item.amount), 0);
   return `${total >= 0 ? '+' : '-'}${money(Math.abs(total))}`;
-}
-
-function sortTransactions(items, sort) {
-  return [...items].sort((a, b) => {
-    if (sort === 'date-asc') return toDate(a) - toDate(b);
-    if (sort === 'category-asc') return String(a.category || '').localeCompare(String(b.category || ''), 'ko') || (toDate(b) - toDate(a));
-    if (sort === 'category-desc') return String(b.category || '').localeCompare(String(a.category || ''), 'ko') || (toDate(b) - toDate(a));
-    if (sort === 'amount-desc') return b.amount - a.amount || (toDate(b) - toDate(a));
-    if (sort === 'amount-asc') return a.amount - b.amount || (toDate(b) - toDate(a));
-    return toDate(b) - toDate(a);
-  });
-}
-
-function samePeriod(item, year, month, day) {
-  const date = toDate(item);
-  const itemYear = date.getFullYear();
-  const itemMonth = date.getMonth() + 1;
-  const itemDay = date.getDate();
-
-  if (String(itemYear) !== String(year)) return false;
-  if (month !== 'all' && String(itemMonth) !== String(month)) return false;
-  if (day && String(itemDay) !== String(day)) return false;
-  return true;
 }
 
 function monthTitle(year, month) {
@@ -398,9 +377,14 @@ function padDatePart(value) {
 }
 
 export default function TransactionsPageDesign({ state, onSelect }) {
-  const sourceTransactions = state.transactions.length ? state.transactions : mockTransactions;
+  const { data: metaData } = useMetadata();
+  const categories = metaData?.categories || [];
+  const emotions = metaData?.emotions || [];
+
   const [view, setView] = useState('일별');
   const [query, setQuery] = useState('');
+  const debouncedQuery = useDebounce(query, 500);
+
   const today = new Date();
   const [year, setYear] = useState(String(today.getFullYear()));
   const [month, setMonth] = useState(String(today.getMonth() + 1));
@@ -411,8 +395,18 @@ export default function TransactionsPageDesign({ state, onSelect }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [openSelect, setOpenSelect] = useState('');
 
-  const categories = useMemo(() => [...new Set(sourceTransactions.map(item => item.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), [sourceTransactions]);
-  const emotions = useMemo(() => [...new Set(sourceTransactions.map(item => item.emotion).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), [sourceTransactions]);
+  const apiParams = useMemo(() => ({
+    year,
+    month: month === 'all' ? undefined : month,
+    day: day || undefined,
+    emotionId: emotionFilters.length ? emotionFilters.join(',') : undefined,
+    categoryId: categoryFilters.length ? categoryFilters.join(',') : undefined,
+    query: debouncedQuery || undefined,
+    sort: sort.replace('-', '_'),
+  }), [year, month, day, emotionFilters, categoryFilters, debouncedQuery, sort]);
+
+  const { data: txData, isLoading } = useTransactionsQuery(apiParams);
+  const transactions = txData?.transactions || [];
 
   const moveMonth = (offset) => {
     const base = new Date(Number(year), month === 'all' ? today.getMonth() : Number(month) - 1, 1);
@@ -443,22 +437,8 @@ export default function TransactionsPageDesign({ state, onSelect }) {
       : [...selected, value]);
   };
 
-  const filtered = sourceTransactions.filter(item => {
-    if (categoryFilters.length && !categoryFilters.includes(item.category)) return false;
-    if (emotionFilters.length && !emotionFilters.includes(item.emotion)) return false;
-    if (!samePeriod(item, year, month, day)) return false;
-    if (query.trim()) {
-      const haystack = `${item.category} ${item.memo}`.toLowerCase();
-      if (!haystack.includes(query.trim().toLowerCase())) return false;
-    }
-    return true;
-  });
-
-  const sortedFiltered = useMemo(() => sortTransactions(filtered, sort), [filtered, sort]);
-
   const groups = useMemo(() => {
-
-    const map = sortedFiltered.reduce((acc, item) => {
+    const map = transactions.reduce((acc, item) => {
       const label = groupLabel(item, view);
       const key = groupKey(item, view);
 
@@ -474,11 +454,9 @@ export default function TransactionsPageDesign({ state, onSelect }) {
       })
       .map(([label, group]) => ({
         label,
-        items: sortTransactions(group.items, sort)
+        items: group.items
       }));
-
-  }, [sortedFiltered, view, sort]);
-
+  }, [transactions, view]);
 
   return (
     <Wrap>
@@ -565,12 +543,12 @@ export default function TransactionsPageDesign({ state, onSelect }) {
               </SelectOption>
               {categories.map(item => (
                 <SelectOption
-                  key={item}
+                  key={item.categoryId}
                   type="button"
-                  active={categoryFilters.includes(item)}
-                  onClick={() => toggleFilter(item, categoryFilters, setCategoryFilters)}
+                  active={categoryFilters.includes(item.categoryId)}
+                  onClick={() => toggleFilter(item.categoryId, categoryFilters, setCategoryFilters)}
                 >
-                  {item}
+                  {item.name}
                   <span>✓</span>
                 </SelectOption>
               ))}
@@ -590,12 +568,12 @@ export default function TransactionsPageDesign({ state, onSelect }) {
               </SelectOption>
               {emotions.map(item => (
                 <SelectOption
-                  key={item}
+                  key={item.emotionId}
                   type="button"
-                  active={emotionFilters.includes(item)}
-                  onClick={() => toggleFilter(item, emotionFilters, setEmotionFilters)}
+                  active={emotionFilters.includes(item.emotionId)}
+                  onClick={() => toggleFilter(item.emotionId, emotionFilters, setEmotionFilters)}
                 >
-                  {item}
+                  {item.name}
                   <span>✓</span>
                 </SelectOption>
               ))}
@@ -604,7 +582,11 @@ export default function TransactionsPageDesign({ state, onSelect }) {
         </SelectLike>
       </ControlGrid>}
 
-      {groups.map(group => (
+      {isLoading && <div css={{ textAlign: 'center', padding: '40px', color: 'var(--sub)' }}>불러오는 중...</div>}
+
+      {!isLoading && groups.length === 0 && <div css={{ textAlign: 'center', padding: '40px', color: 'var(--sub)' }}>거래 내역이 없습니다.</div>}
+
+      {!isLoading && groups.map(group => (
         <Group key={group.label}>
           <div css={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, padding: '0 4px' }}>
             <strong>{group.label}</strong>
@@ -612,12 +594,12 @@ export default function TransactionsPageDesign({ state, onSelect }) {
           </div>
           <GlassCard padding={0}>
             {group.items.map(item => {
-              const emo = getEmotion(item.emotion);
+              const emo = getEmotion(item.emotion?.name || '평온');
               return (
-                <Row key={item.id} onClick={() => onSelect(item)}>
+                <Row key={item.transactionId} onClick={() => onSelect(item)}>
                   <span css={{ width: 40, height: 40, borderRadius: 12, display: 'grid', placeItems: 'center', background: emo.light }}><i css={{ width: 15, height: 15, borderRadius: '50%', background: emo.color }} /></span>
-                  <span css={{ minWidth: 0 }}><strong>{item.category}</strong><small css={{ display: 'block', color: 'var(--sub)', marginTop: 3 }}>{item.emotion} · {item.situation} · {item.memo}</small></span>
-                  <b css={{ color: item.type === 'income' ? '#3E9578' : 'var(--text)' }}>{signedMoney(item)}</b>
+                  <span css={{ minWidth: 0 }}><strong>{item.category?.name}</strong><small css={{ display: 'block', color: 'var(--sub)', marginTop: 3 }}>{item.emotion?.name}{item.memo ? ` · ${item.memo}` : ''}</small></span>
+                  <b css={{ color: item.type === 'INCOME' ? '#3E9578' : 'var(--text)' }}>{signedMoney(item)}</b>
                 </Row>
               );
             })}

@@ -4,7 +4,7 @@ import { transactionsAPI } from '../../api/transactions.js';
 // 1. 거래 내역 목록 조회 쿼리 훅
 export const useTransactionsQuery = (filters) => {
   return useQuery({
-    queryKey: ['transactions', filters],
+    queryKey: ['tx', 'list', filters],
     queryFn: () => transactionsAPI.getTransactions(filters),
     staleTime: 1000 * 60 * 5, // 5분 동안 fresh 상태 유지
   });
@@ -13,7 +13,7 @@ export const useTransactionsQuery = (filters) => {
 // 2. 캐시 일괄 무효화 유틸리티 함수
 const invalidateRelatedQueries = (queryClient) => {
   [
-    ['transactions'],
+    ['tx', 'list'],
     ['summary', 'calendar'],
     ['summary', 'emotions'],
     ['analysis'],
