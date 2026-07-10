@@ -62,12 +62,20 @@ export function useFeelioStore() {
         setState(prev => ({ ...prev, isLoggedIn: false }));
       }
     },
-    completeOnboarding(goalPatch) {
-      setState(prev => ({
-        ...prev,
-        onboardingDone: true,
-        goals: goalPatch ? [{ ...prev.goals[0], ...goalPatch }] : prev.goals
-      }));
+    completeOnboarding: async () => {
+      try {
+        const user = await authAPI.getMe();
+        setState(prev => ({
+          ...prev,
+          user,
+          isLoggedIn: true,
+          onboardingDone: user.onboardingDone,
+          mode: user.themeMode ? user.themeMode.toLowerCase() : prev.mode,
+          aurora: user.auroraTheme || prev.aurora
+        }));
+      } catch (error) {
+        console.error('Failed to refresh user after onboarding', error);
+      }
     },
     logout: async () => {
       try {
