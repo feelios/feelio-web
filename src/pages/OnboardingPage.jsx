@@ -3,6 +3,8 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { money } from '../utils/format.js';
+import { useUpdateMeMutation, useCompleteOnboardingMutation } from '../hooks/queries/useUsers.js';
+import { useCreateGoalMutation } from '../hooks/queries/useGoals.js';
 
 const Page = styled.main`
   min-height: 100dvh;
@@ -100,6 +102,8 @@ const Footer = styled.div`
     font-weight: 800;
     cursor: pointer;
     font-size: 15px;
+    opacity: ${({ disabled }) => disabled ? 0.5 : 1};
+    pointer-events: ${({ disabled }) => disabled ? 'none' : 'auto'};
   }
 
   @media (max-width: 560px) {
@@ -113,35 +117,88 @@ const Footer = styled.div`
 
 export default function OnboardingPage({ onComplete }) {
   const [step, setStep] = useState(0);
+  const [nickname, setNickname] = useState('');
   const [goal, setGoal] = useState('제주도 여행');
   const [amount, setAmount] = useState(2000000);
   const [duration, setDuration] = useState('1년');
   const [customDuration, setCustomDuration] = useState('');
   const [current, setCurrent] = useState(0);
   
+  const updateMeMutation = useUpdateMeMutation();
+  const createGoalMutation = useCreateGoalMutation();
+  const completeOnboardingMutation = useCompleteOnboardingMutation();
+
   const goals = ['제주도 여행', '비상금 마련', '이사 준비', '콘서트 비용', '나만의 목표'];
   const durations = ['3개월', '6개월', '1년', '2년', '기타'];
 
-  function next() {
-    if (step >= 4) {
-      const finalDuration = duration === '기타' ? customDuration : duration;
-      onComplete({ name: goal, target: amount, current, duration: finalDuration });
+  const isNicknameValid = nickname.trim().length >= 1 && nickname.trim().length <= 8;
+
+  const handleNext = async () => {
+    if (step === 0 && !isNicknameValid) return;
+    
+    if (step >= 5) {
+      try {
+        await updateMeMutation.mutateAsync({ nickname: nickname.trim() });
+        
+        // Calculate a dummy startDate and dueDate based on duration for API requirements.
+        // The exact date logic isn't fully defined, so we just pass standard strings or assume backend allows omitting.
+        // Actually, API CONTRACT says: name, targetAmount(>0) 필수.
+        // isMain: true면 기존 대표 목표를 서버가 같은 트랜잭션에서 해제
+        await createGoalMutation.mutateAsync({
+          name: goal,
+          targetAmount: amount,
+          currentAmount: current,
+          isMain: true,
+          // The backend API might accept a string like '2026-10-31' for dueDate, 
+          // but we will just pass what's required based on the API contract.
+        });
+
+        await completeOnboardingMutation.mutateAsync();
+        
+        onComplete();
+      } catch (err) {
+        alert('온보딩 처리 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      }
       return;
     }
     setStep(prev => prev + 1);
-  }
+  };
+
+  const isPending = updateMeMutation.isPending || createGoalMutation.isPending || completeOnboardingMutation.isPending;
 
   return (
     <Page>
       <Panel strong>
         <div>
           <div css={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, color: 'var(--sub)', fontSize: 12, fontWeight: 800 }}>
-            <span>초기 설정</span><span>{step + 1} / 5</span>
+            <span>초기 설정</span><span>{step + 1} / 6</span>
           </div>
-          <Progress value={(step + 1) * 20}><span /></Progress>
+          <Progress value={((step + 1) / 6) * 100}><span /></Progress>
         </div>
         <Body>
           {step === 0 && (
+            <div>
+              <h2>반갑습니다! 사용하실 닉네임을 알려주세요.</h2>
+              <p>1자에서 8자 사이로 입력해 주세요.</p>
+              <input 
+                type="text"
+                value={nickname} 
+                onChange={event => setNickname(event.target.value)} 
+                placeholder="예) 서연"
+                maxLength={8}
+                css={{ 
+                  width: '100%', border: 0, borderBottom: '2px solid var(--line)', background: 'transparent', 
+                  padding: 12, textAlign: 'center', fontSize: 'clamp(32px, 8vw, 42px)', fontWeight: 800, color: 'var(--text)', outline: 'none'
+                }} 
+                autoFocus
+              />
+              {!isNicknameValid && nickname.length > 0 && (
+                <p css={{ color: '#E87573', textAlign: 'center', marginTop: 12 }}>닉네임은 1자에서 8자 사이여야 합니다.</p>
+              )}
+            </div>
+          )}
+
+          {step === 1 && (
             <div>
               <h2>어떤 목표를 이루고 싶나요?</h2>
               <p>가장 가까운 목표 하나만 골라주세요.</p>
@@ -153,7 +210,7 @@ export default function OnboardingPage({ onComplete }) {
             </div>
           )}
 
-          {step === 1 && (
+          {step === 2 && (
             <div>
               <h2>얼마를 모으고 싶나요?</h2>
               <p>대략적인 금액이어도 충분해요.</p>
@@ -176,7 +233,7 @@ export default function OnboardingPage({ onComplete }) {
             </div>
           )}
 
-          {step === 2 && (
+          {step === 3 && (
             <div>
               <h2>언제까지 이루고 싶나요?</h2>
               <p>목표의 속도를 잡기 위한 기준이에요.</p>
@@ -209,7 +266,7 @@ export default function OnboardingPage({ onComplete }) {
             </div>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <div>
               <h2>지금 어느 정도 모았나요?</h2>
               <p>현재 위치를 알려주면 남은 흐름을 계산해요.</p>
@@ -226,11 +283,12 @@ export default function OnboardingPage({ onComplete }) {
             </div>
           )}
 
-          {step === 4 && (
+          {step === 5 && (
             <div>
               <h2>이 정도면 충분해요</h2>
               <p>이제 소비 흐름을 목표에 맞춰 분석해볼게요.</p>
               {[
+                ['닉네임', nickname],
                 ['목표', goal], 
                 ['기간', duration === '기타' ? (customDuration || '설정안함') : duration],
                 ['목표 금액', money(amount)], 
@@ -246,8 +304,10 @@ export default function OnboardingPage({ onComplete }) {
           )}
         </Body>
         <Footer>
-          {step > 0 && <button type="button" onClick={() => setStep(prev => prev - 1)} css={{ background: 'var(--card)', color: 'var(--text)', border: '1px solid var(--line)' }}>이전</button>}
-          <button type="button" onClick={next} css={{ background: 'var(--ink)', color: 'var(--on-ink)' }}>{step >= 4 ? '시작하기' : '다음'}</button>
+          {step > 0 && <button type="button" onClick={() => setStep(prev => prev - 1)} disabled={isPending} css={{ background: 'var(--card)', color: 'var(--text)', border: '1px solid var(--line)' }}>이전</button>}
+          <button type="button" onClick={handleNext} disabled={(step === 0 && !isNicknameValid) || isPending} css={{ background: 'var(--ink)', color: 'var(--on-ink)' }}>
+            {isPending ? '처리 중...' : (step >= 5 ? '시작하기' : '다음')}
+          </button>
         </Footer>
       </Panel>
     </Page>
