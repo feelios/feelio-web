@@ -206,7 +206,6 @@ export default function RecordPageDc({ actions, onSaved }) {
   const [customIncomeCategories, setCustomIncomeCategories] = useState(defaultIncomeCategories);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [customSituations, setCustomSituations] = useState(defaultSituations);
-  const [isEditingSituation, setIsEditingSituation] = useState(false);
   const [addingTag, setAddingTag] = useState(null);
   const [addingText, setAddingText] = useState('');
 
@@ -286,34 +285,11 @@ export default function RecordPageDc({ actions, onSaved }) {
     dragOverItemRef.current = null;
   };
 
-  const handleDropSituation = () => {
-    if (dragItemRef.current === null || dragOverItemRef.current === null) return;
-    if (dragItemRef.current !== dragOverItemRef.current) {
-      const newSits = [...customSituations];
-      const [dragItem] = newSits.splice(dragItemRef.current, 1);
-      newSits.splice(dragOverItemRef.current, 0, dragItem);
-      setCustomSituations(newSits);
-    }
-    dragItemRef.current = null;
-    dragOverItemRef.current = null;
-  };
 
 
 
-  const handleRemoveSituation = (sit) => {
-    setCustomSituations(customSituations.filter(s => s !== sit));
-    if (form.situation.includes(sit)) {
-      setForm(prev => ({ ...prev, situation: prev.situation.filter(item => item !== sit) }));
-    }
-  };
 
   const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
-  const toggleSituation = (value) => setForm(prev => ({
-    ...prev,
-    situation: prev.situation.includes(value)
-      ? prev.situation.filter(item => item !== value)
-      : [...prev.situation, value]
-  }));
 
   const save = () => {
     if (!canSave || mutation.isPending) return;

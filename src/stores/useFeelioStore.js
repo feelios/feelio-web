@@ -44,58 +44,24 @@ export function useFeelioStore() {
 
   const actions = useMemo(() => ({
     login: (provider) => {
-      // 프론트엔드가 돌아올 콜백 주소 (각 소셜 개발자 콘솔에 등록한 URI와 정확히 일치해야 함)
-      const REDIRECT_URI = `${window.location.origin}/auth/callback`;
-      
-      if (provider === 'Google') {
-        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&state=GOOGLE`;
-        window.location.href = authUrl;
-      } 
-      else if (provider === 'Kakao') {
-        const clientId = import.meta.env.VITE_KAKAO_CLIENT_ID;
-        const authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&response_type=code&state=KAKAO`;
-        window.location.href = authUrl;
-      }
-      else if (provider === 'Naver') {
-        const clientId = import.meta.env.VITE_NAVER_CLIENT_ID;
-        const authUrl = `https://nid.naver.com/oauth2.0/authorize?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&response_type=code&state=NAVER`;
-        window.location.href = authUrl;
-      }
+      const providerId = provider.toLowerCase();
+      window.location.href = `http://localhost:8080/oauth2/authorization/${providerId}`;
     },
-    handleCallbackLogin: async (provider, code, redirectUri) => {
-      try {
-        const data = await authAPI.login(provider, code, redirectUri);
-        setState(prev => ({
-          ...prev,
-          isLoggedIn: true,
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-          user: data.user,
-          onboardingDone: data.user.onboardingDone,
-          mode: data.user.themeMode ? data.user.themeMode.toLowerCase() : prev.mode,
-          aurora: data.user.auroraTheme || prev.aurora,
-          toast: '로그인되었습니다.'
-        }));
-        return { success: true };
-      } catch (error) {
-        console.error('Callback login failed', error);
-        setState(prev => ({ ...prev, toast: '로그인에 실패했습니다.' }));
-        return { success: false, error };
-      }
-    },
+
     fetchMe: async () => {
       try {
         const user = await authAPI.getMe();
         setState(prev => ({
           ...prev,
           user,
+          isLoggedIn: true,
           onboardingDone: user.onboardingDone,
           mode: user.themeMode ? user.themeMode.toLowerCase() : prev.mode,
           aurora: user.auroraTheme || prev.aurora
         }));
       } catch (error) {
         console.error('Failed to fetch user profile', error);
+        setState(prev => ({ ...prev, isLoggedIn: false }));
       }
     },
     completeOnboarding(goalPatch) {
