@@ -31,6 +31,16 @@ export const useUpdateGoalMutation = () => {
   });
 };
 
+export const useToggleMainGoalMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ goalId, data }) => goalsAPI.updateGoal(goalId, data),
+    onSuccess: () => {
+      invalidateRelatedQueries(queryClient);
+    },
+  });
+};
+
 export const useDeleteGoalMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
