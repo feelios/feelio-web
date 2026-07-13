@@ -19,7 +19,7 @@ function normalizeMode(mode) {
   return mode === 'dark' ? 'dark' : 'light';
 }
 
-export const useFeelioStore = create(
+const useStore = create(
   persist(
     (set) => ({
       state: initialState,
@@ -206,4 +206,5 @@ export const useFeelioStore = create(
   ) // persist 끝
 ); // create 끝
 
+export const useFeelioStore = useStore;
 export default useStore;

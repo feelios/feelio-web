@@ -7,7 +7,7 @@ import { getEmotion } from '../data/emotions.js';
 import { money, percent } from '../utils/format.js';
 import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
-import { useFeelioStore } from '../stores/useFeelioStore.js';
+import useStore from '../stores/useFeelioStore.js';
 
 const Grid = styled.div`
   width: min(100%, 1420px);
