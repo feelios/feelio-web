@@ -3,7 +3,7 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
-import { useMonthlyAnalysisQuery } from '../hooks/queries/useAnalysis.js';
+import { useMonthlyAnalysisQuery, useAiInsightsQuery } from '../hooks/queries/useAnalysis.js';
 
 const Page = styled.div`
   width: min(100%, 1420px);
@@ -123,22 +123,7 @@ const BarTrack = styled.div`
 // §9 미제공: 예산 현황(budget)·월별 추이(monthly)는 별도 이슈 전까지 정적 유지 예정이었으나,
 // F7-3 진짜 API 연동 전, 데이터가 비어있을 때 빈 박스 UI가 어떻게 나타나는지 확인하기 위해 빈 배열로 초기화
 const categoryData = [];
-
-// ─────────────────────────────────────────────────────────────
-// TODO(GPT): AI 분석 API 연동 예정 — 이 블록만 교체하면 된다.
-// §9(/analysis/monthly)의 결정론적 집계와 분리된 정적 카피/목업이라,
-// 추후 GPT 훅을 붙일 때 이 영역만 수정하면 기존 §9 연동과 충돌하지 않는다.
-// 감정소비 카드 앞면(감정·금액·비율)은 §9 byEmotion으로 실연동되고,
-// 뒷면 문구(title/desc)만 아래 정적 카피를 순서대로 사용한다.
-const aiInsightCopy = [];
-const aiQuickInsights = [
-  { label: '위험 루트', value: '-', note: '-', color: 'var(--sub)' },
-  { label: '팩트 리포트', value: '-', note: '-', color: '#E87573', type: 'fact' },
-  { label: '소비 위험도', value: '-', note: '-', color: '#E87573', type: 'risk' },
-  { label: 'AI 맞춤 챌린지', value: '-', note: '-', color: 'var(--sub)' }
-];
 const monthly = [];
-const evidence = [];
 
 export default function AnalysisPageDc({ state }) {
   const isDark = state?.mode === 'dark';
@@ -152,6 +137,19 @@ export default function AnalysisPageDc({ state }) {
 
   const now = new Date();
   const { data: analysis } = useMonthlyAnalysisQuery(now.getFullYear(), now.getMonth() + 1);
+  const { data: insightsData } = useAiInsightsQuery();
+
+  const aiQuickInsights = insightsData?.aiQuickInsights?.length > 0 ? insightsData.aiQuickInsights : [
+    { label: '위험 루트', value: '-', note: '-', color: 'var(--sub)', type: 'default' },
+    { label: '팩트 리포트', value: '-', note: '-', color: '#E87573', type: 'fact' },
+    { label: '소비 위험도', value: '-', note: '-', color: '#E87573', type: 'risk' },
+    { label: 'AI 맞춤 챌린지', value: '-', note: '-', color: 'var(--sub)', type: 'default' }
+  ];
+  
+  const emotionCardsData = insightsData?.emotionCards ?? [];
+  const evidence = insightsData?.evidence ?? [];
+  const pattern = insightsData?.pattern ?? null;
+  const hasPattern = pattern != null && pattern.count > 0;
 
   // §9(/analysis/monthly) 결정론적 집계 → 화면 뷰모델. 데이터 없으면 빈 배열/0으로 안전 처리.
   const byAmountDesc = (a, b) => b.amount - a.amount;
@@ -190,15 +188,15 @@ export default function AnalysisPageDc({ state }) {
     }
   };
 
-  // 감정소비 카드: 앞면(감정·비율·금액·색)은 §9 byEmotion 상위 3건, 뒷면 문구만 정적 카피(aiInsightCopy).
+  // 감정소비 카드: 앞면(감정·비율·금액·색)은 §9 byEmotion 상위 3건, 뒷면 문구만 정적 카피(emotionCardsData).
   const totalEmotionAmount = (analysis?.byEmotion ?? []).reduce((sum, item) => sum + item.amount, 0);
   const emotionCards = (analysis?.byEmotion ?? []).slice(0, 3).map((item, index) => ({
     emotion: item.name,
     percent: totalEmotionAmount ? Math.round((item.amount / totalEmotionAmount) * 100) : 0,
     amount: `${item.amount.toLocaleString()}원`,
     color: item.color,
-    title: aiInsightCopy[index]?.title ?? '',
-    desc: aiInsightCopy[index]?.desc ?? ''
+    title: emotionCardsData[index]?.title ?? '',
+    desc: emotionCardsData[index]?.desc ?? ''
   }));
   const activeChart = chartConfig[activeChartTab];
   const budgetItems = categoryData
@@ -291,68 +289,78 @@ export default function AnalysisPageDc({ state }) {
               <p css={{ margin: 0, color: 'var(--sub)', fontSize: 12, lineHeight: 1.5 }}>지금 바로 조정해야 할 예산부터 보여줘요</p>
             </div>
             <div css={{ textAlign: 'right', flexShrink: 0 }}>
-              <div css={{ color: overBudgetItem ? '#E87573' : 'var(--text)', fontSize: 18, fontWeight: 950, lineHeight: 1 }}>{budgetAverage}%</div>
+              <div css={{ color: overBudgetItem ? '#E87573' : 'var(--text)', fontSize: 18, fontWeight: 950, lineHeight: 1 }}>
+                {budgetItems.length > 0 ? `${budgetAverage}%` : '측정중'}
+              </div>
               <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 800, marginTop: 4 }}>평균 사용률</div>
             </div>
           </div>
 
-          {overBudgetItem && (
-            <div css={{
-              display: 'grid',
-              gridTemplateColumns: '1fr auto',
-              alignItems: 'center',
-              gap: 14,
-              marginBottom: 18,
-              padding: '14px 0',
-              borderTop: '1px solid var(--line)',
-              borderBottom: '1px solid var(--line)'
-            }}>
-              <div css={{ minWidth: 0 }}>
-                <div css={{ color: '#E87573', fontSize: 11, fontWeight: 950, marginBottom: 5 }}>초과</div>
-                <div css={{ color: 'var(--text)', fontSize: 20, fontWeight: 950, lineHeight: 1.15 }}>{overBudgetItem.name} {Math.round(overBudgetItem.progress)}%</div>
-                <div css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 750, marginTop: 6 }}>{overBudgetItem.emotion} 소비가 목표보다 빨라요</div>
-              </div>
-              <div css={{ textAlign: 'right', flexShrink: 0 }}>
-                <div css={{ color: '#E87573', fontSize: 20, fontWeight: 950 }}>{overBudgetItem.amount.toLocaleString()}원</div>
-                <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 800, marginTop: 5 }}>목표 {overBudgetItem.budget.toLocaleString()}원</div>
-              </div>
+          {budgetItems.length > 0 ? (
+            <>
+              {overBudgetItem && (
+                <div css={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto',
+                  alignItems: 'center',
+                  gap: 14,
+                  marginBottom: 18,
+                  padding: '14px 0',
+                  borderTop: '1px solid var(--line)',
+                  borderBottom: '1px solid var(--line)'
+                }}>
+                  <div css={{ minWidth: 0 }}>
+                    <div css={{ color: '#E87573', fontSize: 11, fontWeight: 950, marginBottom: 5 }}>초과</div>
+                    <div css={{ color: 'var(--text)', fontSize: 20, fontWeight: 950, lineHeight: 1.15 }}>{overBudgetItem.name} {Math.round(overBudgetItem.progress)}%</div>
+                    <div css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 750, marginTop: 6 }}>{overBudgetItem.emotion} 소비가 목표보다 빨라요</div>
+                  </div>
+                  <div css={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div css={{ color: '#E87573', fontSize: 20, fontWeight: 950 }}>{overBudgetItem.amount.toLocaleString()}원</div>
+                    <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 800, marginTop: 5 }}>목표 {overBudgetItem.budget.toLocaleString()}원</div>
+                  </div>
+                </div>
+              )}
+
+              <div css={{ display: 'grid', gap: 12 }}>{budgetItems.map(item => {
+                const displayProgress = Math.min(item.progress, 100);
+                const statusText = item.isOver ? '초과' : item.progress >= 90 ? '주의' : '안정';
+                const statusColor = item.isOver ? '#E87573' : 'var(--sub)';
+
+                return <div key={item.name} css={{ display: 'grid', gridTemplateColumns: 'minmax(76px, .52fr) 1fr minmax(82px, auto)', alignItems: 'center', gap: 12 }}>
+                  <div css={{ minWidth: 0 }}>
+                    <b css={{ display: 'block', fontSize: 13, color: 'var(--text)' }}>{item.name}</b>
+                    <span css={{ display: 'inline-block', marginTop: 3, color: 'var(--sub)', fontSize: 10, fontWeight: 850 }}>{item.emotion}</span>
+                  </div>
+
+                  <div css={{ display: 'grid', gap: 5 }}>
+                    <BarTrack css={{ height: 7, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(31,32,54,0.08)' }}>
+                      <div css={{
+                        width: `${displayProgress}%`,
+                        height: '100%',
+                        borderRadius: 99,
+                        background: item.isOver ? '#E87573' : 'var(--text)',
+                        opacity: item.isOver ? 0.95 : 0.28,
+                        transition: 'width 0.35s ease'
+                      }} />
+                    </BarTrack>
+                    <div css={{ display: 'flex', justifyContent: 'space-between', color: 'var(--sub)', fontSize: 10, fontWeight: 800 }}>
+                      <span>{Math.round(item.progress)}%</span>
+                      <span css={{ color: statusColor }}>{statusText}</span>
+                    </div>
+                  </div>
+
+                  <div css={{ textAlign: 'right' }}>
+                    <div css={{ color: item.isOver ? '#E87573' : 'var(--text)', fontSize: 13, fontWeight: 950 }}>{item.amount.toLocaleString()}원</div>
+                    <div css={{ color: 'var(--sub)', fontSize: 10, fontWeight: 800, marginTop: 4 }}>{item.budget.toLocaleString()}원</div>
+                  </div>
+                </div>;
+              })}</div>
+            </>
+          ) : (
+            <div css={{ padding: '32px 0', textAlign: 'center', color: 'var(--sub)', fontSize: 13, fontWeight: 700, lineHeight: 1.6 }}>
+              예산을 분석할 이전 달 데이터가 부족해요.<br/>꾸준히 기록하면 정확한 예산 코칭을 받을 수 있어요!
             </div>
           )}
-
-          <div css={{ display: 'grid', gap: 12 }}>{budgetItems.map(item => {
-            const displayProgress = Math.min(item.progress, 100);
-            const statusText = item.isOver ? '초과' : item.progress >= 90 ? '주의' : '안정';
-            const statusColor = item.isOver ? '#E87573' : 'var(--sub)';
-
-            return <div key={item.name} css={{ display: 'grid', gridTemplateColumns: 'minmax(76px, .52fr) 1fr minmax(82px, auto)', alignItems: 'center', gap: 12 }}>
-              <div css={{ minWidth: 0 }}>
-                <b css={{ display: 'block', fontSize: 13, color: 'var(--text)' }}>{item.name}</b>
-                <span css={{ display: 'inline-block', marginTop: 3, color: 'var(--sub)', fontSize: 10, fontWeight: 850 }}>{item.emotion}</span>
-              </div>
-
-              <div css={{ display: 'grid', gap: 5 }}>
-                <BarTrack css={{ height: 7, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(31,32,54,0.08)' }}>
-                  <div css={{
-                    width: `${displayProgress}%`,
-                    height: '100%',
-                    borderRadius: 99,
-                    background: item.isOver ? '#E87573' : 'var(--text)',
-                    opacity: item.isOver ? 0.95 : 0.28,
-                    transition: 'width 0.35s ease'
-                  }} />
-                </BarTrack>
-                <div css={{ display: 'flex', justifyContent: 'space-between', color: 'var(--sub)', fontSize: 10, fontWeight: 800 }}>
-                  <span>{Math.round(item.progress)}%</span>
-                  <span css={{ color: statusColor }}>{statusText}</span>
-                </div>
-              </div>
-
-              <div css={{ textAlign: 'right' }}>
-                <div css={{ color: item.isOver ? '#E87573' : 'var(--text)', fontSize: 13, fontWeight: 950 }}>{item.amount.toLocaleString()}원</div>
-                <div css={{ color: 'var(--sub)', fontSize: 10, fontWeight: 800, marginTop: 4 }}>{item.budget.toLocaleString()}원</div>
-              </div>
-            </div>;
-          })}</div>
         </Card>
 
         <Card css={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -409,24 +417,31 @@ export default function AnalysisPageDc({ state }) {
               <p css={{ margin: 0, color: 'var(--sub)', fontSize: 12 }}>최근 7개월 흐름만 담백하게 보여줘요</p>
             </div>
             <div css={{ textAlign: 'right', flexShrink: 0 }}>
-              <div css={{ color: 'var(--text)', fontSize: 18, fontWeight: 950 }}>487,000원</div>
-              <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 850, marginTop: 4 }}>전월 대비 -2.6%</div>
+              <div css={{ color: 'var(--text)', fontSize: 18, fontWeight: 950 }}>{monthly.length > 0 ? '487,000원' : '- 원'}</div>
+              <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 850, marginTop: 4 }}>{monthly.length > 0 ? '전월 대비 -2.6%' : '데이터 수집 중'}</div>
             </div>
           </div>
-          <div css={{ display: 'grid', gap: 12 }}>
-            <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map(([label, value], index) => {
-              const current = index === monthly.length - 1;
-              return <div key={label} css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0 }}>
-                <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 10, fontWeight: current ? 900 : 750, marginBottom: 6, opacity: current ? 1 : 0.58 }}>{(value / 100).toFixed(1)}만</span>
-                <div css={{ width: '100%', height: `${value / 505 * 100}%`, minHeight: 8, borderRadius: 8, background: current ? 'var(--text)' : 'var(--line)', opacity: current ? 0.86 : 0.72 }} />
-                <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 11, fontWeight: current ? 900 : 650, marginTop: 7 }}>{label}</span>
-              </div>;
-            })}</div>
-            <div css={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--line)', color: 'var(--sub)', fontSize: 12, fontWeight: 800 }}>
-              <span>5월 정점 이후 완만하게 내려왔어요</span>
-              <span css={{ color: 'var(--text)', fontWeight: 950 }}>안정 구간</span>
+          
+          {monthly.length > 0 ? (
+            <div css={{ display: 'grid', gap: 12 }}>
+              <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map(([label, value], index) => {
+                const current = index === monthly.length - 1;
+                return <div key={label} css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0 }}>
+                  <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 10, fontWeight: current ? 900 : 750, marginBottom: 6, opacity: current ? 1 : 0.58 }}>{(value / 100).toFixed(1)}만</span>
+                  <div css={{ width: '100%', height: `${value / 505 * 100}%`, minHeight: 8, borderRadius: 8, background: current ? 'var(--text)' : 'var(--line)', opacity: current ? 0.86 : 0.72 }} />
+                  <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 11, fontWeight: current ? 900 : 650, marginTop: 7 }}>{label}</span>
+                </div>;
+              })}</div>
+              <div css={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--line)', color: 'var(--sub)', fontSize: 12, fontWeight: 800 }}>
+                <span>5월 정점 이후 완만하게 내려왔어요</span>
+                <span css={{ color: 'var(--text)', fontWeight: 950 }}>안정 구간</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 180, color: 'var(--sub)', fontSize: 13, fontWeight: 700, lineHeight: 1.6, textAlign: 'center' }}>
+              차트를 그리기 위한 소비 기록이 부족해요.<br/>기록이 쌓이면 멋진 추이 그래프를 보여드릴게요!
+            </div>
+          )}
         </Card>
         <Card css={{ display: 'flex', flexDirection: 'column' }}>
           <div css={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}><span css={{ width: 24, height: 24, borderRadius: 8, background: 'var(--ink)', color: 'var(--on-ink)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 900 }}>AI</span><b css={{ fontSize: 16 }}>감정소비 분석</b></div>
@@ -526,36 +541,36 @@ export default function AnalysisPageDc({ state }) {
             <div css={{ display: 'grid', gap: 18, marginTop: 8 }}>
               <div css={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 18, alignItems: 'center' }}>
                 <div css={{ color: 'var(--text)', fontSize: 52, fontWeight: 950, lineHeight: 1 }}>
-                  {evidence.length > 0 ? 7 : 0}
+                  {hasPattern ? pattern.count : 0}
                 </div>
                 <div>
                   <div css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 850, marginBottom: 5 }}>반복 횟수</div>
                   <div css={{ color: 'var(--text)', fontSize: 19, fontWeight: 950 }}>
-                    {evidence.length > 0 ? '스트레스 소비가 밤에 몰렸어요' : '아직 발견된 패턴이 없어요'}
+                    {hasPattern ? pattern.title : '아직 발견된 패턴이 없어요'}
                   </div>
                 </div>
               </div>
 
               <div css={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto 1fr', gap: 10, alignItems: 'center', padding: '16px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
-                <span css={{ minWidth: 0, opacity: evidence.length > 0 ? 1 : 0.4 }}>
-                  <span css={{ display: 'block', color: evidence.length > 0 ? '#A68BEA' : 'var(--sub)', fontSize: 11, fontWeight: 950, marginBottom: 4 }}>감정</span>
-                  <b css={{ color: 'var(--text)', fontSize: 15 }}>{evidence.length > 0 ? '스트레스' : '?'}</b>
+                <span css={{ minWidth: 0, opacity: hasPattern ? 1 : 0.4 }}>
+                  <span css={{ display: 'block', color: hasPattern ? '#A68BEA' : 'var(--sub)', fontSize: 11, fontWeight: 950, marginBottom: 4 }}>감정</span>
+                  <b css={{ color: 'var(--text)', fontSize: 15 }}>{hasPattern ? pattern.emotion : '?'}</b>
                 </span>
-                <span css={{ color: 'var(--sub)', fontWeight: 900, opacity: evidence.length > 0 ? 1 : 0.4 }}>→</span>
-                <span css={{ minWidth: 0, opacity: evidence.length > 0 ? 1 : 0.4 }}>
+                <span css={{ color: 'var(--sub)', fontWeight: 900, opacity: hasPattern ? 1 : 0.4 }}>→</span>
+                <span css={{ minWidth: 0, opacity: hasPattern ? 1 : 0.4 }}>
                   <span css={{ display: 'block', color: 'var(--sub)', fontSize: 11, fontWeight: 900, marginBottom: 4 }}>사용처</span>
-                  <b css={{ color: 'var(--text)', fontSize: 15 }}>{evidence.length > 0 ? '배달' : '?'}</b>
+                  <b css={{ color: 'var(--text)', fontSize: 15 }}>{hasPattern ? pattern.category : '?'}</b>
                 </span>
-                <span css={{ color: 'var(--sub)', fontWeight: 900, opacity: evidence.length > 0 ? 1 : 0.4 }}>→</span>
-                <span css={{ minWidth: 0, opacity: evidence.length > 0 ? 1 : 0.4 }}>
+                <span css={{ color: 'var(--sub)', fontWeight: 900, opacity: hasPattern ? 1 : 0.4 }}>→</span>
+                <span css={{ minWidth: 0, opacity: hasPattern ? 1 : 0.4 }}>
                   <span css={{ display: 'block', color: 'var(--sub)', fontSize: 11, fontWeight: 900, marginBottom: 4 }}>시간</span>
-                  <b css={{ color: 'var(--text)', fontSize: 15 }}>{evidence.length > 0 ? '밤 10시 이후' : '?'}</b>
+                  <b css={{ color: 'var(--text)', fontSize: 15 }}>{hasPattern ? pattern.time : '?'}</b>
                 </span>
               </div>
 
               <p css={{ margin: 0, color: 'var(--sub)', fontSize: 13, fontWeight: 750, lineHeight: 1.65 }}>
-                {evidence.length > 0 
-                  ? '스트레스 받은 밤, 배달로 마음을 달래고 있었어요. 이 조합만 먼저 알아채도 소비 흐름을 줄일 수 있어요.' 
+                {hasPattern 
+                  ? pattern.desc 
                   : '꾸준히 소비 내역을 기록해 주시면, 숨겨진 소비 패턴을 감지해 AI가 분석해 줘요.'}
               </p>
             </div>

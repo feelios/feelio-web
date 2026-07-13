@@ -9,3 +9,11 @@ export const useMonthlyAnalysisQuery = (year, month) => {
     enabled: !!year && !!month,
   });
 };
+
+export const useAiInsightsQuery = () => {
+  return useQuery({
+    queryKey: ['aiInsights'],
+    queryFn: () => analysisAPI.getAiInsights(),
+    staleTime: 1000 * 60 * 5, // 5분
+  });
+};
