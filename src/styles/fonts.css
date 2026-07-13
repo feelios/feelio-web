@@ -1,5 +1,12 @@
-/* 디스플레이용: Fredoka (가변, 숫자·영문 포인트) — 한글 글리프 없어 한글은 Pretendard로 폴백 */
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap');
+/* 디스플레이용: Fredoka — 숫자(+구분자 , .)에만 적용(unicode-range).
+   영문·한글은 매칭되지 않아 Pretendard로 폴백된다. */
+@font-face {
+  font-family: 'Fredoka';
+  src: url('https://cdn.jsdelivr.net/fontsource/fonts/fredoka:vf@latest/latin-wght-normal.woff2') format('woff2');
+  font-weight: 300 700;
+  font-display: swap;
+  unicode-range: U+0030-0039, U+002C, U+002E;
+}
 
 /* 본문: Pretendard (projectnoonnu CDN, 100~900) */
 @font-face {
