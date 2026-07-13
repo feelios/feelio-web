@@ -5,6 +5,10 @@ import { Modal } from '../common/Modal.jsx';
 import { EmotionBlob } from '../common/EmotionBlob.jsx';
 import { auroras } from '../../data/aurorasDc.js';
 import { money, percent } from '../../utils/format.js';
+// 1. 사용자 설정 및 회원 탈퇴 관련 쿼리/뮤테이션 (위쪽 브랜치 변경 사항)
+import { useUpdateSettingsMutation, useWithdrawMutation } from '../../hooks/queries/useUsers.js';
+
+// 2. 목표 관리 컴포넌트 및 쿼리/뮤테이션 (main 브랜치 변경 사항)
 import GoalForm from './GoalForm.jsx';
 import {
   useCreateGoalMutation,
@@ -285,11 +289,21 @@ export default function ProfileModalDc({ state, actions, onClose }) {
   const [editingGoalId, setEditingGoalId] = useState(null);
   const [goalForm, setGoalForm] = useState({ name: '', target: '', current: '', period: '' });
   const [noti, setNoti] = useState({ record: true, weekly: true, goal: false });
+  // 1. 회원 탈퇴 및 설정 변경 관련 (위쪽 기능 유지)
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const updateSettingsMutation = useUpdateSettingsMutation();
+  const withdrawMutation = useWithdrawMutation();
+
+  // 2. 목표 데이터 가져오기 및 뮤테이션 (main의 발전된 구조 채택)
   const { data: goalsData, isError: isGoalsError, isLoading: isGoalsLoading } = useGoalsQuery();
   const createGoalMutation = useCreateGoalMutation();
   const updateGoalMutation = useUpdateGoalMutation();
   const deleteGoalMutation = useDeleteGoalMutation();
   const toggleMainGoalMutation = useToggleMainGoalMutation();
+  
+  const goals = goalsData?.goals ?? [];
+  
+  // 3. 메인 목표 설정 로직 및 퍼센트 계산
   const goals = goalsData?.goals ?? [];
   const goal = useMemo(
     () => goals.find(item => item.isMain) || goals[0] || { name: '제주도 여행', currentAmount: 0, targetAmount: 1 },
@@ -384,6 +398,58 @@ export default function ProfileModalDc({ state, actions, onClose }) {
 
   function saveAndBack() {
     setView('profile');
+  }
+
+  async function handleThemeToggle() {
+    const nextMode = state.mode === 'dark' ? 'light' : 'dark';
+    actions.syncSettings({ mode: nextMode, aurora: state.aurora });
+
+    try {
+      const updated = await updateSettingsMutation.mutateAsync({
+        themeMode: nextMode.toUpperCase(),
+        auroraTheme: state.aurora
+      });
+      actions.syncSettings({
+        mode: updated?.themeMode || nextMode,
+        aurora: updated?.auroraTheme || state.aurora
+      });
+    } catch (error) {
+      console.error('Failed to update theme settings', error);
+    }
+  }
+
+  async function handleAuroraSelect(auroraId) {
+    actions.syncSettings({ mode: state.mode, aurora: auroraId });
+
+    try {
+      const updated = await updateSettingsMutation.mutateAsync({
+        themeMode: state.mode.toUpperCase(),
+        auroraTheme: auroraId
+      });
+      actions.syncSettings({
+        mode: updated?.themeMode || state.mode,
+        aurora: updated?.auroraTheme || auroraId
+      });
+    } catch (error) {
+      console.error('Failed to update aurora settings', error);
+    }
+  }
+
+  async function handleWithdraw() {
+    if (!window.confirm('정말로 탈퇴하시겠어요? 모든 데이터가 사라집니다.')) return;
+    if (isWithdrawing) return;
+
+    setIsWithdrawing(true);
+    try {
+      await withdrawMutation.mutateAsync({ reason: '사용 빈도 낮음' });
+      actions.clearAccount();
+      onClose();
+    } catch (error) {
+      console.error('Failed to withdraw account', error);
+      actions.showToast('탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setIsWithdrawing(false);
+    }
   }
 
   return (
@@ -529,12 +595,12 @@ export default function ProfileModalDc({ state, actions, onClose }) {
           <Back title="화면 설정"><button type="button" onClick={() => setView('profile')}>‹</button></Back>
           <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0 18px', borderBottom: '1px solid var(--line)', marginBottom: 16 }}>
             <div><div css={{ fontSize: 14.5, fontWeight: 700 }}>다크 모드</div><div css={{ fontSize: 12, color: 'var(--sub)', marginTop: 2 }}>어두운 무광 글래스로 전환해요</div></div>
-            <Switch type="button" active={state.mode === 'dark'} onClick={actions.toggleMode}><span /></Switch>
+            <Switch type="button" active={state.mode === 'dark'} onClick={handleThemeToggle}><span /></Switch>
           </div>
           <div css={{ fontSize: 12.5, color: 'var(--sub)', marginBottom: 14 }}>오로라 색상 · 배경에 흐르게 할 감정의 오로라</div>
           <div css={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {auroras.map(item => (
-              <button key={item.id} type="button" onClick={() => actions.setAurora(item.id)} css={{ display: 'flex', alignItems: 'center', gap: 8, padding: '13px 15px', borderRadius: 16, border: (state.aurora === item.id || visibleAurora.id === item.id) ? '2px solid var(--ink)' : '2px solid var(--line)', background: 'var(--card)', color: 'var(--text)', cursor: 'pointer' }}>
+              <button key={item.id} type="button" onClick={() => handleAuroraSelect(item.id)} css={{ display: 'flex', alignItems: 'center', gap: 8, padding: '13px 15px', borderRadius: 16, border: (state.aurora === item.id || visibleAurora.id === item.id) ? '2px solid var(--ink)' : '2px solid var(--line)', background: 'var(--card)', color: 'var(--text)', cursor: 'pointer' }}>
                 <span css={{ display: 'flex', alignItems: 'center' }}>{item.colors.map((color, index) => <i key={color} css={{ width: 20, height: 20, borderRadius: '50%', background: color, marginLeft: index === 0 ? 0 : -7 }} />)}</span>
                 <span css={{ flex: 1, textAlign: 'right', fontSize: 14, fontWeight: 700 }}>{item.name}</span>
               </button>
@@ -562,7 +628,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
           <div css={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '16px 18px', marginBottom: 10 }}><div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 700 }}>이메일</div><div css={{ fontSize: 14.5, fontWeight: 700, marginTop: 3 }}>{email}</div></div>
           <div css={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '16px 18px', marginBottom: 22 }}><div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 700 }}>가입 방식</div><div css={{ fontSize: 14.5, fontWeight: 700, marginTop: 3 }}>{provider} OAuth2</div></div>
           <button type="button" onClick={actions.logout} css={{ width: '100%', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 14, fontSize: 14.5, fontWeight: 700, cursor: 'pointer', color: 'var(--text)', marginBottom: 10 }}>로그아웃</button>
-          <button type="button" onClick={actions.logout} css={{ width: '100%', background: 'none', border: 'none', padding: 12, fontSize: 13.5, fontWeight: 700, cursor: 'pointer', color: '#E87573', textDecoration: 'underline', textUnderlineOffset: 3 }}>회원탈퇴</button>
+          <button type="button" onClick={handleWithdraw} disabled={isWithdrawing} css={{ width: '100%', background: 'none', border: 'none', padding: 12, fontSize: 13.5, fontWeight: 700, cursor: isWithdrawing ? 'wait' : 'pointer', color: '#E87573', textDecoration: 'underline', textUnderlineOffset: 3, opacity: isWithdrawing ? 0.7 : 1 }}>회원탈퇴</button>
         </Screen>
       )}
     </Modal>

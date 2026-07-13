@@ -20,3 +20,23 @@ export const useCompleteOnboardingMutation = () => {
     }
   });
 };
+
+export const useUpdateSettingsMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => usersAPI.updateSettings(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    }
+  });
+};
+
+export const useWithdrawMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => usersAPI.withdraw(data),
+    onSuccess: () => {
+      queryClient.clear();
+    }
+  });
+};
