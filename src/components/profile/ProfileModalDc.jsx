@@ -261,18 +261,13 @@ const DataAction = styled.button`
   }
 `;
 
-const DangerBox = styled.div`
-  background: #E8757314;
-  border: 1px solid #E8757333;
-  border-radius: 14px;
-  padding: 16px 18px;
-`;
-
 function cleanName(name) {
   if (!name || name.length > 8) return '서연';
   if (/[\uFFFD?]/.test(name) || name.includes('\uC496') || name.includes('\uBF30')) return '서연';
   return name;
 }
+
+const EMPTY_GOALS = [];
 
 function Back({ title, children }) {
   return (
@@ -301,7 +296,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
   const deleteGoalMutation = useDeleteGoalMutation();
   const toggleMainGoalMutation = useToggleMainGoalMutation();
   
-  const goals = goalsData?.goals ?? [];
+  const goals = goalsData?.goals ?? EMPTY_GOALS;
   
   // 3. 메인 목표 설정 로직 및 퍼센트 계산
   const goal = useMemo(
@@ -613,11 +608,6 @@ export default function ProfileModalDc({ state, actions, onClose }) {
           <Back title="데이터 관리"><button type="button" onClick={() => setView('profile')}>‹</button></Back>
           <DataAction type="button" onClick={saveAndBack}><span>데이터 백업</span><span>클라우드에 저장</span></DataAction>
           <DataAction type="button" onClick={saveAndBack}><span>데이터 내보내기</span><span>CSV · Excel</span></DataAction>
-          <DangerBox>
-            <div css={{ fontSize: 14, fontWeight: 700, color: '#E87573', marginBottom: 4 }}>전체 기록 초기화</div>
-            <div css={{ fontSize: 12.5, color: 'var(--sub)', lineHeight: 1.5, marginBottom: 12 }}>모든 거래와 감정 기록이 사라져요. 되돌릴 수 없어요.</div>
-            <button type="button" onClick={actions.resetData} css={{ background: '#E87573', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>초기화하기</button>
-          </DangerBox>
         </Screen>
       )}
 

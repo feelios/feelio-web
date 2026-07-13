@@ -6,6 +6,7 @@ import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
 import { money, percent } from '../utils/format.js';
 import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
+import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 
 const Grid = styled.div`
@@ -513,7 +514,9 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
 
   // Fetch emotion summary data from API
   const { data: emotionData, isLoading: isEmotionLoading } = useEmotionSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
-  const isSummaryLoading = isCalendarLoading || isEmotionLoading;
+  const { data: goalsData, isLoading: isGoalsLoading } = useGoalsQuery();
+  
+  const isSummaryLoading = isCalendarLoading || isEmotionLoading || isGoalsLoading;
   const serverEmotions = emotionData?.emotions || [];
   const serverPrevEmotions = emotionData?.prevMonth || [];
 
@@ -548,7 +551,14 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const dark = state.mode === 'dark';
   const topMeta = showEmptyBlob ? { color: dark ? '#9B8CFF' : '#7C6BE0' } : getEmotion(displayEmotion);
 
-  const goal = state.goals[0];
+  const serverGoals = goalsData?.goals || [];
+  const primaryGoal = serverGoals.find(g => g.isMain) || serverGoals[0];
+  const goal = primaryGoal ? {
+    name: primaryGoal.name,
+    current: primaryGoal.currentAmount || 0,
+    target: primaryGoal.targetAmount || 1
+  } : { name: '등록된 목표 없음', current: 0, target: 1 };
+  
   const goalPct = percent(goal.current, goal.target);
   const days = getCalendarCells(serverDays, visibleMonth);
   const ridgeData = hasEnoughRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
