@@ -17,19 +17,21 @@
 | F2-1 | 온보딩 폼·닉네임 검증 | `feat/users-me` | §4 | Page·api·Store | `['user']` | 완료 | 닉네임 1~8자 검증 UI, 온보딩 API 연동 후 `{onboardingDone:true}` 갱신 → 홈 리다이렉트 |
 | F3-1 | 거래 목록·무한스크롤 | `feat/tx-list` | §6 | Page·Hook·api | `['tx','list']` | 완료 | `mockTransactions` 제거, `useTransactionsQuery` 연동, 무한스크롤 + 연/월 필터 + 검색어 디바운스 |
 | F3-2 | 거래 상세·수정·삭제 | `feat/tx-crud` | §6 | Page·Hook·api | `['tx','detail']` | 완료 | 상세 모달 바인딩, 수정/삭제 Mutation, 완료 시 목록 캐시 무효화 및 즉시 반영 |
-| F4-1 | 목표 CRUD·대표목표 | `feat/goals` | §7 | Page·Hook·api | `['goals']` | 예정 | 목표 입력 폼 분리 + CRUD 바인딩, `isMain` 설정/해제 토글 연동 |
+| F4-1 | 목표 CRUD·대표목표 | `feat/goals` | §7 | Page·Hook·api | `['goals']` | 완료 | 목표 입력 폼 분리 + CRUD 바인딩, `isMain` 설정/해제 토글 연동 |
 | F4-2 | 홈 캘린더 요약 | `feat/summary-cal` | §8 | Page·Hook·api | `['summary','calendar']` | 완료 | 일별 감정 아이콘·지출 합계 캘린더 매핑, 데이터 없는 날짜 예외처리 |
 | F4-3 | 감정 요약 차트·전월대비 | `feat/summary-emo` | §8 | Page·Hook·api | `['summary','emotion']` | 완료 | 차트(Recharts/D3) 바인딩, `prevMonth` 증감률 계산·렌더 |
 | F4-4 | 설정(테마)·회원탈퇴 | `feat/user-settings` | §4 | Page·api·Store | `['user']` | 예정 | 테마 설정 Store 즉시 반영, 탈퇴 API + 로컬·전역 Store·캐시 전체 파기 |
 | F4-5 | 평행우주 UI | `feat/universe` | §9 | Page·Hook·api | `['universe']` | 완료 | §9 시뮬 스키마 바인딩, 3D/인터랙티브 상태·애니메이션 연동 |
 | F4-6 | 월간 분석(analysis) 화면 | `feat/analysis` | §9 | Page·Hook·api | `['analysis']` | 신규 | §9 `/analysis/monthly` 연동(카테고리·시간대·감정 집계 + 인사이트). ※`AnalysisPage` 기존 상황(situation) 기반 evidence 제거·재연동 |
-| F4-7 | 커스텀 카테고리 설정 | `feat/custom-category` | §12 | Page·Hook·api | `['categories']` | 신규 | §12 커스텀 카테고리 추가/삭제 + 공통·커스텀 통합 정렬(드래그) 저장·반환 |
+| F4-7 | 커스텀 카테고리 설정 | `feat/custom-category` | §12 | Page·Hook·api | `['categories']` | 완료 | §12 커스텀 카테고리 추가/삭제 + 공통·커스텀 통합 정렬(드래그) 저장·반환 (커밋 b7b91e1: api/hook + RecordPage 연동) |
 | F5-1 | Skeleton/Suspense 로딩 | `feat/ux-loading` | — | Page·컴포넌트 | — | 예정 | `isLoading` + Suspense 바운더리, 메인/상세 스켈레톤 컴포넌트 노출 |
 | F5-2 | 전역 ErrorBoundary | `feat/ux-error` | §1 | 컴포넌트 | — | 예정 | 라우트 단위 ErrorBoundary, 500 등 오류 시 재시도 버튼 포함 Fallback UI |
 | F5-3 | 거래·목표 낙관적 업데이트 | `feat/ux-optimistic` | §10 | Hook | `['tx']`·`['goals']` | 예정 | `onMutate` 캐시 선반영, `onError` 시 이전 캐시로 롤백 |
 
 > **계층** = 프론트 레이어(`src/pages` · `src/hooks` · `src/api` · `src/store`). **캐시키** = TanStack Query Key(공유 자원 — 임의 생성 금지, 표의 배열을 정확히 사용).
-> 신규(F4-6·F4-7)는 백엔드가 이미 제공하지만(§9 analysis · §12 categories) 프론트 이슈가 없던 부분으로, 백엔드 계약에 맞춰 신규 편성했다.
+> **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남은 등록 작업.
+> **F4-6**: ISSUES.md에만 있고 GitHub 미등록 (백엔드 §9 analysis 선행 필요) → 착수 전 이슈 등록 필요.
+> **F4-7**: GitHub 이슈 없이 코드가 먼저 구현된 케이스(커밋 b7b91e1) → '완료' 처리. 별도 이슈 등록 불필요.
 
 ## 병렬 작업 규칙 (에이전트 간 충돌 방지)
 
