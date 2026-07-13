@@ -120,13 +120,9 @@ const BarTrack = styled.div`
   background: var(--line);
 `;
 
-// §9 미제공: 예산 현황(budget)·월별 추이(monthly)는 별도 이슈 전까지 정적 유지.
-const categoryData = [
-  { name: '배달', amount: 82000, prevAmount: 100000, emotion: '스트레스', pctText: '43%' },
-  { name: '카페', amount: 54000, prevAmount: 50000, emotion: '설렘', pctText: '28%' },
-  { name: '쇼핑', amount: 39000, prevAmount: 48000, emotion: '설렘', pctText: '21%' },
-  { name: '편의점', amount: 15000, prevAmount: 20000, emotion: '평온', pctText: '8%' }
-];
+// §9 미제공: 예산 현황(budget)·월별 추이(monthly)는 별도 이슈 전까지 정적 유지 예정이었으나,
+// F7-3 진짜 API 연동 전, 데이터가 비어있을 때 빈 박스 UI가 어떻게 나타나는지 확인하기 위해 빈 배열로 초기화
+const categoryData = [];
 
 // ─────────────────────────────────────────────────────────────
 // TODO(GPT): AI 분석 API 연동 예정 — 이 블록만 교체하면 된다.
@@ -134,25 +130,15 @@ const categoryData = [
 // 추후 GPT 훅을 붙일 때 이 영역만 수정하면 기존 §9 연동과 충돌하지 않는다.
 // 감정소비 카드 앞면(감정·금액·비율)은 §9 byEmotion으로 실연동되고,
 // 뒷면 문구(title/desc)만 아래 정적 카피를 순서대로 사용한다.
-const aiInsightCopy = [
-  { title: '새벽 1시, 외로우면 지갑이 샌다', desc: '자정~새벽 소비의 78%가 \'외로움\' 태그' },
-  { title: '월급날 다음 3일이 제일 위험해', desc: '불안 소비가 평소의 2.3배로 튐' },
-  { title: '기분이 들뜨면 지출도 들뜬다', desc: '신남 태그 날 하루 평균 지출 49,200원' }
-];
-
+const aiInsightCopy = [];
 const aiQuickInsights = [
-  { label: '위험 루트', value: '우울함 → 새벽 쇼핑', note: '반복 감지', color: 'var(--sub)' },
-  { label: '팩트 리포트', value: '택시비 48,000원', note: '스트레스 핑계', color: '#E87573', type: 'fact' },
-  { label: '소비 위험도', value: '위험', note: '스트레스 누적', color: '#E87573', type: 'risk' },
-  { label: 'AI 맞춤 챌린지', value: '밤 10시 이후 0원', note: '12일 성공 · D-18', color: 'var(--sub)' }
+  { label: '위험 루트', value: '-', note: '-', color: 'var(--sub)' },
+  { label: '팩트 리포트', value: '-', note: '-', color: '#E87573', type: 'fact' },
+  { label: '소비 위험도', value: '-', note: '-', color: '#E87573', type: 'risk' },
+  { label: 'AI 맞춤 챌린지', value: '-', note: '-', color: 'var(--sub)' }
 ];
-const monthly = [['1월', 350], ['2월', 392], ['3월', 445], ['4월', 418], ['5월', 502], ['6월', 473], ['7월', 487]];
-// situation(상황) 필드 제거됨 — [날짜, 사용처, 감정, 금액] (거래 리스트도 추후 GPT/거래 API 연동 예정)
-const evidence = [
-  ['6월 12일', '배달', '스트레스', '₩23,000'],
-  ['6월 18일', '편의점', '스트레스', '₩8,400'],
-  ['6월 22일', '배달', '스트레스', '₩18,000']
-];
+const monthly = [];
+const evidence = [];
 
 export default function AnalysisPageDc({ state }) {
   const isDark = state?.mode === 'dark';
@@ -539,31 +525,39 @@ export default function AnalysisPageDc({ state }) {
 
             <div css={{ display: 'grid', gap: 18, marginTop: 8 }}>
               <div css={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 18, alignItems: 'center' }}>
-                <div css={{ color: 'var(--text)', fontSize: 52, fontWeight: 950, lineHeight: 1 }}>7</div>
+                <div css={{ color: 'var(--text)', fontSize: 52, fontWeight: 950, lineHeight: 1 }}>
+                  {evidence.length > 0 ? 7 : 0}
+                </div>
                 <div>
                   <div css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 850, marginBottom: 5 }}>반복 횟수</div>
-                  <div css={{ color: 'var(--text)', fontSize: 19, fontWeight: 950 }}>스트레스 소비가 밤에 몰렸어요</div>
+                  <div css={{ color: 'var(--text)', fontSize: 19, fontWeight: 950 }}>
+                    {evidence.length > 0 ? '스트레스 소비가 밤에 몰렸어요' : '아직 발견된 패턴이 없어요'}
+                  </div>
                 </div>
               </div>
 
               <div css={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto 1fr', gap: 10, alignItems: 'center', padding: '16px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
-                <span css={{ minWidth: 0 }}>
-                  <span css={{ display: 'block', color: '#A68BEA', fontSize: 11, fontWeight: 950, marginBottom: 4 }}>감정</span>
-                  <b css={{ color: 'var(--text)', fontSize: 15 }}>스트레스</b>
+                <span css={{ minWidth: 0, opacity: evidence.length > 0 ? 1 : 0.4 }}>
+                  <span css={{ display: 'block', color: evidence.length > 0 ? '#A68BEA' : 'var(--sub)', fontSize: 11, fontWeight: 950, marginBottom: 4 }}>감정</span>
+                  <b css={{ color: 'var(--text)', fontSize: 15 }}>{evidence.length > 0 ? '스트레스' : '?'}</b>
                 </span>
-                <span css={{ color: 'var(--sub)', fontWeight: 900 }}>→</span>
-                <span css={{ minWidth: 0 }}>
+                <span css={{ color: 'var(--sub)', fontWeight: 900, opacity: evidence.length > 0 ? 1 : 0.4 }}>→</span>
+                <span css={{ minWidth: 0, opacity: evidence.length > 0 ? 1 : 0.4 }}>
                   <span css={{ display: 'block', color: 'var(--sub)', fontSize: 11, fontWeight: 900, marginBottom: 4 }}>사용처</span>
-                  <b css={{ color: 'var(--text)', fontSize: 15 }}>배달</b>
+                  <b css={{ color: 'var(--text)', fontSize: 15 }}>{evidence.length > 0 ? '배달' : '?'}</b>
                 </span>
-                <span css={{ color: 'var(--sub)', fontWeight: 900 }}>→</span>
-                <span css={{ minWidth: 0 }}>
+                <span css={{ color: 'var(--sub)', fontWeight: 900, opacity: evidence.length > 0 ? 1 : 0.4 }}>→</span>
+                <span css={{ minWidth: 0, opacity: evidence.length > 0 ? 1 : 0.4 }}>
                   <span css={{ display: 'block', color: 'var(--sub)', fontSize: 11, fontWeight: 900, marginBottom: 4 }}>시간</span>
-                  <b css={{ color: 'var(--text)', fontSize: 15 }}>밤 10시 이후</b>
+                  <b css={{ color: 'var(--text)', fontSize: 15 }}>{evidence.length > 0 ? '밤 10시 이후' : '?'}</b>
                 </span>
               </div>
 
-              <p css={{ margin: 0, color: 'var(--sub)', fontSize: 13, fontWeight: 750, lineHeight: 1.65 }}>스트레스 받은 밤, 배달로 마음을 달래고 있었어요. 이 조합만 먼저 알아채도 소비 흐름을 줄일 수 있어요.</p>
+              <p css={{ margin: 0, color: 'var(--sub)', fontSize: 13, fontWeight: 750, lineHeight: 1.65 }}>
+                {evidence.length > 0 
+                  ? '스트레스 받은 밤, 배달로 마음을 달래고 있었어요. 이 조합만 먼저 알아채도 소비 흐름을 줄일 수 있어요.' 
+                  : '꾸준히 소비 내역을 기록해 주시면, 숨겨진 소비 패턴을 감지해 AI가 분석해 줘요.'}
+              </p>
             </div>
             
             <div css={{ display: 'none', '@media (max-width: 900px)': { display: 'block', textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--sub)', fontWeight: 800 } }}>
