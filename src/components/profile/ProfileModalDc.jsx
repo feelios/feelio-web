@@ -9,6 +9,7 @@ import { money, percent } from '../../utils/format.js';
 import { useUpdateSettingsMutation, useWithdrawMutation } from '../../hooks/queries/useUsers.js';
 
 // 2. 목표 관리 컴포넌트 및 쿼리/뮤테이션 (main 브랜치 변경 사항)
+import GoalForm from './GoalForm.jsx';
 import {
   useCreateGoalMutation,
   useDeleteGoalMutation,
