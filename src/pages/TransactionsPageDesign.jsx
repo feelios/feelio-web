@@ -376,7 +376,7 @@ function padDatePart(value) {
   return String(value).padStart(2, '0');
 }
 
-export default function TransactionsPageDesign({ state, onSelect }) {
+export default function TransactionsPageDesign({ onSelect }) {
   const { data: metaData } = useMetadata();
   const categories = metaData?.categories || [];
   const emotions = metaData?.emotions || [];
@@ -406,7 +406,7 @@ export default function TransactionsPageDesign({ state, onSelect }) {
   }), [year, month, day, emotionFilters, categoryFilters, debouncedQuery, sort]);
 
   const { data: txData, isLoading } = useTransactionsQuery(apiParams);
-  const transactions = txData?.transactions || [];
+  const transactions = useMemo(() => txData?.transactions || [], [txData?.transactions]);
 
   const moveMonth = (offset) => {
     const base = new Date(Number(year), month === 'all' ? today.getMonth() : Number(month) - 1, 1);

@@ -1,10 +1,11 @@
 /** @jsxImportSource @emotion/react */
-import { useEffect, useId, useMemo, useState, useRef } from 'react';
+import { useId, useMemo, useState, useRef } from 'react';
 import styled from '@emotion/styled';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
-import { dayKey, money, percent } from '../utils/format.js';
+import { money, percent } from '../utils/format.js';
+import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
 
 const Grid = styled.div`
   width: min(100%, 1420px);
@@ -420,60 +421,52 @@ function EmptyRidge({ dark = false }) {
   );
 }
 
-const defaultHomeEmotion = '스트레스';
 const defaultRidgeData = [['화남', 8], ['평온', 15], ['외로움', 38], ['스트레스', 22], ['신남', 12], ['무덤덤', 5]];
 const ridgeEmotions = ['화남', '평온', '외로움', '스트레스', '신남', '무덤덤'];
 
-function visibleMonthTransactions(transactions, visibleMonth) {
-  const year = visibleMonth.getFullYear();
-  const month = visibleMonth.getMonth();
-  return transactions.filter(item => {
-    const date = new Date(item.date);
-    return date.getFullYear() === year && date.getMonth() === month;
+function getEmotionRidgeData(emotions) {
+  if (!emotions || emotions.length === 0) return defaultRidgeData;
+  const maxCount = Math.max(...emotions.map(e => e.count), 1);
+  return ridgeEmotions.map(name => {
+    const item = emotions.find(e => e.name === name);
+    const count = item ? item.count : 0;
+    return [name, Math.max(5, Math.round((count / maxCount) * 38))];
   });
 }
 
-function visibleDayTransactions(transactions, visibleDate) {
-  const key = dayKey(visibleDate);
-  return transactions.filter(item => dayKey(item.date) === key);
-}
-
-function dominantEmotion(transactions, fallback = defaultHomeEmotion) {
-  const counts = transactions.reduce((map, item) => {
-    if (item.emotion) map[item.emotion] = (map[item.emotion] || 0) + 1;
-    return map;
-  }, {});
-  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || fallback;
-}
-
-function emotionRidge(transactions) {
-  const expenses = transactions.filter(item => item.type === 'expense');
-  if (!expenses.length) return defaultRidgeData;
-
-  const counts = expenses.reduce((map, item) => {
-    map[item.emotion] = (map[item.emotion] || 0) + 1;
-    return map;
-  }, {});
-  const max = Math.max(...Object.values(counts), 1);
-  return ridgeEmotions.map(name => [name, Math.max(5, Math.round(((counts[name] || 0) / max) * 38))]);
-}
-
-function calendarDays(transactions, visibleMonth) {
-  const txMap = new Map();
-  transactions
-    .filter(item => item.emotion)
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
-    .forEach(item => {
-      const key = dayKey(item.date);
-      const entry = txMap.get(key) || { counts: {}, top: item.emotion, topCount: 0 };
-      const count = (entry.counts[item.emotion] || 0) + 1;
-      entry.counts[item.emotion] = count;
-      if (count >= entry.topCount) {
-        entry.top = item.emotion;
-        entry.topCount = count;
+function getEmotionSignals(emotions, prevMonth) {
+  const signals = [];
+  emotions.forEach(curr => {
+    const prev = prevMonth.find(e => e.name === curr.name);
+    const prevAmount = prev ? prev.amount : 0;
+    const currAmount = curr.amount;
+    
+    if (prevAmount === 0 && currAmount > 0) {
+      signals.push({ name: curr.name, rate: 100, delta: '▲ 100%' });
+    } else if (prevAmount > 0) {
+      const rate = Math.round(((currAmount - prevAmount) / prevAmount) * 100);
+      if (rate !== 0) {
+        signals.push({ name: curr.name, rate, delta: rate > 0 ? `▲ ${rate}%` : `▼ ${Math.abs(rate)}%` });
       }
-      txMap.set(key, entry);
-    });
+    }
+  });
+  
+  return signals.sort((a, b) => Math.abs(b.rate) - Math.abs(a.rate)).slice(0, 3);
+}
+
+function getCalendarCells(daysData, visibleMonth) {
+  const txMap = new Map();
+  daysData.forEach(item => {
+    let dateStr = item.date;
+    if (Array.isArray(item.date)) {
+      // Spring Boot LocalDate array format: [2026, 7, 1]
+      dateStr = `${item.date[0]}-${String(item.date[1]).padStart(2, '0')}-${String(item.date[2]).padStart(2, '0')}`;
+    } else if (typeof item.date === 'string') {
+      dateStr = item.date.slice(0, 10);
+    }
+    txMap.set(dateStr, item.dominantEmotion?.name);
+  });
+  
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
   const lead = new Date(year, month, 1).getDay();
@@ -482,7 +475,7 @@ function calendarDays(transactions, visibleMonth) {
   const days = Array.from({ length: lastDay }, (_, index) => {
     const day = index + 1;
     const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const emotion = txMap.get(key)?.top;
+    const emotion = txMap.get(key);
     return { id: `day-${day}`, day, emotion, strong: Boolean(emotion), today: year === 2026 && month === 6 && day === 1 };
   });
   const cells = [...empty, ...days];
@@ -505,36 +498,61 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const [isRidgeExpanded, setIsRidgeExpanded] = useState(false);
   const [isCalendarExpanded, setIsCalendarExpanded] = useState(false);
 
-  useEffect(() => {
-    // selectedDate can be driven by other pages, so keep the visible month aligned.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setVisibleMonth(prev => {
-      if (prev.getFullYear() === selected.getFullYear() && prev.getMonth() === selected.getMonth()) return prev;
-      return new Date(selected.getFullYear(), selected.getMonth(), 1);
-    });
-  }, [selected]);
+  const [prevSelected, setPrevSelected] = useState(selected);
+  if (selected !== prevSelected) {
+    setPrevSelected(selected);
+    if (visibleMonth.getFullYear() !== selected.getFullYear() || visibleMonth.getMonth() !== selected.getMonth()) {
+      setVisibleMonth(new Date(selected.getFullYear(), selected.getMonth(), 1));
+    }
+  }
 
-  const monthlyTransactions = visibleMonthTransactions(state.transactions, visibleMonth);
-  // 감정/AI 분석 시 '저축' 카테고리는 제외
-  const monthlyEmotionTransactions = monthlyTransactions.filter(item => item.type === 'expense' && item.emotion && item.category !== '저축');
-  const hasAnyTransactions = state.transactions.length > 0;
-  const hasMonthlyTransactions = monthlyTransactions.length > 0;
-  const dailyTransactions = visibleDayTransactions(state.transactions, selected);
-  const dailyEmotionTransactions = dailyTransactions.filter(item => item.emotion && item.category !== '저축');
-  const hasDailyEmotion = dailyEmotionTransactions.length > 0;
-  const hasEnoughRidgeData = monthlyEmotionTransactions.length >= 5;
-  const displayEmotion = hasDailyEmotion
-    ? dominantEmotion(dailyEmotionTransactions)
-    : dominantEmotion(state.transactions.filter(item => item.category !== '저축'), defaultHomeEmotion);
-  const topMeta = getEmotion(displayEmotion);
+  // Fetch calendar summary data from API
+  const { data: calendarData } = useCalendarSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
+  const serverDays = calendarData?.days || [];
+
+  // Fetch emotion summary data from API
+  const { data: emotionData } = useEmotionSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
+  const serverEmotions = emotionData?.emotions || [];
+  const serverPrevEmotions = emotionData?.prevMonth || [];
+
+  const hasMonthlyTransactions = serverEmotions.length > 0;
+  const hasEnoughRidgeData = serverEmotions.length >= 5;
+  
+  const selectedDayKey = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, '0')}-${String(selected.getDate()).padStart(2, '0')}`;
+  
+  // 1. 선택한 날짜에 기록이 있는지?
+  const selectedDayEmotion = serverDays.find(d => {
+    let dStr = d.date;
+    if (Array.isArray(d.date)) dStr = `${d.date[0]}-${String(d.date[1]).padStart(2, '0')}-${String(d.date[2]).padStart(2, '0')}`;
+    else if (typeof d.date === 'string') dStr = d.date.slice(0, 10);
+    return dStr === selectedDayKey;
+  })?.dominantEmotion?.name;
+  
+  // 2. 이번 달에 기록이 있는지?
+  const hasAnyEmotionsThisMonth = serverDays.length > 0;
+  let topMonthEmotion = null;
+  if (hasAnyEmotionsThisMonth) {
+    const counts = serverDays.reduce((acc, d) => {
+      const name = d.dominantEmotion?.name;
+      if (name) acc[name] = (acc[name] || 0) + 1;
+      return acc;
+    }, {});
+    topMonthEmotion = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  }
+
+  // 3. 우선순위에 따라 렌더링할 감정 결정
+  const displayEmotion = selectedDayEmotion || topMonthEmotion || null;
+  const showEmptyBlob = displayEmotion === null;
+  const dark = state.mode === 'dark';
+  const topMeta = showEmptyBlob ? { color: dark ? '#9B8CFF' : '#7C6BE0' } : getEmotion(displayEmotion);
+
   const goal = state.goals[0];
   const goalPct = percent(goal.current, goal.target);
-  const dark = state.mode === 'dark';
-  const days = calendarDays(state.transactions.filter(item => item.category !== '저축'), visibleMonth);
-  const selectedDayKey = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, '0')}-${String(selected.getDate()).padStart(2, '0')}`;
-  const ridgeData = hasEnoughRidgeData ? emotionRidge(monthlyEmotionTransactions) : defaultRidgeData;
+  const days = getCalendarCells(serverDays, visibleMonth);
+  const ridgeData = hasEnoughRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
   const ridgePeak = ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0]);
   const slot = 560 / ridgeData.length;
+  const signals = getEmotionSignals(serverEmotions, serverPrevEmotions);
   const monthLabel = `${visibleMonth.getFullYear()}년 ${visibleMonth.getMonth() + 1}월`;
   const moveMonth = (step) => setVisibleMonth(prev => {
     const next = new Date(prev.getFullYear(), prev.getMonth() + step, 1);
@@ -559,17 +577,17 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
         <Stage>
           <div>
             <BlobHalo color={topMeta.color}>
-              <div css={{ position: 'relative', display: 'grid', placeItems: 'center', width: 'clamp(260px, 22vw, 320px)', height: hasAnyTransactions ? 'clamp(230px, 20vw, 290px)' : 'clamp(310px, 26vw, 360px)' }}>
-                {hasAnyTransactions
+              <div css={{ position: 'relative', display: 'grid', placeItems: 'center', width: 'clamp(260px, 22vw, 320px)', height: !showEmptyBlob ? 'clamp(230px, 20vw, 290px)' : 'clamp(310px, 26vw, 360px)' }}>
+                {!showEmptyBlob
                   ? <EmotionBlob emotion={displayEmotion} size={300} />
                   : <EmptyEmotionBlob size={280} dark={dark} />}
               </div>
             </BlobHalo>
             <div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 800, marginTop: 12 }}>
-              {!hasAnyTransactions ? '아직 감정을 기다리는 중' : hasDailyEmotion ? '선택한 날에 가장 오래 머문 마음' : '선택한 날에는 감정 기록이 없어요'}
+              {showEmptyBlob ? '아직 감정을 기다리는 중' : selectedDayEmotion ? '선택한 날에 가장 오래 머문 마음' : '선택한 날에는 감정 기록이 없어요'}
             </div>
-            <div css={{ fontSize: 24, color: hasAnyTransactions ? topMeta.color : (dark ? '#9B8CFF' : '#7C6BE0'), fontWeight: 900, letterSpacing: '-.02em', marginTop: 2 }}>
-              {hasAnyTransactions ? `${displayEmotion} 말랑이` : '감정 말랑이'}
+            <div css={{ fontSize: 24, color: !showEmptyBlob ? topMeta.color : (dark ? '#9B8CFF' : '#7C6BE0'), fontWeight: 900, letterSpacing: '-.02em', marginTop: 2 }}>
+              {!showEmptyBlob ? `${displayEmotion} 말랑이` : '감정 말랑이'}
             </div>
           </div>
         </Stage>
@@ -671,13 +689,21 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
           </div>
           {hasMonthlyTransactions ? (
             <>
-              <div css={{ fontSize: 14.5, fontWeight: 900, lineHeight: 1.35 }}>이번 달은 스트레스 소비가 조금 늘고 있어요.</div>
+              <div css={{ fontSize: 14.5, fontWeight: 900, lineHeight: 1.35 }}>
+                {signals.length > 0 && signals[0].rate > 0 
+                  ? `이번 달은 ${signals[0].name} 소비가 조금 늘고 있어요.` 
+                  : '감정 소비가 안정적으로 관리되고 있어요.'}
+              </div>
               <div css={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '8px 0 7px', borderTop: '1px solid var(--line)', marginTop: 8 }}>
-                {[
-                  ['스트레스', '▲ 8%'],
-                  ['외로움', '▲ 5%'],
-                  ['평온', '▼ 3%']
-                ].map(([name, delta]) => <span key={name} css={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 999, background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--sub)', fontSize: 11.5, fontWeight: 800 }}><i css={{ width: 7, height: 7, borderRadius: '50%', background: getEmotion(name).color }} />{name} {delta}</span>)}
+                {signals.length > 0 ? (
+                  signals.map(({ name, delta }) => (
+                    <span key={name} css={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 999, background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--sub)', fontSize: 11.5, fontWeight: 800 }}>
+                      <i css={{ width: 7, height: 7, borderRadius: '50%', background: getEmotion(name).color }} />{name} {delta}
+                    </span>
+                  ))
+                ) : (
+                  <span css={{ color: 'var(--sub)', fontSize: 11.5, fontWeight: 800 }}>아직 뚜렷한 감정 소비 신호가 없습니다.</span>
+                )}
               </div>
               <button type="button" onClick={() => onRoute('analysis')} css={{ border: 0, padding: 0, background: 'transparent', color: 'var(--sub)', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>분석 자세히 보기 →</button>
             </>
