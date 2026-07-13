@@ -7,6 +7,7 @@ import { getEmotion } from '../data/emotions.js';
 import { money, percent } from '../utils/format.js';
 import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
+import { useFeelioStore } from '../stores/useFeelioStore.js';
 
 const Grid = styled.div`
   width: min(100%, 1420px);
@@ -548,9 +549,15 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const dark = state.mode === 'dark';
   const topMeta = showEmptyBlob ? { color: dark ? '#9B8CFF' : '#7C6BE0' } : getEmotion(displayEmotion);
 
-  const defaultGoal = { name: '제주도 여행', current: 0, target: 1 };
-  const goal = (state.goals && state.goals.length ? state.goals[0] : defaultGoal);
-  const goalPct = percent(goal.current ?? 0, goal.target ?? 1);
+  const goals = useStore((store) => store.state.goals || []);
+  const primaryGoal = goals.find(g => g.isMain) || goals[0];
+  const goal = primaryGoal ? {
+    name: primaryGoal.name,
+    current: primaryGoal.current ?? primaryGoal.currentAmount ?? 0,
+    target: primaryGoal.target ?? primaryGoal.targetAmount ?? 1
+  } : { name: '등록된 목표 없음', current: 0, target: 1 };
+  
+  const goalPct = percent(goal.current, goal.target);
   const days = getCalendarCells(serverDays, visibleMonth);
   const ridgeData = hasEnoughRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
   const ridgePeak = ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0]);
