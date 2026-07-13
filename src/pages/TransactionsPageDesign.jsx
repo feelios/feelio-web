@@ -7,6 +7,7 @@ import { money, signedMoney } from '../utils/format.js';
 import { useDebounce } from '../hooks/useDebounce.js';
 import { useTransactionsQuery } from '../hooks/queries/useTransactions.js';
 import { useMetadata } from '../hooks/queries/useMetadata.js';
+import { TransactionListSkeleton } from '../components/common/Skeleton.jsx';
 
 const Wrap = styled.div`
   width: min(100%, 1120px);
@@ -582,7 +583,7 @@ export default function TransactionsPageDesign({ onSelect }) {
         </SelectLike>
       </ControlGrid>}
 
-      {isLoading && <div css={{ textAlign: 'center', padding: '40px', color: 'var(--sub)' }}>불러오는 중...</div>}
+      {isLoading && <TransactionListSkeleton />}
 
       {!isLoading && groups.length === 0 && <div css={{ textAlign: 'center', padding: '40px', color: 'var(--sub)' }}>거래 내역이 없습니다.</div>}
 
