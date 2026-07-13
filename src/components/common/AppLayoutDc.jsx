@@ -20,8 +20,10 @@ const Shell = styled.div`
   --scrim: ${({ mode }) => mode === 'dark' ? 'rgba(5,6,12,.42)' : 'rgba(40,32,24,.22)'};
   --shadow: ${({ mode }) => mode === 'dark' ? theme.darkShadow : theme.shadow};
   position: relative;
-  min-height: 100dvh;
-  overflow-x: hidden;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-start;
   background: linear-gradient(160deg, var(--bg-1), var(--bg-2));
 `;
 
@@ -41,12 +43,38 @@ const Veil = styled.div`
 
 const Main = styled.main`
   position: relative;
-  z-index: 2;
-  min-height: 100dvh;
-  padding: clamp(22px, 2.4vw, 32px) clamp(24px, 3vw, 54px) 42px 268px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 
   @media (max-width: 820px) {
     padding: 22px 16px calc(96px + env(safe-area-inset-bottom));
+  }
+`;
+
+const Content = styled.div`
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+`;
+
+const Frame = styled.div`
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1800px;
+  height: 100%;
+  display: flex;
+  gap: 100px;
+  padding: 24px;
+
+  @media (max-width: 820px) {
+    padding: 0;
+    gap: 0;
   }
 `;
 
@@ -55,19 +83,20 @@ const Top = styled.header`
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  width: min(100%, 1420px);
-  margin: 0 auto 10px;
+  flex-shrink: 0;
+  width: 100%;
+  margin: 0 0 10px;
 
   p {
     margin: 0;
     color: var(--sub);
-    font-size: 13px;
+    font-size: 14.5px;
     font-weight: 600;
   }
 
   h1 {
-    margin: 2px 0 0;
-    font-size: 24px;
+    margin: 3px 0 0;
+    font-size: 32px;
     letter-spacing: -.02em;
   }
 `;
@@ -125,6 +154,7 @@ export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, 
       <Orb mode={state.mode} style={{ width: 560, height: 560, right: -140, top: '16%', background: colors[1], filter: 'blur(115px)', animation: `${driftB} 32s ease-in-out infinite` }} />
       <Orb mode={state.mode} style={{ width: 640, height: 640, left: '32%', bottom: -200, background: colors[2], filter: 'blur(120px)', animation: `${driftA} 36s ease-in-out infinite reverse` }} />
       <Veil mode={state.mode} />
+      <Frame>
       <SidebarDesign route={route} onRoute={onRoute} user={state.user} onProfile={onProfile} />
       <Main>
         <Top>
@@ -141,8 +171,9 @@ export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, 
             </MobileProfile>
           </TopRight>
         </Top>
-        {children}
+        <Content>{children}</Content>
       </Main>
+      </Frame>
       <BottomNav route={route} onRoute={onRoute} />
     </Shell>
   );

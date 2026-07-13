@@ -14,8 +14,16 @@ import {
 } from '../hooks/queries/useCategories.js';
 
 const Page = styled.div`
-  width: min(100%, 1080px);
-  margin: 0 auto;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  @media (max-width: 820px) {
+    justify-content: flex-start;
+  }
 `;
 
 const Grid = styled.div`
