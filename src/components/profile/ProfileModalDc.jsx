@@ -5,7 +5,17 @@ import { Modal } from '../common/Modal.jsx';
 import { EmotionBlob } from '../common/EmotionBlob.jsx';
 import { auroras } from '../../data/aurorasDc.js';
 import { money, percent } from '../../utils/format.js';
+// 1. 사용자 설정 및 회원 탈퇴 관련 쿼리/뮤테이션 (위쪽 브랜치 변경 사항)
 import { useUpdateSettingsMutation, useWithdrawMutation } from '../../hooks/queries/useUsers.js';
+
+// 2. 목표 관리 컴포넌트 및 쿼리/뮤테이션 (main 브랜치 변경 사항)
+import {
+  useCreateGoalMutation,
+  useDeleteGoalMutation,
+  useGoalsQuery,
+  useToggleMainGoalMutation,
+  useUpdateGoalMutation,
+} from '../../hooks/queries/useGoals.js';
 
 const Screen = styled.div`
   min-height: 100%;
@@ -278,11 +288,26 @@ export default function ProfileModalDc({ state, actions, onClose }) {
   const [editIndex, setEditIndex] = useState(-1);
   const [goalForm, setGoalForm] = useState({ name: '', target: '', current: '', period: '' });
   const [noti, setNoti] = useState({ record: true, weekly: true, goal: false });
+  // 1. 회원 탈퇴 및 설정 변경 관련 (위쪽 기능 유지)
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const updateSettingsMutation = useUpdateSettingsMutation();
   const withdrawMutation = useWithdrawMutation();
-  const goal = useMemo(() => state.goals[0] || { name: '제주도 여행', current: 0, target: 1 }, [state.goals]);
-  const goalPct = percent(goal.current, goal.target);
+
+  // 2. 목표 데이터 가져오기 및 뮤테이션 (main의 발전된 구조 채택)
+  const { data: goalsData, isError: isGoalsError, isLoading: isGoalsLoading } = useGoalsQuery();
+  const createGoalMutation = useCreateGoalMutation();
+  const updateGoalMutation = useUpdateGoalMutation();
+  const deleteGoalMutation = useDeleteGoalMutation();
+  const toggleMainGoalMutation = useToggleMainGoalMutation();
+  
+  const goals = goalsData?.goals ?? [];
+  
+  // 3. 메인 목표 설정 로직 및 퍼센트 계산
+  const goal = useMemo(
+    () => goals.find(item => item.isMain) || goals[0] || { name: '제주도 여행', currentAmount: 0, targetAmount: 1 },
+    [goals],
+  );
+  const goalPct = percent(goal.currentAmount, goal.targetAmount);
   const provider = state.user.provider || 'Google';
   const email = state.user.email || 'seoyeon@feelio.app';
   const visibleAurora = auroras.find(item => item.id === state.aurora) || auroras[0];
