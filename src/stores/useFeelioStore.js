@@ -24,6 +24,10 @@ function loadState() {
   }
 }
 
+function normalizeMode(mode) {
+  return mode === 'dark' ? 'dark' : 'light';
+}
+
 export function useFeelioStore() {
   const [state, setState] = useState(loadState);
 
@@ -92,6 +96,26 @@ export function useFeelioStore() {
     },
     toggleMode() {
       setState(prev => ({ ...prev, mode: prev.mode === 'dark' ? 'light' : 'dark' }));
+    },
+    syncSettings({ mode, aurora }) {
+      setState(prev => ({
+        ...prev,
+        mode: normalizeMode(mode || prev.mode),
+        aurora: aurora || prev.aurora
+      }));
+    },
+    clearAccount() {
+      setState(prev => ({
+        ...prev,
+        isLoggedIn: false,
+        onboardingDone: false,
+        mode: 'light',
+        aurora: '블루',
+        user: { nickname: '', provider: '', email: '' },
+        goals: [],
+        transactions: [],
+        toast: '회원탈퇴가 완료되었어요'
+      }));
     },
     setAurora(aurora) {
       setState(prev => ({ ...prev, aurora }));
