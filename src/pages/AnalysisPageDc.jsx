@@ -3,7 +3,7 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
-import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery } from '../hooks/queries/useAnalysis.js';
+import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
 
 const Page = styled.div`
   width: min(100%, 1420px);
@@ -120,10 +120,6 @@ const BarTrack = styled.div`
   background: var(--line);
 `;
 
-// §9 미제공: 예산 현황(budget)은 별도 이슈 전까지 정적 유지 예정이었으나,
-// F7-3 진짜 API 연동 전, 데이터가 비어있을 때 빈 박스 UI가 어떻게 나타나는지 확인하기 위해 빈 배열로 초기화
-const categoryData = [];
-
 export default function AnalysisPageDc({ state }) {
   const isDark = state?.mode === 'dark';
   const [flippedCards, setFlippedCards] = useState({});
@@ -138,6 +134,7 @@ export default function AnalysisPageDc({ state }) {
   const { data: analysis } = useMonthlyAnalysisQuery(now.getFullYear(), now.getMonth() + 1);
   const { data: insightsData } = useAiInsightsQuery();
   const { data: trendData } = useMonthlyTrendQuery();
+  const { data: budgetData } = useBudgetStatusQuery();
   
   const monthly = trendData?.monthlyData ?? [];
 
@@ -201,16 +198,25 @@ export default function AnalysisPageDc({ state }) {
     desc: emotionCardsData[index]?.desc ?? ''
   }));
   const activeChart = chartConfig[activeChartTab];
-  const budgetItems = categoryData
+  const serverBudgetItems = budgetData?.budgetItems ?? [];
+  const budgetItems = serverBudgetItems
     .map(data => {
       const emo = getEmotion(data.emotion);
-      const budget = data.prevAmount * 0.95;
-      const progress = (data.amount / budget) * 100;
-      return { ...data, emo, budget, progress, isOver: progress > 100 };
+      const budget = data.budget;
+      const isMeasuring = budget === 0;
+      const progress = isMeasuring ? 0 : (data.currentAmount / budget) * 100;
+      return { ...data, emo, budget, amount: data.currentAmount, progress, isOver: progress > 100, isMeasuring };
     })
-    .sort((a, b) => Number(b.isOver) - Number(a.isOver) || b.progress - a.progress);
+    .sort((a, b) => {
+      if (a.isMeasuring && !b.isMeasuring) return 1;
+      if (!a.isMeasuring && b.isMeasuring) return -1;
+      return Number(b.isOver) - Number(a.isOver) || b.progress - a.progress;
+    });
   const overBudgetItem = budgetItems.find(item => item.isOver);
-  const budgetAverage = Math.round(budgetItems.reduce((sum, item) => sum + item.progress, 0) / budgetItems.length);
+  const validBudgetItems = budgetItems.filter(item => !item.isMeasuring);
+  const budgetAverage = validBudgetItems.length > 0 
+    ? Math.round(validBudgetItems.reduce((sum, item) => sum + item.progress, 0) / validBudgetItems.length) 
+    : 0;
 
   const renderTabs = (isMobile) => (
     <div css={{ 
@@ -292,7 +298,7 @@ export default function AnalysisPageDc({ state }) {
             </div>
             <div css={{ textAlign: 'right', flexShrink: 0 }}>
               <div css={{ color: overBudgetItem ? '#E87573' : 'var(--text)', fontSize: 18, fontWeight: 950, lineHeight: 1 }}>
-                {budgetItems.length > 0 ? `${budgetAverage}%` : '측정중'}
+                {validBudgetItems.length > 0 ? `${budgetAverage}%` : '측정중'}
               </div>
               <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 800, marginTop: 4 }}>평균 사용률</div>
             </div>
@@ -324,9 +330,9 @@ export default function AnalysisPageDc({ state }) {
               )}
 
               <div css={{ display: 'grid', gap: 12 }}>{budgetItems.map(item => {
-                const displayProgress = Math.min(item.progress, 100);
-                const statusText = item.isOver ? '초과' : item.progress >= 90 ? '주의' : '안정';
-                const statusColor = item.isOver ? '#E87573' : 'var(--sub)';
+                const displayProgress = item.isMeasuring ? 0 : Math.min(item.progress, 100);
+                const statusText = item.isMeasuring ? '측정중' : item.isOver ? '초과' : item.progress >= 90 ? '주의' : '안정';
+                const statusColor = item.isMeasuring ? 'var(--sub)' : item.isOver ? '#E87573' : 'var(--sub)';
 
                 return <div key={item.name} css={{ display: 'grid', gridTemplateColumns: 'minmax(76px, .52fr) 1fr minmax(82px, auto)', alignItems: 'center', gap: 12 }}>
                   <div css={{ minWidth: 0 }}>
@@ -346,14 +352,16 @@ export default function AnalysisPageDc({ state }) {
                       }} />
                     </BarTrack>
                     <div css={{ display: 'flex', justifyContent: 'space-between', color: 'var(--sub)', fontSize: 10, fontWeight: 800 }}>
-                      <span>{Math.round(item.progress)}%</span>
+                      <span>{item.isMeasuring ? '-' : `${Math.round(item.progress)}%`}</span>
                       <span css={{ color: statusColor }}>{statusText}</span>
                     </div>
                   </div>
 
                   <div css={{ textAlign: 'right' }}>
                     <div css={{ color: item.isOver ? '#E87573' : 'var(--text)', fontSize: 13, fontWeight: 950 }}>{item.amount.toLocaleString()}원</div>
-                    <div css={{ color: 'var(--sub)', fontSize: 10, fontWeight: 800, marginTop: 4 }}>{item.budget.toLocaleString()}원</div>
+                    <div css={{ color: 'var(--sub)', fontSize: 10, fontWeight: 800, marginTop: 4 }}>
+                      {item.isMeasuring ? '예산 설정중' : `목표 ${item.budget.toLocaleString()}원`}
+                    </div>
                   </div>
                 </div>;
               })}</div>

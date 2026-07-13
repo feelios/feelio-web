@@ -12,5 +12,9 @@ export const analysisAPI = {
   getMonthlyTrend: async () => {
     const response = await client.get('/analysis/trend');
     return response.data.data;
+  },
+  getBudgetStatus: async () => {
+    const response = await client.get('/analysis/budget');
+    return response.data.data;
   }
 };
