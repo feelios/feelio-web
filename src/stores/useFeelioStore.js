@@ -1,16 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authAPI } from '../api/auth.js';
-import { goalsAPI } from '../api/goals.js';
-import { mockGoals } from '../data/mockGoals.js';
+import { goalsAPI } from '../api/goals.js'; // fix 브랜치 반영
 
 const initialState = {
   isLoggedIn: false,
   onboardingDone: false,
   mode: 'light',
   aurora: '블루',
-  user: { nickname: '서연', provider: 'Google' },
-  goals: mockGoals,
+  user: { nickname: '서연', provider: 'Google', email: '' },
+  goals: [],
   transactions: [],
   toast: ''
 };
@@ -28,11 +27,10 @@ const useStore = create(
           const providerId = provider.toLowerCase();
           window.location.href = `http://localhost:8080/oauth2/authorization/${providerId}`;
         },
-
-        // 1. fetchMe: 기존 main 코드 대신, goals 예외 처리가 추가된 이 코드로 대체
         fetchMe: async () => {
           try {
             const user = await authAPI.getMe();
+            // fix 브랜치: 탈퇴 복구 대응을 위해 goals 안전하게 조회
             const goals = await goalsAPI.getGoals().catch((goalError) => {
               console.error('Failed to fetch user goals', goalError);
               return null;
@@ -46,19 +44,25 @@ const useStore = create(
                 onboardingDone: user.onboardingDone,
                 mode: user.themeMode ? user.themeMode.toLowerCase() : prev.state.mode,
                 aurora: user.auroraTheme || prev.state.aurora,
-                goals: Array.isArray(goals) ? goals : prev.state.goals
+                goals: Array.isArray(goals) ? goals : prev.state.goals // fix 브랜치 반영
               }
             }));
           } catch (error) {
             console.error('Failed to fetch user profile', error);
-            set((prev) => ({ state: { ...prev.state, isLoggedIn: false } }));
+            set((prev) => ({
+              state: {
+                ...prev.state,
+                isLoggedIn: false,
+                onboardingDone: false,
+                user: { nickname: '', provider: '', email: '' }
+              }
+            }));
           }
         },
-
-        // 2. completeOnboarding: 마찬가지로 goals 로직이 포함된 이 코드로 대체
         completeOnboarding: async () => {
           try {
             const user = await authAPI.getMe();
+            // fix 브랜치: 탈퇴 복구 대응을 위해 goals 안전하게 조회
             const goals = await goalsAPI.getGoals().catch((goalError) => {
               console.error('Failed to fetch user goals', goalError);
               return null;
@@ -72,36 +76,32 @@ const useStore = create(
                 onboardingDone: user.onboardingDone,
                 mode: user.themeMode ? user.themeMode.toLowerCase() : prev.state.mode,
                 aurora: user.auroraTheme || prev.state.aurora,
-                goals: Array.isArray(goals) ? goals : prev.state.goals
+                goals: Array.isArray(goals) ? goals : prev.state.goals // fix 브랜치 반영
               }
             }));
           } catch (error) {
             console.error('Failed to refresh user after onboarding', error);
           }
         },
-    logout: async () => {
+        logout: async () => {
           try {
             await authAPI.logout();
           } catch (error) {
             console.error('Logout API failed, but clearing local state anyway', error);
           } finally {
-            // Zustand의 set 함수와 state 구조 적용
             set((prev) => ({
               state: {
                 ...prev.state,
                 isLoggedIn: false,
                 onboardingDone: false,
-                user: { nickname: '', provider: '' }
+                user: { nickname: '', provider: '', email: '' }
               }
             }));
           }
         },
         toggleMode: () => {
           set((prev) => ({
-            state: { 
-              ...prev.state, 
-              mode: prev.state.mode === 'dark' ? 'light' : 'dark' 
-            }
+            state: { ...prev.state, mode: prev.state.mode === 'dark' ? 'light' : 'dark' }
           }));
         },
         syncSettings: ({ mode, aurora }) => {
@@ -122,23 +122,18 @@ const useStore = create(
               mode: 'light',
               aurora: '블루',
               user: { nickname: '', provider: '', email: '' },
-              goals: [],
-              transactions: [],
+              goals: [], // fix 브랜치 회원탈퇴 시 클리어 데이터 보존
+              transactions: [], // fix 브랜치 회원탈퇴 시 클리어 데이터 보존
               toast: '회원탈퇴가 완료되었어요'
             }
           }));
         },
         setAurora: (aurora) => {
-          set((prev) => ({ 
-            state: { ...prev.state, aurora } 
-          }));
+          set((prev) => ({ state: { ...prev.state, aurora } }));
         },
         updateUser: (userPatch) => {
           set((prev) => ({
-            state: { 
-              ...prev.state, 
-              user: { ...prev.state.user, ...userPatch } 
-            }
+            state: { ...prev.state, user: { ...prev.state.user, ...userPatch } }
           }));
         },
         addGoal: (goal) => {
@@ -183,28 +178,48 @@ const useStore = create(
           });
         },
         clearToast: () => {
-          set((prev) => ({ 
-            state: { ...prev.state, toast: '' } 
-          }));
+          set((prev) => ({ state: { ...prev.state, toast: '' } }));
         },
         showToast: (message) => {
-          set((prev) => ({ 
-            state: { ...prev.state, toast: message } 
-          }));
+          set((prev) => ({ state: { ...prev.state, toast: message } }));
         },
         resetData: () => {
           set((prev) => ({
-            state: { 
-              ...prev.state, 
-              transactions: [], 
-              toast: '모든 기록을 초기화했어요' 
-            }
+            state: { ...prev.state, transactions: [], toast: '모든 기록을 초기화했어요' }
           }));
         }
-      } // actions 끝
-    }) // 스토어 설정 끝
-  ) // persist 끝
-); // create 끝
+      }
+    }),
+    {
+      name: 'feelio-storage', // 기존 STORAGE_KEY 값을 직접 적거나 변수가 있다면 맞춰주세요.
+      partialize: (store) => ({
+        mode: store.state.mode,
+        aurora: store.state.aurora
+      }),
+      merge: (persistedState, currentState) => {
+        return {
+          ...currentState,
+          state: {
+            ...currentState.state,
+            ...(persistedState || {})
+          }
+        };
+      }
+    }
+  )
+);
 
-export const useFeelioStore = useStore;
+if (typeof window !== 'undefined') {
+  window.addEventListener('feelio-store-sync', (e) => {
+    useStore.setState((prev) => ({
+      state: { ...prev.state, ...e.detail }
+    }));
+  });
+}
+
+export function useFeelioStore() {
+  const store = useStore();
+  return { state: store.state, actions: store.actions };
+}
+
 export default useStore;
