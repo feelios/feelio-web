@@ -49,9 +49,9 @@
 
 - **감정 8종 (고정, 커스텀 불가):** 신남, 설렘, 뿌듯함, 스트레스, 외로움, 화남, 평온, 무덤덤
 - **카테고리:** EXPENSE — 식비, 배달, 카페, 교통, 쇼핑, 문화, 건강, 기타 / INCOME — 급여, 용돈, 기타
-- **상황:** 퇴근 후, 혼자 있음, 친구와, 보상, 습관, 이동 중, 아침, 밤
 - 감정 색상·정렬의 원본은 웹 `src/styles/theme.js`의 emotionPalette → DB emotions 테이블 시드로 이관
 - ⚠️ **감정소비 누수율 관련 API·필드는 만들지 않는다 (제거 확정 기능)**
+- ⚠️ **상황(situation) 관련 API·필드·테이블은 만들지 않는다 (제거 확정 기능)**
 
 ## 3. 인증 (Auth)
 
@@ -126,8 +126,7 @@ Response `data`:
 ```json
 {
   "emotions":   [ { "emotionId": 4, "name": "스트레스", "color": "#A68BEA", "sortOrder": 4 } ],
-  "categories": [ { "categoryId": 3, "name": "카페", "type": "EXPENSE", "sortOrder": 3 } ],
-  "situations": [ { "situationId": 1, "name": "퇴근 후", "sortOrder": 1 } ]
+  "categories": [ { "categoryId": 3, "name": "카페", "type": "EXPENSE", "sortOrder": 3 } ]
 }
 ```
 - `is_active=true`만 반환. 프론트는 세션 캐시(TanStack Query staleTime 길게). 기록 입력 폼·필터 옵션·수정 폼이 사용.
@@ -142,12 +141,11 @@ Response `data`:
   "amount": 18600,
   "category":  { "categoryId": 3, "name": "카페" },
   "emotion":   { "emotionId": 4, "name": "스트레스", "color": "#A68BEA" },
-  "situations": [ { "situationId": 1, "name": "퇴근 후" }, { "situationId": 2, "name": "혼자 있음" } ],
   "memo": "달달한 라떼와 케이크",
   "occurredAt": "2026-07-01T21:30:00"
 }
 ```
-- type: `EXPENSE` | `INCOME` / 감정·카테고리는 단일, **상황은 복수(N:M)** — 팀 확정
+- type: `EXPENSE` | `INCOME` / 감정·카테고리는 단일
 
 ### GET /api/transactions · 인증 필요
 
@@ -175,21 +173,20 @@ Request:
   "amount": 18600,
   "categoryId": 3,
   "emotionId": 4,
-  "situationIds": [1, 2],
   "memo": "달달한 라떼와 케이크",
   "occurredAt": "2026-07-01T21:30:00"
 }
 ```
 - 필수: type, amount(>0 정수), categoryId, emotionId, occurredAt
-- situationIds: 생략·빈 배열 허용 (최대 5개) / memo: 생략 시 **null 저장**(기본 문자열 저장 금지), 최대 200자
-- 서버: transactions + transaction_situations **단일 트랜잭션** 저장. 메모의 HTML/Script 태그는 XSS 방어 필터 적용 필수.
+- memo: 생략 시 **null 저장**(기본 문자열 저장 금지), 최대 200자
+- 서버: transactions 저장(단건). 메모의 HTML/Script 태그는 XSS 방어 필터 적용 필수.
 
 Response(201) `data`: 생성된 거래 객체. 에러: VALIDATION_ERROR
 - 호출 화면: RecordPage / Workflow: `RecordPage 입력 → POST → 성공 시 폼 초기화 + 관련 캐시 무효화`
-- 관련 Entity: `Transaction`, `TransactionSituation`, `Category`, `Emotion`
+- 관련 Entity: `Transaction`, `Category`, `Emotion`
 
 ### GET /api/transactions/{transactionId} · 인증 필요 — 거래 객체 반환 (딥링크 대비용, 목록 재사용 가능하면 생략)
-### PUT /api/transactions/{transactionId} · 인증 필요 — POST와 동일 필드, situationIds는 전량 교체. 에러: VALIDATION_ERROR·FORBIDDEN·NOT_FOUND
+### PUT /api/transactions/{transactionId} · 인증 필요 — POST와 동일 필드. 에러: VALIDATION_ERROR·FORBIDDEN·NOT_FOUND
 ### DELETE /api/transactions/{transactionId} · 인증 필요 → `data`: `{ "deleted": true }` (확인 다이얼로그는 프론트 책임)
 ### DELETE /api/transactions — 전체 초기화 · 인증 필요 → `data`: `{ "deletedCount": 42 }` (프로필>데이터 관리 전용)
 
@@ -239,11 +236,74 @@ Response `data`:
 ```
 - 지출 기록 기준 집계. 감정 능선(8종 전체 축)·홈 감정 신호(전월 대비)에 사용.
 
-## 9. 분석·평행우주 (3순위 — 스키마 미확정)
+## 9. 분석·평행우주 (3순위 — 스키마 확정, A3-1)
 
-- `GET /api/analysis/monthly?year&month` — 카테고리·시간대·감정 집계 + 인사이트 문장
-- `GET /api/universe/simulation?goalId&reductionRate` — 두 미래 시나리오 수치·내레이션 (감축률은 쿼리 파라미터)
-- **응답 스키마 확정 전 구현 금지. 확정하면 이 문서를 먼저 갱신한다.**
+> 스키마 확정 완료. A3-2(analysis)·A3-3(universe)는 아래 응답 형태를 기준으로 구현한다.
+> 집계는 모두 **지출(EXPENSE) 기준**이며, 모든 접근은 인증 주체 user_id 기준.
+> **"감정소비"의 정의**: 특정 **한 감정**에 소비가 지나치게 쏠리는 것을 짚어주는 개념이다. 긍정·부정을 가리지 않는다("설렘일 때 유독 많이 썼다"도 감정소비). 특정 부정 감정만 대상으로 삼지 않으며, 모든 지출을 무차별로 보지도 않는다 — **소비가 몰린 그 감정**에 초점을 둔다.
+> ⚠️ 제거 확정된 "감정소비 누수율"(비율·점수)은 재도입하지 않는다. universe는 비율 지표가 아니라 **시나리오 비교**로만 표현한다.
+
+### GET /api/analysis/monthly?year&month · 인증 필요
+
+- month 필수. 해당 월의 카테고리·시간대·감정별 지출 집계 + 인사이트 문장.
+
+Response(200) `data`:
+```json
+{
+  "year": 2026,
+  "month": 7,
+  "totalIncome": 2600000,
+  "totalExpense": 320000,
+  "byCategory": [
+    { "categoryId": 3, "name": "카페", "type": "EXPENSE", "amount": 48000, "count": 6 }
+  ],
+  "byEmotion": [
+    { "emotionId": 4, "name": "스트레스", "color": "#A68BEA", "amount": 140600, "count": 6 }
+  ],
+  "byTimeSlot": [
+    { "slot": "DAWN",      "label": "새벽", "amount": 12000,  "count": 1 },
+    { "slot": "MORNING",   "label": "아침", "amount": 30000,  "count": 2 },
+    { "slot": "AFTERNOON", "label": "오후", "amount": 88000,  "count": 4 },
+    { "slot": "NIGHT",     "label": "밤",   "amount": 190000, "count": 8 }
+  ],
+  "insights": [
+    { "type": "PATTERN", "content": "외로운 밤마다 배달 소비가 반복되고 있어요." }
+  ]
+}
+```
+- `byCategory`·`byEmotion`·`byTimeSlot`: 지출 기준 집계(금액 `amount`·건수 `count`). 기록 없는 항목은 배열에서 생략.
+- `byEmotion`은 **amount 내림차순** 정렬 → 소비가 가장 몰린 감정이 맨 앞(긍정·부정 무관, "감정소비" 관점의 초점 감정).
+- `byTimeSlot.slot`: `occurred_at` 시(hour) 기준 4구간 — `DAWN`(0–5) · `MORNING`(6–11) · `AFTERNOON`(12–17) · `NIGHT`(18–23). `label`은 한글 표기.
+- `insights`: `ai_insights` 테이블 매핑(`insight_type`→`type`, `content`→`content`), 0..n건. 문구는 감정 중립(긍정 감정도 대상). 인사이트 생성 로직은 A3-2 소관.
+
+### GET /api/universe/simulation?goalId · 인증 필요
+
+- **goalId 필수**. 해당 목표에 대해 두 미래 시나리오(현재 소비 유지 / 소비를 줄임)를 비교한다.
+- 목표 없음·타인 목표: `NOT_FOUND` / `FORBIDDEN`.
+
+Response(200) `data`:
+```json
+{
+  "goal": { "goalId": 1, "name": "제주도 여행", "targetAmount": 2000000, "currentAmount": 300000 },
+  "monthlyIncome": 2600000,
+  "monthlyExpense": 250000,
+  "focusEmotion": { "emotionId": 2, "name": "설렘", "color": "#F28AB7", "monthlyAmount": 120000 },
+  "reductionRate": 0.5,
+  "scenarios": [
+    { "key": "CURRENT", "title": "지금처럼 쓴다면",     "monthlyExpense": 250000, "monthlySaving": 150000, "monthsToGoal": 12, "estimatedAchieveDate": "2027-07", "narration": "지금 속도라면 약 12개월 걸려요." },
+    { "key": "REDUCED", "title": "설렘 소비를 줄이면",   "monthlyExpense": 190000, "monthlySaving": 210000, "monthsToGoal": 9,  "estimatedAchieveDate": "2027-04", "narration": "설렘 소비를 절반 줄이면 3개월 빨라져요." }
+  ]
+}
+```
+- **감정소비 = 소비가 가장 몰린 한 감정**(긍정·부정 무관)에 초점. REDUCED는 월 지출 전체가 아니라 **그 감정의 지출만** 줄인 시나리오다.
+- `focusEmotion`: 해당 기간 지출이 가장 큰 감정 1건 + 그 감정의 월 지출 `monthlyAmount`. 지출 기록이 전혀 없으면 `null`.
+- `monthlyIncome`/`monthlyExpense`: 최근 활동 기준 월 수입·지출(산정 방식은 A3-3 구현 소관).
+- `reductionRate`: 서버가 가정한 감축 비율(0~1, 예 `0.5`). 응답에 명시해 프론트 하드코딩을 피한다.
+- `scenarios`: `CURRENT`(현행)·`REDUCED`(감축) 2건 고정. `REDUCED.title`은 focusEmotion 이름을 반영(예: "설렘 소비를 줄이면").
+  - `REDUCED.monthlyExpense = monthlyExpense − round(focusEmotion.monthlyAmount × reductionRate)` (focusEmotion 이 `null`이면 CURRENT 와 동일).
+  - `monthlySaving = monthlyIncome − 시나리오 monthlyExpense` (음수면 0 처리).
+  - `monthsToGoal = ceil((targetAmount − currentAmount) / monthlySaving)`. `monthlySaving ≤ 0`이면 `monthsToGoal`·`estimatedAchieveDate` 모두 `null`(도달 불가).
+- 에러: `NOT_FOUND`(목표 없음) · `FORBIDDEN`(타인 목표) · `VALIDATION_ERROR`(goalId 누락).
 
 ## 10. 캐시 무효화 규칙 (프론트 TanStack Query)
 
@@ -261,9 +321,47 @@ Response `data`:
 | 2차 | goals CRUD, summary 2종, users/me/settings |
 | 3차 | analysis, universe, 회원탈퇴, 전체 초기화 |
 
+## 12. 카테고리 설정 (Categories)
+
+### GET /api/categories?type=EXPENSE · 인증 필요
+- 인증된 사용자의 공통 카테고리와 커스텀 카테고리를 `category_orders` 순서대로 통합 반환.
+- Response `data`:
+```json
+{
+  "categories": [
+    { "categoryId": 1, "name": "식비", "type": "EXPENSE", "isCustom": false, "sortOrder": 1 },
+    { "categoryId": 4, "name": "해외직구", "type": "EXPENSE", "isCustom": true, "sortOrder": 2 }
+  ]
+}
+```
+
+### POST /api/categories/custom · 인증 필요
+- 커스텀 카테고리 추가. 추가 즉시 자동으로 맨 뒤 정렬 순서를 부여.
+- Request: `{ "name": "해외직구", "type": "EXPENSE" }`
+- Response(201) `data`: 생성된 객체 반환. 에러: `VALIDATION_ERROR`
+
+### DELETE /api/categories/custom/{customCategoryId} · 인증 필요
+- 해당 커스텀 카테고리 삭제 (동시에 `category_orders`에서도 제거).
+- Response(200) `data`: `{ "deleted": true }`
+- 에러: `NOT_FOUND` (없음), `FORBIDDEN` (내 것이 아님)
+
+### PUT /api/categories/order · 인증 필요
+- 드래그 앤 드롭 등으로 변경된 카테고리 통합 순서를 일괄 저장.
+- Request:
+```json
+{
+  "type": "EXPENSE",
+  "orders": [
+    { "categoryId": 1, "isCustom": false, "sortOrder": 1 },
+    { "categoryId": 4, "isCustom": true, "sortOrder": 2 }
+  ]
+}
+```
+- Response(200) `data`: `{ "updated": true }`
+
 ---
 
-## 12. Authentication Flow (BFF)
+## 13. Authentication Flow (BFF)
 
 ```text
 +----------+                         +-----------------+                    +---------------+
@@ -281,7 +379,7 @@ Response `data`:
 ```
 - provider 토큰도 우리 JWT도 브라우저 JS에 노출되지 않는다(HttpOnly). Authorization 헤더를 프론트가 직접 세팅하지 않는다.
 
-## 13. API Flow (화면 흐름)
+## 14. API Flow (화면 흐름)
 
 ```text
 1. 로그인 흐름
@@ -314,14 +412,14 @@ TransactionsPage
 TransactionsPage
 ```
 
-## 14. Naming Convention
+## 15. Naming Convention
 
 - URL Path는 항상 명사형 소문자(kebab-case)를 사용한다. (예: `/api/notification-settings`)
 - 자원 컬렉션은 복수형을 사용한다. (`/users`, `/transactions`, `/goals`)
 - 특정 자원 식별은 경로 변수를 사용한다. (`/api/transactions/{transactionId}`)
 - REST로 표현 불가능한 행위는 제한적으로 동사형 경로를 허용한다. (`/auth/logout`, `/auth/token/refresh`) — 로그인은 Spring Security `oauth2Login`(`/oauth2/authorization/{provider}`)이 담당한다.
 
-## 15. 문서와 코드의 차이점 요약 (Cross-Verification Notes)
+## 16. 문서와 코드의 차이점 요약 (Cross-Verification Notes)
 
 1. **온보딩 API 설계**
    - 문서(STEP 9): `PATCH /api/users/me/onboarding`으로 목표 등록 후 온보딩 완료를 별도 통신으로 갱신.
@@ -335,11 +433,12 @@ TransactionsPage
    - 약관 동의는 로그인 시 서버 신규가입 처리에 포함(별도 엔드포인트 미도입).
    - 평행우주 `reductionRate`는 쿼리 파라미터 방식으로 반영(9절).
 
-## 16. Revision History
+## 17. Revision History
 
+- **2026-07-13**: 백엔드 계약(feelio-api SSOT)에 맞춰 동기화 — 로그인 BFF/HttpOnly 쿠키 반영, **상황(situation) 관련 필드·엔드포인트 전면 제거**(§2·§5·§6), §9 분석·평행우주 확정 스키마 반영, §12 카테고리 설정(커스텀 카테고리) 신설(이하 프론트 부록 섹션 번호 +1).
 - **2026-07-07**: 루트 `API_CONTRACT.md`와 `docs/API-CONTRACT.md`를 병합해 단일 계약으로 통합. 응답 봉투(`success`/`data`)·에러 코드·Base URL(`/api`)·메모 200자 등 스펙은 docs 기준으로 통일하고, 인증/화면 흐름 다이어그램·Naming Convention·교차검증 노트를 흡수.
 
-## 17. 최종 검토 체크리스트
+## 18. 최종 검토 체크리스트
 
 - [x] Workflow와 API가 일치하는가 (화면 흐름 매핑 완료)
 - [x] 코드와 문서가 일치하는가 (로컬 Store 방식과 비교 후 차이점 15절 기록)
