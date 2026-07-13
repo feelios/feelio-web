@@ -6,6 +6,7 @@ import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
 import { money, percent } from '../utils/format.js';
 import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
+import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 
 const Grid = styled.div`
   width: min(100%, 1420px);
@@ -507,11 +508,12 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   }
 
   // Fetch calendar summary data from API
-  const { data: calendarData } = useCalendarSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
+  const { data: calendarData, isLoading: isCalendarLoading } = useCalendarSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
   const serverDays = calendarData?.days || [];
 
   // Fetch emotion summary data from API
-  const { data: emotionData } = useEmotionSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
+  const { data: emotionData, isLoading: isEmotionLoading } = useEmotionSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
+  const isSummaryLoading = isCalendarLoading || isEmotionLoading;
   const serverEmotions = emotionData?.emotions || [];
   const serverPrevEmotions = emotionData?.prevMonth || [];
 
@@ -574,6 +576,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   return (
     <Grid>
       <Left>
+        {isSummaryLoading ? <HomeSummarySkeleton /> : <>
         <Stage>
           <div>
             <BlobHalo color={topMeta.color}>
@@ -637,6 +640,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
             <EmptyRidge dark={dark} />
           )}
         </Ridge>
+        </>}
       </Left>
 
       <Right>
