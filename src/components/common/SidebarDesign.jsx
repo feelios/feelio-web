@@ -3,21 +3,18 @@ import { routes } from '../../app/routes.js';
 import { EmotionBlob } from './EmotionBlob.jsx';
 
 const Aside = styled.aside`
-  position: fixed;
-  left: 14px;
-  top: 14px;
-  bottom: 14px;
-  z-index: 30;
-  width: 224px;
+  flex-shrink: 0;
+  height: 100%;
+  width: 256px;
   display: flex;
   flex-direction: column;
   padding: 20px 16px;
   border-radius: 28px;
-  background: var(--card-strong);
+  background: var(--card);
   border: 1px solid var(--card-border);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(30px) saturate(1.3);
-  -webkit-backdrop-filter: blur(30px) saturate(1.3);
+  backdrop-filter: blur(26px) saturate(1.25);
+  -webkit-backdrop-filter: blur(26px) saturate(1.25);
 
   @media (max-width: 820px) {
     display: none;

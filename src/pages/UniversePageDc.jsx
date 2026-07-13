@@ -50,7 +50,7 @@ const Container = styled.div`
   width: 100%;
   max-width: 1420px;
   margin: 0 auto;
-  height: calc(100dvh - 100px);
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,7 +63,7 @@ const PageWrapper = styled.div`
   border-radius: 28px;
   overflow: hidden;
   background: radial-gradient(135% 100% at 50% -10%,#23263e 0%,#14161f 44%,#0a0c14 100%);
-  box-shadow: 0 44px 100px -34px rgba(20,16,30,.72),0 0 0 1px rgba(255,255,255,.06);
+  box-shadow: none;
   font-family: system-ui, -apple-system, sans-serif;
   animation: pu-unfold 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards, pu-flicker 1.2s ease-out forwards;
 `;

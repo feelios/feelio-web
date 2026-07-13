@@ -10,23 +10,24 @@ import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 
 const Grid = styled.div`
-  width: min(100%, 1420px);
-  min-height: clamp(680px, calc(100dvh - 92px), 820px);
-  margin: 0 auto;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(370px, .76fr);
-  gap: clamp(8px, 1vw, 16px);
+  grid-template-columns: clamp(620px, 52vw, 840px) minmax(0, 1fr);
+  gap: 100px;
   align-items: stretch;
-  padding-bottom: clamp(20px, 4vh, 40px);
 
   @media (max-width: 1180px) {
-    grid-template-columns: minmax(0, 1fr) minmax(350px, .76fr);
+    grid-template-columns: clamp(540px, 50vw, 740px) minmax(0, 1fr);
   }
 
   @media (max-width: 980px) {
     grid-template-columns: 1fr;
     gap: 19px;
+    height: auto;
     min-height: auto;
+    overflow: visible;
     display: flex;
     flex-direction: column;
     padding-bottom: 30px;
@@ -60,8 +61,8 @@ const Stage = styled.div`
 
 const BlobHalo = styled.div`
   position: relative;
-  width: clamp(330px, 30vw, 430px);
-  height: clamp(330px, 30vw, 430px);
+  width: clamp(380px, 34vw, 500px);
+  height: clamp(380px, 34vw, 500px);
   display: grid;
   place-items: center;
 
@@ -116,8 +117,8 @@ const AccordionSummary = styled.div`
 const Right = styled.div`
   min-height: 0;
   width: 100%;
-  max-width: clamp(370px, 29vw, 420px);
-  justify-self: start;
+  max-width: none;
+  justify-self: stretch;
   display: grid;
   grid-template-rows: auto auto clamp(142px, 17vh, 168px);
   gap: clamp(12px, 1.4vw, 16px);
@@ -158,7 +159,7 @@ const MonthBar = styled.div`
   grid-template-columns: 34px 1fr 34px;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 
   strong {
     text-align: center;
@@ -243,27 +244,6 @@ const Pebble = styled.button`
       ? `inset 0 1px 1px rgba(255,255,255,.16), inset 0 0 14px rgba(255,255,255,.03), 0 8px 20px -16px rgba(0,0,0,.55)${selectedRing}${todayRing}`
       : `inset 0 1px 1.5px rgba(255,255,255,.5), inset 0 -8px 20px rgba(70,55,44,.045), 0 12px 26px -22px rgba(70,55,44,.36)${selectedRing}${todayRing}`;
   }};
-`;
-
-const Legend = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  margin-top: clamp(7px, .8vw, 10px);
-
-  span {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--sub);
-    font-size: clamp(10.5px, .8vw, 11.5px);
-  }
-
-  i {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
 `;
 
 const Signal = styled(GlassCard)`
@@ -481,8 +461,10 @@ function getCalendarCells(daysData, visibleMonth) {
     return { id: `day-${day}`, day, emotion, strong: Boolean(emotion), today: year === 2026 && month === 6 && day === 1 };
   });
   const cells = [...empty, ...days];
+  // 마지막 주까지만 채워 달마다 5~6주로 높이 가변 (항상 6주 고정 X)
+  const filled = Math.ceil(cells.length / 7) * 7;
   const trailing = Array.from(
-    { length: Math.max(0, 42 - cells.length) },
+    { length: Math.max(0, filled - cells.length) },
     (_, index) => ({ id: `trailing-${index}`, empty: true })
   );
   return [...cells, ...trailing];
@@ -590,13 +572,13 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
         <Stage>
           <div>
             <BlobHalo color={topMeta.color}>
-              <div css={{ position: 'relative', display: 'grid', placeItems: 'center', width: 'clamp(260px, 22vw, 320px)', height: !showEmptyBlob ? 'clamp(230px, 20vw, 290px)' : 'clamp(310px, 26vw, 360px)' }}>
+              <div css={{ position: 'relative', display: 'grid', placeItems: 'center', width: 'clamp(320px, 28vw, 400px)', height: !showEmptyBlob ? 'clamp(360px, 31vw, 372px)' : 'clamp(330px, 28vw, 344px)' }}>
                 {!showEmptyBlob
-                  ? <EmotionBlob emotion={displayEmotion} size={300} />
-                  : <EmptyEmotionBlob size={280} dark={dark} />}
+                  ? <EmotionBlob emotion={displayEmotion} size={360} />
+                  : <EmptyEmotionBlob size={330} dark={dark} />}
               </div>
             </BlobHalo>
-            <div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 800, marginTop: 12 }}>
+            <div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 800, marginTop: -24 }}>
               {showEmptyBlob ? '아직 감정을 기다리는 중' : selectedDayEmotion ? '선택한 날에 가장 오래 머문 마음' : '선택한 날에는 감정 기록이 없어요'}
             </div>
             <div css={{ fontSize: 24, color: !showEmptyBlob ? topMeta.color : (dark ? '#9B8CFF' : '#7C6BE0'), fontWeight: 900, letterSpacing: '-.02em', marginTop: 2 }}>
@@ -655,7 +637,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
 
       <Right>
         <Calendar expanded={isCalendarExpanded} onClick={() => setIsCalendarExpanded(!isCalendarExpanded)}>
-          <AccordionSummary expanded={isCalendarExpanded}>
+          <AccordionSummary expanded={isCalendarExpanded} css={{ '@media (min-width: 981px)': { display: 'none' } }}>
             <div css={{ display: 'flex', alignItems: 'center', gap: 9 }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#76A7E8" strokeWidth="1.9"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="16" y1="2" x2="16" y2="6" strokeLinecap="round" strokeLinejoin="round" /><line x1="8" y1="2" x2="8" y2="6" strokeLinecap="round" strokeLinejoin="round" /><line x1="3" y1="10" x2="21" y2="10" strokeLinecap="round" strokeLinejoin="round" /></svg>
               <span>{monthLabel} 캘린더</span>
@@ -677,7 +659,6 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
                 return <Pebble key={item.id} color={color} strong={item.strong} selected={dateKey === selectedDayKey} today={item.today} dark={dark} onClick={event => selectDay(item.day, dateKey, event.timeStamp)}>{item.day}</Pebble>;
               })}
             </PebbleGrid>
-            <Legend>{['스트레스', '외로움', '평온', '뿌듯함'].map(name => <span key={name}><i style={{ background: getEmotion(name).color }} />{name}</span>)}</Legend>
           </div>
         </Calendar>
 

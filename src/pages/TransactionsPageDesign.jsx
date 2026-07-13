@@ -10,8 +10,8 @@ import { useMetadata } from '../hooks/queries/useMetadata.js';
 import { TransactionListSkeleton } from '../components/common/Skeleton.jsx';
 
 const Wrap = styled.div`
-  width: min(100%, 1120px);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 `;
 
 const PageHeader = styled.div`

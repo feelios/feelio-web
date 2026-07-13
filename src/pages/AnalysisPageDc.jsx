@@ -6,8 +6,8 @@ import { getEmotion } from '../data/emotions.js';
 import { useMonthlyAnalysisQuery } from '../hooks/queries/useAnalysis.js';
 
 const Page = styled.div`
-  width: min(100%, 1420px);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 20px;
