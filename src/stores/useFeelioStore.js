@@ -44,7 +44,14 @@ const useStore = create(
             }));
           } catch (error) {
             console.error('Failed to fetch user profile', error);
-            set((prev) => ({ state: { ...prev.state, isLoggedIn: false } }));
+            set((prev) => ({
+              state: {
+                ...prev.state,
+                isLoggedIn: false,
+                onboardingDone: false,
+                user: { nickname: '', provider: '', email: '' }
+              }
+            }));
           }
         },
         completeOnboarding: async () => {
@@ -75,7 +82,9 @@ const useStore = create(
                 ...prev.state,
                 isLoggedIn: false,
                 onboardingDone: false,
-                user: { nickname: '', provider: '' }
+                user: { nickname: '', provider: '', email: '' },
+                goals: [],
+                transactions: []
               }
             }));
           }
