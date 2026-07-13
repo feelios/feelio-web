@@ -3,7 +3,7 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
-import { useMonthlyAnalysisQuery, useAiInsightsQuery } from '../hooks/queries/useAnalysis.js';
+import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery } from '../hooks/queries/useAnalysis.js';
 
 const Page = styled.div`
   width: min(100%, 1420px);
@@ -120,10 +120,9 @@ const BarTrack = styled.div`
   background: var(--line);
 `;
 
-// §9 미제공: 예산 현황(budget)·월별 추이(monthly)는 별도 이슈 전까지 정적 유지 예정이었으나,
+// §9 미제공: 예산 현황(budget)은 별도 이슈 전까지 정적 유지 예정이었으나,
 // F7-3 진짜 API 연동 전, 데이터가 비어있을 때 빈 박스 UI가 어떻게 나타나는지 확인하기 위해 빈 배열로 초기화
 const categoryData = [];
-const monthly = [];
 
 export default function AnalysisPageDc({ state }) {
   const isDark = state?.mode === 'dark';
@@ -138,6 +137,9 @@ export default function AnalysisPageDc({ state }) {
   const now = new Date();
   const { data: analysis } = useMonthlyAnalysisQuery(now.getFullYear(), now.getMonth() + 1);
   const { data: insightsData } = useAiInsightsQuery();
+  const { data: trendData } = useMonthlyTrendQuery();
+  
+  const monthly = trendData?.monthlyData ?? [];
 
   const aiQuickInsights = insightsData?.aiQuickInsights?.length > 0 ? insightsData.aiQuickInsights : [
     { label: '위험 루트', value: '-', note: '-', color: 'var(--sub)', type: 'default' },
@@ -417,24 +419,28 @@ export default function AnalysisPageDc({ state }) {
               <p css={{ margin: 0, color: 'var(--sub)', fontSize: 12 }}>최근 7개월 흐름만 담백하게 보여줘요</p>
             </div>
             <div css={{ textAlign: 'right', flexShrink: 0 }}>
-              <div css={{ color: 'var(--text)', fontSize: 18, fontWeight: 950 }}>{monthly.length > 0 ? '487,000원' : '- 원'}</div>
-              <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 850, marginTop: 4 }}>{monthly.length > 0 ? '전월 대비 -2.6%' : '데이터 수집 중'}</div>
+              <div css={{ color: 'var(--text)', fontSize: 18, fontWeight: 950 }}>{monthly.length > 0 ? `${(trendData?.currentTotalAmount ?? 0).toLocaleString()}원` : '- 원'}</div>
+              <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 850, marginTop: 4 }}>
+                {monthly.length > 0 ? `전월 대비 ${trendData?.comparedToLastMonth > 0 ? '+' : ''}${trendData?.comparedToLastMonth ?? 0}%` : '데이터 수집 중'}
+              </div>
             </div>
           </div>
           
           {monthly.length > 0 ? (
             <div css={{ display: 'grid', gap: 12 }}>
-              <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map(([label, value], index) => {
+              <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map((item, index) => {
                 const current = index === monthly.length - 1;
-                return <div key={label} css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0 }}>
-                  <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 10, fontWeight: current ? 900 : 750, marginBottom: 6, opacity: current ? 1 : 0.58 }}>{(value / 100).toFixed(1)}만</span>
-                  <div css={{ width: '100%', height: `${value / 505 * 100}%`, minHeight: 8, borderRadius: 8, background: current ? 'var(--text)' : 'var(--line)', opacity: current ? 0.86 : 0.72 }} />
-                  <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 11, fontWeight: current ? 900 : 650, marginTop: 7 }}>{label}</span>
+                const maxAmount = Math.max(...monthly.map(m => m.amount)) || 1;
+                const heightPercent = Math.max((item.amount / maxAmount) * 100, 5);
+                return <div key={item.label} css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0 }}>
+                  <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 10, fontWeight: current ? 900 : 750, marginBottom: 6, opacity: current ? 1 : 0.58 }}>{(item.amount / 10000).toFixed(1)}만</span>
+                  <div css={{ width: '100%', height: `${heightPercent}%`, minHeight: 8, borderRadius: 8, background: current ? 'var(--text)' : 'var(--line)', opacity: current ? 0.86 : 0.72 }} />
+                  <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 11, fontWeight: current ? 900 : 650, marginTop: 7 }}>{item.label}</span>
                 </div>;
               })}</div>
               <div css={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--line)', color: 'var(--sub)', fontSize: 12, fontWeight: 800 }}>
-                <span>5월 정점 이후 완만하게 내려왔어요</span>
-                <span css={{ color: 'var(--text)', fontWeight: 950 }}>안정 구간</span>
+                <span>{trendData?.trendMessage ?? ''}</span>
+                <span css={{ color: 'var(--text)', fontWeight: 950 }}>{trendData?.comparedToLastMonth > 0 ? '지출 증가' : '안정 구간'}</span>
               </div>
             </div>
           ) : (
