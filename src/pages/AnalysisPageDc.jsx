@@ -387,7 +387,7 @@ export default function AnalysisPageDc({ state }) {
             '@media (max-width: 600px)': { gridTemplateColumns: '1fr', gap: 20 }
           }}>
             <div css={{ display: 'grid', justifyItems: 'center', gap: 12 }}>
-              <div css={{ color: activeChart.color, fontSize: 'clamp(46px, 8vw, 56px)', fontWeight: 950, lineHeight: .95 }}>{activeChart.percent}%</div>
+              <div css={{ fontFamily: 'var(--font-display)', color: activeChart.color, fontSize: 'clamp(46px, 8vw, 56px)', fontWeight: 950, lineHeight: .95 }}>{activeChart.percent}%</div>
               <div css={{ color: 'var(--text)', fontSize: 'clamp(18px, 4vw, 20px)', fontWeight: 950 }}>{activeChart.label}</div>
               <div css={{ maxWidth: 230, color: 'var(--sub)', fontSize: 12, fontWeight: 750, lineHeight: 1.55, textAlign: 'center' }}>{activeChart.focus}</div>
               <div css={{ width: 'min(100%, 220px)', marginTop: 4 }}>
@@ -475,7 +475,7 @@ export default function AnalysisPageDc({ state }) {
                        '@media (max-width: 600px)': { padding: '16px 12px' }
                      }}>
                        <span css={{ fontSize: 'clamp(13px, 3vw, 16px)', color: 'var(--sub)', fontWeight: 800 }}>{insight.emotion}</span>
-                       <b css={{ fontSize: 'clamp(24px, 5.5vw, 36px)', color: 'var(--text)', lineHeight: 1 }}>{insight.percent}%</b>
+                       <b css={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 5.5vw, 36px)', color: 'var(--text)', lineHeight: 1 }}>{insight.percent}%</b>
                        <span css={{ fontSize: 'clamp(11px, 2.5vw, 14px)', color: insight.color, fontWeight: 900 }}>{insight.amount}</span>
                      </div>
                      

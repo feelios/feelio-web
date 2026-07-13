@@ -600,7 +600,7 @@ export default function TransactionsPageDesign({ onSelect }) {
                 <Row key={item.transactionId} onClick={() => onSelect(item)}>
                   <span css={{ width: 40, height: 40, borderRadius: 12, display: 'grid', placeItems: 'center', background: emo.light }}><i css={{ width: 15, height: 15, borderRadius: '50%', background: emo.color }} /></span>
                   <span css={{ minWidth: 0 }}><strong>{item.category?.name}</strong><small css={{ display: 'block', color: 'var(--sub)', marginTop: 3 }}>{item.emotion?.name}{item.memo ? ` · ${item.memo}` : ''}</small></span>
-                  <b css={{ color: item.type === 'INCOME' ? '#3E9578' : 'var(--text)' }}>{signedMoney(item)}</b>
+                  <b css={{ fontFamily: 'var(--font-display)', color: item.type === 'INCOME' ? '#3E9578' : 'var(--text)' }}>{signedMoney(item)}</b>
                 </Row>
               );
             })}

@@ -1,11 +1,13 @@
 /** @jsxImportSource @emotion/react */
 import { useState, useEffect } from 'react';
+import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { GlobalStyles } from '../styles/globalStyles.jsx';
 import { theme } from '../styles/theme.js';
 import { driftA, driftB } from '../styles/animations.js';
 import { useFeelioStore } from '../stores/useFeelioStore.js';
 import { AppLayoutDc } from '../components/common/AppLayoutDc.jsx';
+import { ErrorBoundary } from '../components/common/ErrorBoundary.jsx';
 import { Toast } from '../components/common/Toast.jsx';
 import ProfileModalDc from '../components/profile/ProfileModalDc.jsx';
 import TransactionDetailModal from '../components/transactions/TransactionDetailModal.jsx';
@@ -120,7 +122,13 @@ export default function App() {
           onRoute={setRoute}
           onProfile={() => setProfileOpen(true)}
         >
-          {content}
+          <QueryErrorResetBoundary>
+            {({ reset }) => (
+              <ErrorBoundary onReset={reset} resetKey={route}>
+                {content}
+              </ErrorBoundary>
+            )}
+          </QueryErrorResetBoundary>
         </AppLayoutDc>
       )}
       {profileOpen && <ProfileModalDc state={state} actions={actions} onClose={() => setProfileOpen(false)} />}

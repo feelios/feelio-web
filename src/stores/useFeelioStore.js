@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import { authAPI } from '../api/auth.js';
 import { goalsAPI } from '../api/goals.js'; // fix 브랜치 반영
 
+const STORAGE_KEY = 'feelio-dc-react-state-v4-temp-seed';
+
 const initialState = {
   isLoggedIn: false,
   onboardingDone: false,

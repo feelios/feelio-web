@@ -7,7 +7,7 @@
 > **Claude / Gemini 어떤 도구로 작업하든 이 표를 공통 기준으로 삼는다.**
 > 이슈 코드(예: F1-1)로 브랜치·계약(§)·계층·캐시키·상태·완료기준을 확정한다.
 > 규칙 전체는 [AGENTS.md](../AGENTS.md), API 계약은 [docs/API-CONTRACT.md](./API-CONTRACT.md)가 SSOT.
-> 코드 체계: F1=기반 안정화, F2=온보딩, F3=핵심 거래, F4=목표·분석·설정, F5=UX 고도화 (계약 §11 우선순위와 정렬).
+> 코드 체계: F1=기반 안정화, F2=온보딩, F3=핵심 거래, F4=목표·분석·설정, F5=UX 고도화, F6=보안 및 아키텍처 리팩토링 (계약 우선순위와 정렬).
 > 상태: 완료(머지됨) · 예정 · 신규(백엔드 계약에 맞춰 신규 편성, 예정)
 
 | 코드 | 제목 | 브랜치 | 계약 | 계층 | 캐시키 | 상태 | 완료기준(핵심) |
@@ -27,6 +27,9 @@
 | F5-1 | Skeleton/Suspense 로딩 | `feat/ux-loading` | — | Page·컴포넌트 | — | 예정 | `isLoading` + Suspense 바운더리, 메인/상세 스켈레톤 컴포넌트 노출 |
 | F5-2 | 전역 ErrorBoundary | `feat/ux-error` | §1 | 컴포넌트 | — | 예정 | 라우트 단위 ErrorBoundary, 500 등 오류 시 재시도 버튼 포함 Fallback UI |
 | F5-3 | 거래·목표 낙관적 업데이트 | `feat/ux-optimistic` | §10 | Hook | `['tx']`·`['goals']` | 예정 | `onMutate` 캐시 선반영, `onError` 시 이전 캐시로 롤백 |
+| F6-1 | 전역 상태(로컬 스토리지) 보안 및 최적화 | `refactor/storage-whitelist` | §13 | Store·Hook | — | 신규 | §13 민감/비즈니스 데이터 스토리지에서 제거 + UI 상태(themeMode, aurora 등)만 로컬 유지(partialize 적용) |
+| F6-2 | JWT 보안 통신 및 Silent Refresh 구현 | `feat/auth-interceptor` | §14 | api·Store | — | 신규 | §14 Access 토큰 메모리(전역 상태) 관리 + 401 에러 감지 시 토큰 재발급 Axios 인터셉터 구현 (withCredentials 포함) |
+| F6-3 | 결제/목표 데이터 서버 연동(Fetching) 전환 | `refactor/data-fetching` | §15 | Page·Hook | `['transactions']`, `['goals']` | 신규 | §15 로컬 스토리지 의존성 100% 제거 + HomePage 등 남은 화면 컴포넌트 마운트 시 API 패칭(React Query)으로 완전 전환 |
 
 > **계층** = 프론트 레이어(`src/pages` · `src/hooks` · `src/api` · `src/store`). **캐시키** = TanStack Query Key(공유 자원 — 임의 생성 금지, 표의 배열을 정확히 사용).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남은 등록 작업.

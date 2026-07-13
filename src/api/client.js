@@ -1,28 +1,5 @@
 import axios from 'axios';
 
-const STORAGE_KEY = 'feelio-dc-react-state-v4-temp-seed';
-
-function getStoreState() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : null;
-  } catch {
-    return null;
-  }
-}
-
-function updateStoreState(patch) {
-  try {
-    const currentState = getStoreState() || {};
-    const newState = { ...currentState, ...patch };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-    // 상태 동기화를 위해 커스텀 이벤트 발생 (useFeelioStore.js 에서 수신)
-    window.dispatchEvent(new CustomEvent('feelio-store-sync', { detail: patch }));
-  } catch (err) {
-    console.error('Failed to update store state', err);
-  }
-}
-
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 5000,
@@ -60,12 +37,12 @@ client.interceptors.response.use(
           return client(originalRequest);
         } catch (refreshError) {
           // 리프레시 실패 (만료 등) -> UNAUTHORIZED
-          updateStoreState({ isLoggedIn: false, onboardingDone: false });
+          window.dispatchEvent(new CustomEvent('feelio-store-sync', { detail: { isLoggedIn: false, onboardingDone: false } }));
           return Promise.reject(refreshError);
         }
       } else {
         // TOKEN_EXPIRED가 명확히 아닌 401 (UNAUTHORIZED 등)
-        updateStoreState({ isLoggedIn: false, onboardingDone: false });
+        window.dispatchEvent(new CustomEvent('feelio-store-sync', { detail: { isLoggedIn: false, onboardingDone: false } }));
       }
     }
 

@@ -32,6 +32,7 @@ const Brand = styled.div`
 
   strong {
     display: block;
+    font-family: var(--font-display);
     font-size: 20px;
     font-weight: 900;
     letter-spacing: 0;

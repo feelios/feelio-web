@@ -6,6 +6,7 @@ import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
 import { money, percent } from '../utils/format.js';
 import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
+import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 import useStore from '../stores/useFeelioStore.js';
 
@@ -514,7 +515,9 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
 
   // Fetch emotion summary data from API
   const { data: emotionData, isLoading: isEmotionLoading } = useEmotionSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
-  const isSummaryLoading = isCalendarLoading || isEmotionLoading;
+  const { data: goalsData, isLoading: isGoalsLoading } = useGoalsQuery();
+  
+  const isSummaryLoading = isCalendarLoading || isEmotionLoading || isGoalsLoading;
   const serverEmotions = emotionData?.emotions || [];
   const serverPrevEmotions = emotionData?.prevMonth || [];
 
