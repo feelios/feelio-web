@@ -25,3 +25,11 @@ export const useMonthlyTrendQuery = () => {
     staleTime: 1000 * 60 * 5, // 5분
   });
 };
+
+export const useBudgetStatusQuery = () => {
+  return useQuery({
+    queryKey: ['analysis', 'budget'],
+    queryFn: () => analysisAPI.getBudgetStatus(),
+    staleTime: 1000 * 60 * 5, // 5분
+  });
+};
