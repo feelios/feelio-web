@@ -8,6 +8,7 @@ import { money, percent } from '../utils/format.js';
 import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
 import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
+import useStore from '../stores/useFeelioStore.js';
 
 const Grid = styled.div`
   width: min(100%, 1420px);
@@ -551,12 +552,12 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const dark = state.mode === 'dark';
   const topMeta = showEmptyBlob ? { color: dark ? '#9B8CFF' : '#7C6BE0' } : getEmotion(displayEmotion);
 
-  const serverGoals = goalsData?.goals || [];
-  const primaryGoal = serverGoals.find(g => g.isMain) || serverGoals[0];
+  const goals = useStore((store) => store.state.goals || []);
+  const primaryGoal = goals.find(g => g.isMain) || goals[0];
   const goal = primaryGoal ? {
     name: primaryGoal.name,
-    current: primaryGoal.currentAmount || 0,
-    target: primaryGoal.targetAmount || 1
+    current: primaryGoal.current ?? primaryGoal.currentAmount ?? 0,
+    target: primaryGoal.target ?? primaryGoal.targetAmount ?? 1
   } : { name: '등록된 목표 없음', current: 0, target: 1 };
   
   const goalPct = percent(goal.current, goal.target);
