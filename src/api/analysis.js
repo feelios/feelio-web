@@ -8,5 +8,9 @@ export const analysisAPI = {
   getAiInsights: async () => {
     const response = await client.get('/analysis/ai-insights');
     return response.data.data;
+  },
+  getMonthlyTrend: async () => {
+    const response = await client.get('/analysis/trend');
+    return response.data.data;
   }
 };

@@ -17,3 +17,11 @@ export const useAiInsightsQuery = () => {
     staleTime: 1000 * 60 * 5, // 5분
   });
 };
+
+export const useMonthlyTrendQuery = () => {
+  return useQuery({
+    queryKey: ['analysis', 'trend'],
+    queryFn: () => analysisAPI.getMonthlyTrend(),
+    staleTime: 1000 * 60 * 5, // 5분
+  });
+};

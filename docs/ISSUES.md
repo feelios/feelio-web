@@ -33,6 +33,9 @@
 | F7-1 | '저축' 기본 카테고리 전환 및 UI 개편 | `refactor/default-category-savings` | - | Component·Page·api | `['categories']`, `['transactions']` | 신규 | 커스텀 '저축' 생성 UI/POST 로직 제거 → 스타일 상수(아이콘/테마) 매핑 → 기본 카테고리 하단(Order 9) 노출 및 거래 생성 검증 |
 | F7-2 | AI 분석: 데이터 부족 시 빈 박스(Empty Box) 예외 처리 | `feat/analysis-empty-state` | - | Component·Page | - | 신규 | 데이터 부재(배열 0 or 총합 0) 판별 → 차트 Early Return → 문구/버튼 없이 기존 영역 크기 유지하는 빈 박스(Empty Box) 렌더링 |
 | F7-3 | AI 멘트 API 연동 및 더미 텍스트 제거 | `feat/analysis-ai-insights-api` | - | api·Page·Hook | `['aiInsights']` | 신규 | `AnalysisPageDc.jsx` 내 더미(`aiQuickInsights` 등) 전면 제거 → `useAiInsightsQuery` 훅 생성/바인딩 → Mock 갱신 시 UI 즉각 반영 |
+| F7-4 | 지출 추이 차트 API 연동 및 하드코딩 제거 | `feat/analysis-trend-api` | - | api·Page·Hook | `['analysis', 'trend']` | 신규 | 1. `api/analysis.js` 통신 함수 및 `useMonthlyTrendQuery` 훅 생성.<br>2. 타겟 파일(`AnalysisPageDc.jsx`) 내 하드코딩된 금액, 증감률, 7개월 치 더미 배열 전면 삭제.<br>3. API 응답 데이터(`currentTotalAmount`, `monthlyData` 등)를 기반으로 우측 상단 텍스트 및 차트 동적 바인딩.<br>4. 데이터 빈 배열 시 "데이터 수집 중" UI 방어 로직 정상 연결 확인. |
+| F7-5 | 예산 현황 UI 바인딩 및 프론트 임의 로직 제거 | `feat/analysis-budget-api` | - | api·Page·Hook | `['analysis', 'budget']` | 신규 | 1. `api/analysis.js` 통신 함수 및 `useBudgetStatusQuery` 훅 생성.<br>2. `AnalysisPageDc.jsx` 내부에서 임의로 95%(`prevAmount * 0.95`)를 곱해 예산을 산출하던 억지 연산 로직 완전 제거.<br>3. 서버 응답값(`budget`, `currentAmount`)을 온전히 사용하여 진행률 퍼센트 계산.<br>4. 진행률에 따른 "안정", "주의", "초과" 텍스트 및 분기 색상(`#E87573` 등) 렌더링 검증. |
+
 > **계층** = 프론트 레이어(`src/pages` · `src/hooks` · `src/api` · `src/store`). **캐시키** = TanStack Query Key(공유 자원 — 임의 생성 금지, 표의 배열을 정확히 사용).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.
 > **F4-6**: ISSUES.md에만 있고 GitHub 미등록 (백엔드 §9 analysis 선행 필요) → 착수 전 이슈 등록 필요.
