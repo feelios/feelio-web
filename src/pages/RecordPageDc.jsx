@@ -321,7 +321,6 @@ export default function RecordPageDc({ actions, onSaved }) {
     });
   };
 
-  const hasSaving = customCategories.some(c => c.name === '저축');
   const savingCatIndex = customCategories.findIndex(c => c.name === '저축');
   const savingCat = customCategories[savingCatIndex];
 
@@ -415,7 +414,7 @@ export default function RecordPageDc({ actions, onSaved }) {
               )}
             </ChipRow>
 
-            {hasSaving ? (
+            {form.type === 'expense' && (
               <div css={{ marginTop: 'auto', paddingTop: 24 }}>
                 <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                   <span css={{ color: '#8a837a', fontSize: 11, fontWeight: 800 }}>적금</span>
@@ -439,12 +438,12 @@ export default function RecordPageDc({ actions, onSaved }) {
                   {isEditingCategory ? (
                     <Chip 
                       color={selected.color} active 
-                      draggable 
-                      onDragStart={(e) => handleDragStart(e, savingCatIndex)}
-                      onDragEnter={() => handleDragEnter(savingCatIndex)}
+                      draggable={savingCatIndex >= 0}
+                      onDragStart={(e) => savingCatIndex >= 0 && handleDragStart(e, savingCatIndex)}
+                      onDragEnter={() => savingCatIndex >= 0 && handleDragEnter(savingCatIndex)}
                       onDragEnd={handleDropCategory}
                       onDragOver={(e) => e.preventDefault()}
-                      css={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', cursor: 'grab', '&:active': { cursor: 'grabbing' } }}
+                      css={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', cursor: savingCatIndex >= 0 ? 'grab' : 'default', '&:active': { cursor: savingCatIndex >= 0 ? 'grabbing' : 'default' } }}
                     >
                       <span>저축</span>
                       {savingCat?.isCustom && <span onClick={() => handleRemoveCategory(savingCat)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>}
@@ -454,18 +453,6 @@ export default function RecordPageDc({ actions, onSaved }) {
                   )}
                 </div>
               </div>
-            ) : (
-              form.type === 'expense' && (
-                <div css={{ marginTop: 'auto', paddingTop: 24 }}>
-                  <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span css={{ color: '#8a837a', fontSize: 11, fontWeight: 800 }}>적금</span>
-                  </div>
-                  <div css={{ height: 1, background: 'var(--line)', marginBottom: 14 }} />
-                  <div css={{ display: 'flex' }}>
-                    <Chip color={selected.color} onClick={() => createCategoryMutation.mutate({ name: '저축', type: 'EXPENSE' })}>+ 저축 카테고리 추가하기</Chip>
-                  </div>
-                </div>
-              )
             )}
           </SideCard>
 

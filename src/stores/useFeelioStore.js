@@ -22,6 +22,10 @@ const useStore = create(
     (set) => ({
       state: initialState,
       actions: {
+        login: (provider) => {
+          const providerId = provider.toLowerCase();
+          window.location.href = `http://localhost:8080/oauth2/authorization/${providerId}`;
+        },
         fetchMe: async () => {
           try {
             const user = await authAPI.getMe();
