@@ -55,12 +55,25 @@ export const useUpdateTransactionMutation = () => {
   });
 };
 
-// 5. 거래 내역 삭제 뮤테이션 훅
+// 5. 거래 내역 삭제 뮤테이션 훅 (낙관적 삭제 + 실패 시 롤백)
 export const useDeleteTransactionMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (transactionId) => transactionsAPI.deleteTransaction(transactionId),
-    onSuccess: () => {
+    onMutate: async (transactionId) => {
+      // 필터별로 여러 개일 수 있는 ['tx','list'] 캐시를 한번에 선반영.
+      await queryClient.cancelQueries({ queryKey: ['tx', 'list'] });
+      const previous = queryClient.getQueriesData({ queryKey: ['tx', 'list'] });
+      queryClient.setQueriesData({ queryKey: ['tx', 'list'] }, (old) => {
+        if (!old?.transactions) return old;
+        return { ...old, transactions: old.transactions.filter((t) => t.transactionId !== transactionId) };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      context?.previous?.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: () => {
       invalidateRelatedQueries(queryClient);
     },
   });
