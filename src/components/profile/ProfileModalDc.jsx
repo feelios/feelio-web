@@ -304,7 +304,6 @@ export default function ProfileModalDc({ state, actions, onClose }) {
   const goals = goalsData?.goals ?? [];
   
   // 3. 메인 목표 설정 로직 및 퍼센트 계산
-  const goals = goalsData?.goals ?? [];
   const goal = useMemo(
     () => goals.find(item => item.isMain) || goals[0] || { name: '제주도 여행', currentAmount: 0, targetAmount: 1 },
     [goals],
