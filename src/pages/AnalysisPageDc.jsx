@@ -3,6 +3,7 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
+import { useMonthlyAnalysisQuery } from '../hooks/queries/useAnalysis.js';
 
 const Page = styled.div`
   width: min(100%, 1420px);
@@ -119,6 +120,7 @@ const BarTrack = styled.div`
   background: var(--line);
 `;
 
+// §9 미제공: 예산 현황(budget)·월별 추이(monthly)는 별도 이슈 전까지 정적 유지.
 const categoryData = [
   { name: '배달', amount: 82000, prevAmount: 100000, emotion: '스트레스', pctText: '43%' },
   { name: '카페', amount: 54000, prevAmount: 50000, emotion: '설렘', pctText: '28%' },
@@ -126,10 +128,16 @@ const categoryData = [
   { name: '편의점', amount: 15000, prevAmount: 20000, emotion: '평온', pctText: '8%' }
 ];
 
-const aiInsights = [
-  { emotion: '외로움', percent: 61, amount: '113,000원', color: '#5b7db1', title: '새벽 1시, 외로우면 지갑이 샌다', desc: '자정~새벽 소비의 78%가 \'외로움\' 태그' },
-  { emotion: '불안', percent: 22, amount: '41,000원', color: '#a68b55', title: '월급날 다음 3일이 제일 위험해', desc: '불안 소비가 평소의 2.3배로 튐' },
-  { emotion: '신남', percent: 17, amount: '31,500원', color: '#b15b76', title: '기분이 들뜨면 지출도 들뜬다', desc: '신남 태그 날 하루 평균 지출 49,200원' }
+// ─────────────────────────────────────────────────────────────
+// TODO(GPT): AI 분석 API 연동 예정 — 이 블록만 교체하면 된다.
+// §9(/analysis/monthly)의 결정론적 집계와 분리된 정적 카피/목업이라,
+// 추후 GPT 훅을 붙일 때 이 영역만 수정하면 기존 §9 연동과 충돌하지 않는다.
+// 감정소비 카드 앞면(감정·금액·비율)은 §9 byEmotion으로 실연동되고,
+// 뒷면 문구(title/desc)만 아래 정적 카피를 순서대로 사용한다.
+const aiInsightCopy = [
+  { title: '새벽 1시, 외로우면 지갑이 샌다', desc: '자정~새벽 소비의 78%가 \'외로움\' 태그' },
+  { title: '월급날 다음 3일이 제일 위험해', desc: '불안 소비가 평소의 2.3배로 튐' },
+  { title: '기분이 들뜨면 지출도 들뜬다', desc: '신남 태그 날 하루 평균 지출 49,200원' }
 ];
 
 const aiQuickInsights = [
@@ -139,10 +147,11 @@ const aiQuickInsights = [
   { label: 'AI 맞춤 챌린지', value: '밤 10시 이후 0원', note: '12일 성공 · D-18', color: 'var(--sub)' }
 ];
 const monthly = [['1월', 350], ['2월', 392], ['3월', 445], ['4월', 418], ['5월', 502], ['6월', 473], ['7월', 487]];
+// situation(상황) 필드 제거됨 — [날짜, 사용처, 감정, 금액] (거래 리스트도 추후 GPT/거래 API 연동 예정)
 const evidence = [
-  ['6월 12일', '배달', '스트레스', '퇴근 후', '₩23,000'],
-  ['6월 18일', '편의점', '스트레스', '밤', '₩8,400'],
-  ['6월 22일', '배달', '스트레스', '혼자 있음', '₩18,000']
+  ['6월 12일', '배달', '스트레스', '₩23,000'],
+  ['6월 18일', '편의점', '스트레스', '₩8,400'],
+  ['6월 22일', '배달', '스트레스', '₩18,000']
 ];
 
 export default function AnalysisPageDc({ state }) {
@@ -155,35 +164,56 @@ export default function AnalysisPageDc({ state }) {
     setFlippedCards(prev => ({ ...prev, [emotion]: !prev[emotion] }));
   };
 
+  const now = new Date();
+  const { data: analysis } = useMonthlyAnalysisQuery(now.getFullYear(), now.getMonth() + 1);
+
+  // §9(/analysis/monthly) 결정론적 집계 → 화면 뷰모델. 데이터 없으면 빈 배열/0으로 안전 처리.
+  const byAmountDesc = (a, b) => b.amount - a.amount;
+  const buildSegments = (items) => {
+    const list = items ?? [];
+    const total = list.reduce((sum, item) => sum + item.amount, 0);
+    return list.slice(0, 4).map(item => ({
+      name: item.name ?? item.label,
+      percent: total ? Math.round((item.amount / total) * 100) : 0,
+      amount: `${item.amount.toLocaleString()}원`,
+      color: item.color
+    }));
+  };
+  const categorySegments = buildSegments([...(analysis?.byCategory ?? [])].sort(byAmountDesc));
+  const emotionSegments = buildSegments(analysis?.byEmotion ?? []); // 계약상 amount 내림차순
+  const timeSegments = buildSegments([...(analysis?.byTimeSlot ?? [])].sort(byAmountDesc));
+
   const chartConfig = {
     category: {
-      label: '배달', percent: 43, color: 'var(--text)', helper: '가장 많이 쓴 곳', focus: '배달 소비가 예산 흐름을 가장 크게 만들었어요',
-      segments: [
-        { name: '배달', percent: 43, amount: '82,000원', color: '#A68BEA' },
-        { name: '카페', percent: 28, amount: '54,000원', color: '#F28AB7' },
-        { name: '쇼핑', percent: 21, amount: '39,000원', color: '#F28AB7' },
-        { name: '편의점', percent: 8, amount: '15,000원', color: '#83C9B0' }
-      ]
+      label: categorySegments[0]?.name ?? '—', percent: categorySegments[0]?.percent ?? 0,
+      color: 'var(--text)', helper: '가장 많이 쓴 곳',
+      focus: categorySegments[0] ? `${categorySegments[0].name} 소비가 예산 흐름을 가장 크게 만들었어요` : '이번 달 지출 데이터가 아직 없어요',
+      segments: categorySegments
     },
     time: {
-      label: '밤', percent: 33, color: 'var(--text)', helper: '가장 몰린 시간', focus: '밤 시간대 소비가 반복되고 있어요',
-      segments: [
-        { name: '밤', percent: 33, color: '#A68BEA' },
-        { name: '저녁', percent: 31, color: '#B4AAF2' },
-        { name: '점심', percent: 24, color: '#76A7E8' },
-        { name: '아침', percent: 12, color: '#83C9B0' }
-      ]
+      label: timeSegments[0]?.name ?? '—', percent: timeSegments[0]?.percent ?? 0,
+      color: 'var(--text)', helper: '가장 몰린 시간',
+      focus: timeSegments[0] ? `${timeSegments[0].name} 시간대 소비가 반복되고 있어요` : '이번 달 지출 데이터가 아직 없어요',
+      segments: timeSegments
     },
     emotion: {
-      label: '스트레스', percent: 43, color: '#A68BEA', helper: '핵심 소비 감정', focus: '스트레스가 이번 달 소비를 가장 많이 끌고 갔어요',
-      segments: [
-        { name: '스트레스', percent: 43, color: '#A68BEA' },
-        { name: '외로움', percent: 28, color: '#76A7E8' },
-        { name: '설렘', percent: 21, color: '#F28AB7' },
-        { name: '평온', percent: 8, color: '#83C9B0' }
-      ]
+      label: emotionSegments[0]?.name ?? '—', percent: emotionSegments[0]?.percent ?? 0,
+      color: emotionSegments[0]?.color ?? '#A68BEA', helper: '핵심 소비 감정',
+      focus: emotionSegments[0] ? `${emotionSegments[0].name}이(가) 이번 달 소비를 가장 많이 끌고 갔어요` : '이번 달 지출 데이터가 아직 없어요',
+      segments: emotionSegments
     }
   };
+
+  // 감정소비 카드: 앞면(감정·비율·금액·색)은 §9 byEmotion 상위 3건, 뒷면 문구만 정적 카피(aiInsightCopy).
+  const totalEmotionAmount = (analysis?.byEmotion ?? []).reduce((sum, item) => sum + item.amount, 0);
+  const emotionCards = (analysis?.byEmotion ?? []).slice(0, 3).map((item, index) => ({
+    emotion: item.name,
+    percent: totalEmotionAmount ? Math.round((item.amount / totalEmotionAmount) * 100) : 0,
+    amount: `${item.amount.toLocaleString()}원`,
+    color: item.color,
+    title: aiInsightCopy[index]?.title ?? '',
+    desc: aiInsightCopy[index]?.desc ?? ''
+  }));
   const activeChart = chartConfig[activeChartTab];
   const budgetItems = categoryData
     .map(data => {
@@ -421,7 +451,7 @@ export default function AnalysisPageDc({ state }) {
             gap: 12, 
             flex: 1
           }}>
-            {aiInsights.map(insight => {
+            {emotionCards.map(insight => {
                const isFlipped = flippedCards[insight.emotion];
                return (
                  <div 
@@ -556,13 +586,13 @@ export default function AnalysisPageDc({ state }) {
               <span>날짜</span><span>내역</span><span>금액</span>
             </div>
             <div css={{ overflowY: 'auto', flex: 1, paddingBottom: 16 }}>
-              {evidence.map(([date, category, emotion, situation, amount], idx) => {
+              {evidence.map(([date, category, emotion, amount], idx) => {
                 const emo = getEmotion(emotion);
                 return <div key={`${date}-${idx}`} css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, alignItems: 'center', padding: '15px 0', borderBottom: '1px solid var(--line)' }}>
                   <span css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 800 }}>{date}</span>
                   <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                     <span css={{ width: 7, height: 7, borderRadius: '50%', background: emo.color, flexShrink: 0 }} />
-                    <b css={{ color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{category} <span css={{ color: 'var(--sub)', fontWeight: 650 }}>· {situation}</span></b>
+                    <b css={{ color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{category}</b>
                     <span css={{ display: 'none', '@media (min-width: 901px)': { display: 'inline' }, color: emo.text || emo.color, fontSize: 11, fontWeight: 900, flexShrink: 0 }}>{emotion}</span>
                   </div>
                   <b css={{ color: 'var(--text)' }}>{amount}</b>
