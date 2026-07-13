@@ -42,6 +42,7 @@ const Hero = styled.div`
 
 const Amount = styled.div`
   margin-top: 8px;
+  font-family: var(--font-display);
   font-size: 32px;
   font-weight: 900;
   color: ${({ income }) => income ? '#3E9578' : 'var(--text)'};

@@ -91,6 +91,7 @@ const AmountInput = styled.input`
   background: transparent;
   color: var(--text);
   text-align: right;
+  font-family: var(--font-display);
   font-size: clamp(42px, 7vw, 70px);
   font-weight: 900;
   font-variant-numeric: tabular-nums;
