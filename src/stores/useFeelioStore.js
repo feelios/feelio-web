@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { authAPI } from '../api/auth.js';
+import { goalsAPI } from '../api/goals.js';
 import { mockGoals } from '../data/mockGoals.js';
 
 const STORAGE_KEY = 'feelio-dc-react-state-v4-temp-seed';
@@ -52,13 +53,22 @@ export function useFeelioStore() {
     fetchMe: async () => {
       try {
         const user = await authAPI.getMe();
+        let goals = [];
+
+        try {
+          goals = await goalsAPI.getGoals();
+        } catch (goalError) {
+          console.error('Failed to fetch user goals', goalError);
+        }
+
         setState(prev => ({
           ...prev,
           user,
           isLoggedIn: true,
           onboardingDone: user.onboardingDone,
           mode: user.themeMode ? user.themeMode.toLowerCase() : prev.mode,
-          aurora: user.auroraTheme || prev.aurora
+          aurora: user.auroraTheme || prev.aurora,
+          goals: goals.length ? goals : prev.goals
         }));
       } catch (error) {
         console.error('Failed to fetch user profile', error);
@@ -68,13 +78,22 @@ export function useFeelioStore() {
     completeOnboarding: async () => {
       try {
         const user = await authAPI.getMe();
+        let goals = [];
+
+        try {
+          goals = await goalsAPI.getGoals();
+        } catch (goalError) {
+          console.error('Failed to fetch user goals', goalError);
+        }
+
         setState(prev => ({
           ...prev,
           user,
           isLoggedIn: true,
           onboardingDone: user.onboardingDone,
           mode: user.themeMode ? user.themeMode.toLowerCase() : prev.mode,
-          aurora: user.auroraTheme || prev.aurora
+          aurora: user.auroraTheme || prev.aurora,
+          goals: goals.length ? goals : prev.goals
         }));
       } catch (error) {
         console.error('Failed to refresh user after onboarding', error);

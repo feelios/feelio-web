@@ -548,8 +548,9 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const dark = state.mode === 'dark';
   const topMeta = showEmptyBlob ? { color: dark ? '#9B8CFF' : '#7C6BE0' } : getEmotion(displayEmotion);
 
-  const goal = state.goals[0];
-  const goalPct = percent(goal.current, goal.target);
+  const defaultGoal = { name: '제주도 여행', current: 0, target: 1 };
+  const goal = (state.goals && state.goals.length ? state.goals[0] : defaultGoal);
+  const goalPct = percent(goal.current ?? 0, goal.target ?? 1);
   const days = getCalendarCells(serverDays, visibleMonth);
   const ridgeData = hasEnoughRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
   const ridgePeak = ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0]);
