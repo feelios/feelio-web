@@ -50,6 +50,8 @@
 | F10-1 | 거래내역 다중 삭제 UI | `feat/transaction-bulk-delete-ui` | - | api·Component | `['tx','list']` | 신규 | 체크박스 다중 선택 UI 및 삭제 API 연동 |
 | F10-2 | 패턴 분석 연동 및 UI | `feat/recurring-pattern-ui` | - | api·Component | `['analysis', 'pattern']` | 신규 | 패턴 API 응답 기반 반복 소비 패턴 시각화 |
 
+
+
 > **계층** = 프론트 레이어(`src/pages` · `src/hooks` · `src/api` · `src/store`). **캐시키** = TanStack Query Key(공유 자원 — 임의 생성 금지, 표의 배열을 정확히 사용).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.
 > **F4-6**: ISSUES.md에만 있고 GitHub 미등록 (백엔드 §9 analysis 선행 필요) → 착수 전 이슈 등록 필요.
