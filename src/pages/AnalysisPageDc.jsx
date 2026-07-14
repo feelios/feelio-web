@@ -120,18 +120,13 @@ const BarTrack = styled.div`
   background: var(--line);
 `;
 
-export default function AnalysisPageDc({ state }) {
+export default function AnalysisPageDc({ state, analysisDate, setAnalysisDate }) {
   const isDark = state?.mode === 'dark';
   const [flippedCards, setFlippedCards] = useState({});
   const [activeChartTab, setActiveChartTab] = useState('emotion');
   const [patternFlipped, setPatternFlipped] = useState(false);
 
-  const toggleFlip = (emotion) => {
-    setFlippedCards(prev => ({ ...prev, [emotion]: !prev[emotion] }));
-  };
-
-  const now = new Date();
-  const { data: analysis } = useMonthlyAnalysisQuery(now.getFullYear(), now.getMonth() + 1);
+  const { data: analysis } = useMonthlyAnalysisQuery(analysisDate.getFullYear(), analysisDate.getMonth() + 1);
   const { data: insightsData } = useAiInsightsQuery();
   const { data: trendData } = useMonthlyTrendQuery();
   const { data: budgetData } = useBudgetStatusQuery();
@@ -261,6 +256,10 @@ export default function AnalysisPageDc({ state }) {
       ))}
     </div>
   );
+
+  const toggleFlip = (emotion) => {
+    setFlippedCards(prev => ({ ...prev, [emotion]: !prev[emotion] }));
+  };
 
   return (
     <Page>
@@ -449,11 +448,25 @@ export default function AnalysisPageDc({ state }) {
           
           {monthly.length > 0 ? (
             <div css={{ display: 'grid', gap: 12 }}>
-              <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map((item, index) => {
-                const current = index === monthly.length - 1;
+              <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map((item) => {
+                const match = item.label.match(/(\d+)월/);
+                const itemMonth = match ? parseInt(match[1], 10) - 1 : -1;
+                const current = itemMonth === analysisDate.getMonth();
                 const maxAmount = Math.max(...monthly.map(m => m.amount)) || 1;
                 const heightPercent = Math.max((item.amount / maxAmount) * 100, 5);
-                return <div key={item.label} css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0 }}>
+                return <div 
+                  key={item.label} 
+                  css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0, cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                  onClick={() => {
+                    if (match) {
+                      let y = new Date().getFullYear();
+                      if (itemMonth > new Date().getMonth()) {
+                        y -= 1;
+                      }
+                      setAnalysisDate(new Date(y, itemMonth, 1));
+                    }
+                  }}
+                >
                   <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 10, fontWeight: current ? 900 : 750, marginBottom: 6, opacity: current ? 1 : 0.58 }}>{(item.amount / 10000).toFixed(1)}만</span>
                   <div css={{ width: '100%', height: `${heightPercent}%`, minHeight: 8, borderRadius: 8, background: current ? 'var(--text)' : 'var(--line)', opacity: current ? 0.86 : 0.72 }} />
                   <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 11, fontWeight: current ? 900 : 650, marginTop: 7 }}>{item.label}</span>
