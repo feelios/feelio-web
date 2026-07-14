@@ -353,13 +353,13 @@ function getEmotionSignals(emotions, prevMonth) {
   const signals = [];
   emotions.forEach(curr => {
     const prev = prevMonth.find(e => e.name === curr.name);
-    const prevAmount = prev ? prev.amount : 0;
-    const currAmount = curr.amount;
+    const prevCount = prev ? prev.count : 0;
+    const currCount = curr.count;
     
-    if (prevAmount === 0 && currAmount > 0) {
+    if (prevCount === 0 && currCount > 0) {
       signals.push({ name: curr.name, rate: 100, delta: '▲ 100%' });
-    } else if (prevAmount > 0) {
-      const rate = Math.round(((currAmount - prevAmount) / prevAmount) * 100);
+    } else if (prevCount > 0) {
+      const rate = Math.round(((currCount - prevCount) / prevCount) * 100);
       if (rate !== 0) {
         signals.push({ name: curr.name, rate, delta: rate > 0 ? `▲ ${rate}%` : `▼ ${Math.abs(rate)}%` });
       }

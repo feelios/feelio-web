@@ -163,13 +163,14 @@ export default function AnalysisPageDc({ state }) {
     }));
   };
   const categorySegments = buildSegments([...(analysis?.byCategory ?? [])].sort(byAmountDesc));
-  const byEmotionTotal = (analysis?.byEmotion ?? []).reduce((sum, item) => sum + item.amount, 0);
+  const emotionTotalCount = (analysis?.byEmotion ?? []).reduce((sum, item) => sum + item.count, 0);
   const emotionSegments = emotions.map(emo => {
     const found = (analysis?.byEmotion ?? []).find(item => (item.name ?? item.label) === emo.name);
+    const count = found ? found.count : 0;
     const amount = found ? found.amount : 0;
     return {
       name: emo.name,
-      percent: byEmotionTotal ? Math.round((amount / byEmotionTotal) * 100) : 0,
+      percent: emotionTotalCount ? Math.round((count / emotionTotalCount) * 100) : 0,
       amount: `${amount.toLocaleString()}원`,
       color: emo.color
     };
@@ -201,11 +202,10 @@ export default function AnalysisPageDc({ state }) {
   };
 
   // 감정소비 카드: 앞면(감정·비율·금액·색)은 §9 byEmotion 상위 3건, 뒷면 문구만 정적 카피(emotionCardsData).
-  const totalEmotionAmount = (analysis?.byEmotion ?? []).reduce((sum, item) => sum + item.amount, 0);
-  const emotionCards = (analysis?.byEmotion ?? []).slice(0, 3).map((item, index) => ({
+  const emotionCards = emotionSegments.slice(0, 3).map((item, index) => ({
     emotion: item.name,
-    percent: totalEmotionAmount ? Math.round((item.amount / totalEmotionAmount) * 100) : 0,
-    amount: `${item.amount.toLocaleString()}원`,
+    percent: item.percent,
+    amount: item.amount,
     color: item.color,
     title: emotionCardsData[index]?.title ?? '',
     desc: emotionCardsData[index]?.desc ?? ''
