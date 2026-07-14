@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
-import { getEmotion } from '../data/emotions.js';
+import { getEmotion, emotions } from '../data/emotions.js';
 import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
 
 const Page = styled.div`
@@ -163,7 +163,20 @@ export default function AnalysisPageDc({ state }) {
     }));
   };
   const categorySegments = buildSegments([...(analysis?.byCategory ?? [])].sort(byAmountDesc));
-  const emotionSegments = buildSegments(analysis?.byEmotion ?? []); // 계약상 amount 내림차순
+  const byEmotionTotal = (analysis?.byEmotion ?? []).reduce((sum, item) => sum + item.amount, 0);
+  const emotionSegments = emotions.map(emo => {
+    const found = (analysis?.byEmotion ?? []).find(item => (item.name ?? item.label) === emo.name);
+    const amount = found ? found.amount : 0;
+    return {
+      name: emo.name,
+      percent: byEmotionTotal ? Math.round((amount / byEmotionTotal) * 100) : 0,
+      amount: `${amount.toLocaleString()}원`,
+      color: emo.color
+    };
+  }).sort((a, b) => {
+    if (b.percent !== a.percent) return b.percent - a.percent;
+    return b.amount - a.amount;
+  });
   const timeSegments = buildSegments([...(analysis?.byTimeSlot ?? [])].sort(byAmountDesc));
 
   const chartConfig = {
