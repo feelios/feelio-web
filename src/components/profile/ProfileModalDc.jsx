@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 import { Modal } from '../common/Modal.jsx';
 import { EmotionBlob } from '../common/EmotionBlob.jsx';
+import { EmptyEmotionBlob } from '../common/EmptyEmotionBlob.jsx';
 import { auroras } from '../../data/aurorasDc.js';
 import { money, percent } from '../../utils/format.js';
 // 1. 사용자 설정 및 회원 탈퇴 관련 쿼리/뮤테이션 (위쪽 브랜치 변경 사항)
@@ -21,11 +22,13 @@ import {
 const Screen = styled.div`
   min-height: 100%;
   box-sizing: border-box;
-  padding: 24px 28px 26px;
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
 `;
 
 const MainScreen = styled(Screen)`
-  padding-top: 28px;
+  padding-top: 26px;
 `;
 
 const Header = styled.div`
@@ -108,7 +111,7 @@ const MenuRow = styled.button`
 
 const Logout = styled.button`
   width: 100%;
-  margin-top: 16px;
+  margin-top: auto;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -181,6 +184,7 @@ const Field = styled.input`
 
 const PrimaryButton = styled.button`
   width: 100%;
+  margin-top: auto;
   background: var(--ink);
   color: var(--on-ink);
   border: none;
@@ -306,6 +310,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
   const goalPct = percent(goal.currentAmount, goal.targetAmount);
   const provider = state.user.provider || 'Google';
   const email = state.user.email || 'seoyeon@feelio.app';
+  const profileImageUrl = state.user.profileImageUrl;
   const visibleAurora = auroras.find(item => item.id === state.aurora) || auroras[0];
 
   const menu = [
@@ -450,13 +455,14 @@ export default function ProfileModalDc({ state, actions, onClose }) {
     <Modal
       onClose={onClose}
       width="min(460px, calc(100vw - 40px))"
+      height="min(620px, calc(100dvh - 40px))"
       maxHeight="min(720px, calc(100dvh - 40px))"
       overflow="auto"
     >
       {view === 'profile' && (
         <MainScreen>
           <Header>
-            <Avatar>{nickname.slice(0, 1)}</Avatar>
+            <Avatar>{profileImageUrl ? <img src={profileImageUrl} alt="프로필" referrerPolicy="no-referrer" css={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : nickname.slice(0, 1)}</Avatar>
             <div css={{ flex: 1 }}>
               <div css={{ fontSize: 19, fontWeight: 700 }}>{nickname}</div>
               <div css={{ fontSize: 13, color: 'var(--sub)' }}>{email} · {provider} 계정</div>
@@ -491,8 +497,12 @@ export default function ProfileModalDc({ state, actions, onClose }) {
         <Screen>
           <Back title="프로필 수정"><button type="button" onClick={() => setView('profile')}>‹</button></Back>
           <div css={{ textAlign: 'center', marginBottom: 20 }}>
-            <div css={{ width: 96, height: 96, margin: '0 auto' }}><EmotionBlob emotion="설렘" size={96} interactive={false} /></div>
-            <div css={{ fontSize: 12.5, color: 'var(--sub)', marginTop: 6 }}>말랑이를 눌러 대표 감정을 바꿔보세요</div>
+            <div css={{ width: 96, height: 96, margin: '0 auto', display: 'grid', placeItems: 'center' }}>
+              {profileImageUrl
+                ? <img src={profileImageUrl} alt="프로필" referrerPolicy="no-referrer" css={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover' }} />
+                : <EmptyEmotionBlob size={80} dark={state.mode === 'dark'} />}
+            </div>
+            <div css={{ fontSize: 12.5, color: 'var(--sub)', marginTop: 6 }}>{profileImageUrl ? '연동된 프로필 사진이에요' : '프로필 사진이 없어요'}</div>
           </div>
           <FieldLabel>닉네임</FieldLabel>
           <Field value={nickname} onChange={event => setNickname(event.target.value)} />
@@ -616,8 +626,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
           <Back title="계정 관리"><button type="button" onClick={() => setView('profile')}>‹</button></Back>
           <div css={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '16px 18px', marginBottom: 10 }}><div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 700 }}>이메일</div><div css={{ fontSize: 14.5, fontWeight: 700, marginTop: 3 }}>{email}</div></div>
           <div css={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '16px 18px', marginBottom: 22 }}><div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 700 }}>가입 방식</div><div css={{ fontSize: 14.5, fontWeight: 700, marginTop: 3 }}>{provider} OAuth2</div></div>
-          <button type="button" onClick={actions.logout} css={{ width: '100%', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 14, fontSize: 14.5, fontWeight: 700, cursor: 'pointer', color: 'var(--text)', marginBottom: 10 }}>로그아웃</button>
-          <button type="button" onClick={handleWithdraw} disabled={isWithdrawing} css={{ width: '100%', background: 'none', border: 'none', padding: 12, fontSize: 13.5, fontWeight: 700, cursor: isWithdrawing ? 'wait' : 'pointer', color: '#E87573', textDecoration: 'underline', textUnderlineOffset: 3, opacity: isWithdrawing ? 0.7 : 1 }}>회원탈퇴</button>
+          <button type="button" onClick={handleWithdraw} disabled={isWithdrawing} css={{ width: '100%', marginTop: 'auto', background: 'rgba(232,117,115,0.08)', border: '1px solid rgba(232,117,115,0.38)', borderRadius: 14, padding: 14, fontSize: 14.5, fontWeight: 800, cursor: isWithdrawing ? 'wait' : 'pointer', color: '#E87573', opacity: isWithdrawing ? 0.7 : 1 }}>회원탈퇴</button>
         </Screen>
       )}
     </Modal>

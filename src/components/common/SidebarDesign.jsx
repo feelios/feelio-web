@@ -117,7 +117,9 @@ export function SidebarDesign({ route, onRoute, user, onProfile }) {
   return (
     <Aside>
       <Brand>
-        <EmotionBlob emotion="설렘" size={40} interactive={false} />
+        {user?.profileImageUrl
+          ? <img src={user.profileImageUrl} alt="프로필" referrerPolicy="no-referrer" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
+          : <EmotionBlob emotion="설렘" size={40} interactive={false} />}
         <div><strong>feelio</strong><span>Feel + I/O</span></div>
       </Brand>
       <Nav>
@@ -129,7 +131,7 @@ export function SidebarDesign({ route, onRoute, user, onProfile }) {
         ))}
       </Nav>
       <Profile type="button" onClick={onProfile}>
-        <i>{user.nickname.slice(0, 1)}</i>
+        <i>{user?.profileImageUrl ? <img src={user.profileImageUrl} alt="프로필" referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : user.nickname.slice(0, 1)}</i>
         <span><strong>{user.nickname}</strong><small>{user.provider} 계정</small></span>
       </Profile>
     </Aside>

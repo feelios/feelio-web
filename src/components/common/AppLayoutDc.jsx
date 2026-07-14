@@ -167,7 +167,9 @@ export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, 
               {state.mode === 'dark' ? '☀' : '☾'}
             </DarkModeToggle>
             <MobileProfile type="button" onClick={onProfile} aria-label="프로필 열기">
-              {state.user?.nickname?.slice(0, 1) || '나'}
+              {state.user?.profileImageUrl
+                ? <img src={state.user.profileImageUrl} alt="프로필" referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                : (state.user?.nickname?.slice(0, 1) || '나')}
             </MobileProfile>
           </TopRight>
         </Top>
