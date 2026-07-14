@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import styled from "@emotion/styled";
 import { ChevronDown } from "lucide-react";
 
@@ -190,6 +190,7 @@ export default function SegmentDatePicker({ value, onChange, disabled }) {
 
   // Clamp day when switching to a shorter month
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (day > daysInMonth) setDay(daysInMonth);
   }, [daysInMonth, day]);
 

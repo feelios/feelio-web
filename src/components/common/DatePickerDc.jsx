@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import React, { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import styled from "@emotion/styled";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -243,7 +243,7 @@ const TimeSlot = styled.button`
   `}
 `;
 
-export default function DatePickerDc({ value, onChange, onClose, scale = 1, placement = 'top' }) {
+export default function DatePickerDc({ value, onChange, onClose, scale = 1, placement = 'top', initialTimePanelOpen = false }) {
   const initDate = value && !isNaN(new Date(value).getTime()) ? new Date(value) : new Date();
   
   const today = useMemo(() => new Date(), []);
@@ -261,7 +261,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
 
   const [selectedTime, setSelectedTime] = useState(String(h));
   const [period, setPeriod] = useState(p);
-  const [timePanelOpen, setTimePanelOpen] = useState(false);
+  const [timePanelOpen, setTimePanelOpen] = useState(initialTimePanelOpen);
  
   const cells = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
  

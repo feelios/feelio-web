@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useRef, useState, useEffect } from "react";
 import styled from '@emotion/styled';
 import { ChevronDown, X } from 'lucide-react';
 
