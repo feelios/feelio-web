@@ -15,35 +15,67 @@ client.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// ── 토큰 refresh 직렬화 (레이스 컨디션 방지) ──────────────────
+// 여러 요청이 동시에 401을 받아도 refresh는 "한 번"만 호출한다.
+// refresh 토큰은 회전(rotation)+재사용 감지 방식이라, 동시에 여러 번
+// refresh하면 두 번째부터 "구 토큰 재사용"으로 실패 → 엉뚱한 로그아웃이 발생.
+// → 첫 요청만 refresh를 수행하고, 나머지는 큐에서 대기 후 재시도한다.
+let isRefreshing = false;
+let pendingQueue = [];
+
+const flushQueue = (error) => {
+  pendingQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve();
+  });
+  pendingQueue = [];
+};
+
+const logout = () => {
+  window.dispatchEvent(
+    new CustomEvent('feelio-store-sync', { detail: { isLoggedIn: false, onboardingDone: false } })
+  );
+};
+
 // Response Interceptor: 401 처리
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // 401 UNAUTHORIZED 에러 발생 및 재시도하지 않은 요청인 경우
+    // 401 이고, 아직 재시도하지 않은 요청만 처리
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
       const errorCode = error.response?.data?.error?.code;
 
-      // TOKEN_EXPIRED 이거나 단순 401일 때 리프레시 시도 (쿠키 자동 전송)
+      // TOKEN_EXPIRED 이거나 단순 401 → refresh 시도
       if (errorCode === 'TOKEN_EXPIRED' || !errorCode) {
-        try {
-          // Token Refresh API 호출 (페이로드 없음, 쿠키 활용)
-          await axios.post(`${client.defaults.baseURL}/auth/token/refresh`, {}, { withCredentials: true });
-          
-          // 기존 요청 재시도 (새로운 토큰 쿠키가 자동으로 담겨서 전송됨)
-          return client(originalRequest);
-        } catch (refreshError) {
-          // 리프레시 실패 (만료 등) -> UNAUTHORIZED
-          window.dispatchEvent(new CustomEvent('feelio-store-sync', { detail: { isLoggedIn: false, onboardingDone: false } }));
-          return Promise.reject(refreshError);
+        originalRequest._retry = true;
+
+        // 이미 다른 요청이 refresh 중이면 → 큐에서 대기했다가 재시도
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            pendingQueue.push({ resolve, reject });
+          }).then(() => client(originalRequest));
         }
-      } else {
-        // TOKEN_EXPIRED가 명확히 아닌 401 (UNAUTHORIZED 등)
-        window.dispatchEvent(new CustomEvent('feelio-store-sync', { detail: { isLoggedIn: false, onboardingDone: false } }));
+
+        // 이 요청이 대표로 단 한 번 refresh 수행
+        isRefreshing = true;
+        try {
+          await axios.post(`${client.defaults.baseURL}/auth/token/refresh`, {}, { withCredentials: true });
+          flushQueue(null);              // 대기하던 요청들 재시도 허용
+          return client(originalRequest); // 새 토큰 쿠키로 원 요청 재시도
+        } catch (refreshError) {
+          flushQueue(refreshError);      // 대기하던 요청들도 실패 처리
+          logout();
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
       }
+
+      // TOKEN_EXPIRED가 아닌 401(UNAUTHORIZED 등) → 바로 로그아웃
+      originalRequest._retry = true;
+      logout();
     }
 
     return Promise.reject(error);
