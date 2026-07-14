@@ -173,15 +173,6 @@ const SelectBox = styled.label`
   }
 `;
 
-const NativeDateInput = styled.input`
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-`;
-
 const DatePickerShell = styled.div`
   position: relative;
   min-height: 41px;
@@ -429,7 +420,6 @@ export default function TransactionsPageDesign({ onSelect }) {
     setDay('');
   };
 
-  const yearPickerValue = `${year}-01-01`;
   const monthDayPickerValue = `${year}-${padDatePart(month === 'all' ? today.getMonth() + 1 : month)}-${padDatePart(day || 1)}`;
 
   const handleYearPicker = (value) => {

@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useState } from 'react';
+
 import styled from '@emotion/styled';
 import SegmentDatePicker from '../common/SegmentDatePicker.jsx';
 
