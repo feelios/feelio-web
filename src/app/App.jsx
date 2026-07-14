@@ -64,8 +64,7 @@ export default function App() {
   const [route, setRoute] = useState('home');
   const [isInitializing, setIsInitializing] = useState(true);
 
-  const [homeDate, setHomeDate] = useState(() => new Date(2026, 6, 1));
-  const [analysisDate, setAnalysisDate] = useState(() => new Date());
+  const [globalDate, setGlobalDate] = useState(() => new Date());
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState(null);
 
@@ -88,12 +87,12 @@ export default function App() {
   const colors = getAurora(state.aurora).colors;
 
   const content = {
-    home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={homeDate} onSelectDate={setHomeDate} />,
+    home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={globalDate} onSelectDate={setGlobalDate} />,
     record: <RecordPageDc state={state} actions={actions} onSaved={(date) => {
-      setHomeDate(new Date(date));
+      setGlobalDate(new Date(date));
     }} />,
-    transactions: <TransactionsPageDesign state={state} onSelect={setSelectedTxn} />,
-    analysis: <AnalysisPageDc state={state} analysisDate={analysisDate} setAnalysisDate={setAnalysisDate} />,
+    transactions: <TransactionsPageDesign state={state} onSelect={setSelectedTxn} globalDate={globalDate} setGlobalDate={setGlobalDate} />,
+    analysis: <AnalysisPageDc state={state} globalDate={globalDate} setGlobalDate={setGlobalDate} />,
     universe: <UniversePageDc state={state} />
   }[route];
 
@@ -121,9 +120,9 @@ export default function App() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span>AI 분석</span>
                 <MonthlyAnalysisSwitcher 
-                  year={analysisDate.getFullYear()} 
-                  month={analysisDate.getMonth()} 
-                  onChangeMonth={(y, m) => setAnalysisDate(new Date(y, m, 1))} 
+                  year={globalDate.getFullYear()} 
+                  month={globalDate.getMonth()} 
+                  onChangeMonth={(y, m) => setGlobalDate(new Date(y, m, 1))} 
                 />
               </div>
             ) : titles[route]

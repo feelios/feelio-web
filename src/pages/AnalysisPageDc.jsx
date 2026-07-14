@@ -120,13 +120,13 @@ const BarTrack = styled.div`
   background: var(--line);
 `;
 
-export default function AnalysisPageDc({ state, analysisDate, setAnalysisDate }) {
+export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const isDark = state?.mode === 'dark';
   const [flippedCards, setFlippedCards] = useState({});
   const [activeChartTab, setActiveChartTab] = useState('emotion');
   const [patternFlipped, setPatternFlipped] = useState(false);
 
-  const { data: analysis } = useMonthlyAnalysisQuery(analysisDate.getFullYear(), analysisDate.getMonth() + 1);
+  const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: insightsData } = useAiInsightsQuery();
   const { data: trendData } = useMonthlyTrendQuery();
   const { data: budgetData } = useBudgetStatusQuery();
@@ -451,7 +451,7 @@ export default function AnalysisPageDc({ state, analysisDate, setAnalysisDate })
               <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map((item) => {
                 const match = item.label.match(/(\d+)월/);
                 const itemMonth = match ? parseInt(match[1], 10) - 1 : -1;
-                const current = itemMonth === analysisDate.getMonth();
+                const current = itemMonth === globalDate.getMonth();
                 const maxAmount = Math.max(...monthly.map(m => m.amount)) || 1;
                 const heightPercent = Math.max((item.amount / maxAmount) * 100, 5);
                 return <div 
@@ -463,7 +463,7 @@ export default function AnalysisPageDc({ state, analysisDate, setAnalysisDate })
                       if (itemMonth > new Date().getMonth()) {
                         y -= 1;
                       }
-                      setAnalysisDate(new Date(y, itemMonth, 1));
+                      setGlobalDate(new Date(y, itemMonth, 1));
                     }
                   }}
                 >
