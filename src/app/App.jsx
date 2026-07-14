@@ -1,5 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { useState, useEffect } from 'react';
+import MonthlyAnalysisSwitcher from '../components/analysis/MonthlyAnalysisSwitcher.jsx';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { GlobalStyles } from '../styles/globalStyles.jsx';
@@ -55,7 +56,6 @@ const titles = {
   home: '홈',
   record: '지출·수입 기록',
   transactions: '거래내역',
-  analysis: 'AI 분석',
   universe: '평행우주'
 };
 
@@ -64,8 +64,8 @@ export default function App() {
   const [route, setRoute] = useState('home');
   const [isInitializing, setIsInitializing] = useState(true);
 
-
   const [homeDate, setHomeDate] = useState(() => new Date(2026, 6, 1));
+  const [analysisDate, setAnalysisDate] = useState(() => new Date());
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState(null);
 
@@ -93,7 +93,7 @@ export default function App() {
       setHomeDate(new Date(date));
     }} />,
     transactions: <TransactionsPageDesign state={state} onSelect={setSelectedTxn} />,
-    analysis: <AnalysisPageDc state={state} />,
+    analysis: <AnalysisPageDc state={state} analysisDate={analysisDate} setAnalysisDate={setAnalysisDate} />,
     universe: <UniversePageDc state={state} />
   }[route];
 
@@ -116,7 +116,18 @@ export default function App() {
       {state.isLoggedIn && state.onboardingDone && (
         <AppLayoutDc
           route={route}
-          title={titles[route]}
+          title={
+            route === 'analysis' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span>AI 분석</span>
+                <MonthlyAnalysisSwitcher 
+                  year={analysisDate.getFullYear()} 
+                  month={analysisDate.getMonth()} 
+                  onChangeMonth={(y, m) => setAnalysisDate(new Date(y, m, 1))} 
+                />
+              </div>
+            ) : titles[route]
+          }
           state={state}
           actions={actions}
           onRoute={setRoute}
