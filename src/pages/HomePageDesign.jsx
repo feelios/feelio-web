@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { EmptyEmotionBlob } from '../components/common/EmptyEmotionBlob.jsx';
@@ -413,6 +413,12 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
   const lastClickTimeRef = useRef({});
   const [isRidgeExpanded, setIsRidgeExpanded] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 980);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 980);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   const [isCalendarExpanded, setIsCalendarExpanded] = useState(false);
 
   const [prevSelected, setPrevSelected] = useState(selected);
@@ -505,13 +511,13 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
         <Stage>
           <div>
             <BlobHalo color={topMeta.color}>
-              <div css={{ position: 'relative', display: 'grid', placeItems: 'center', width: 'clamp(320px, 28vw, 400px)', height: !showEmptyBlob ? 'clamp(360px, 31vw, 372px)' : 'clamp(330px, 28vw, 344px)' }}>
+              <div css={{ position: 'relative', display: 'grid', placeItems: 'center', width: isMobile ? 210 : 'clamp(320px, 28vw, 400px)', height: isMobile ? 224 : (!showEmptyBlob ? 'clamp(360px, 31vw, 372px)' : 'clamp(330px, 28vw, 344px)') }}>
                 {!showEmptyBlob
-                  ? <EmotionBlob emotion={displayEmotion} size={360} />
-                  : <EmptyEmotionBlob size={330} dark={dark} />}
+                  ? <EmotionBlob emotion={displayEmotion} size={isMobile ? 200 : 360} />
+                  : <EmptyEmotionBlob size={isMobile ? 176 : 330} dark={dark} />}
               </div>
             </BlobHalo>
-            <div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 800, marginTop: -24 }}>
+            <div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 800, marginTop: isMobile ? 4 : -24 }}>
               {showEmptyBlob ? '아직 감정을 기다리는 중' : selectedDayEmotion ? '선택한 날에 가장 오래 머문 마음' : '선택한 날에는 감정 기록이 없어요'}
             </div>
             <div css={{ fontSize: 24, color: !showEmptyBlob ? topMeta.color : (dark ? '#9B8CFF' : '#7C6BE0'), fontWeight: 900, letterSpacing: '-.02em', marginTop: 2 }}>

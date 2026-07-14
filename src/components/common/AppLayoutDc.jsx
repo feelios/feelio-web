@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { theme } from '../../styles/theme.js';
 import { driftA, driftB } from '../../styles/animations.js';
@@ -147,12 +148,18 @@ export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, 
     day: 'numeric',
     weekday: 'long'
   });
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 820);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 820);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   return (
     <Shell mode={state.mode}>
-      <Orb mode={state.mode} style={{ width: 640, height: 640, left: -100, top: -180, background: colors[0], filter: 'blur(110px)', animation: `${driftA} 28s ease-in-out infinite` }} />
-      <Orb mode={state.mode} style={{ width: 560, height: 560, right: -140, top: '16%', background: colors[1], filter: 'blur(115px)', animation: `${driftB} 32s ease-in-out infinite` }} />
-      <Orb mode={state.mode} style={{ width: 640, height: 640, left: '32%', bottom: -200, background: colors[2], filter: 'blur(120px)', animation: `${driftA} 36s ease-in-out infinite reverse` }} />
+      <Orb mode={state.mode} style={{ background: colors[0], animation: `${driftA} 28s ease-in-out infinite`, ...(isMobile ? { width: 'clamp(240px, 64vw, 360px)', height: 'clamp(240px, 64vw, 360px)', left: '-24%', top: '-3%', filter: 'blur(58px)' } : { width: 640, height: 640, left: -100, top: -180, filter: 'blur(110px)' }) }} />
+      <Orb mode={state.mode} style={{ background: colors[1], animation: `${driftB} 32s ease-in-out infinite`, ...(isMobile ? { width: 'clamp(220px, 58vw, 320px)', height: 'clamp(220px, 58vw, 320px)', right: '-28%', top: '20%', filter: 'blur(60px)' } : { width: 560, height: 560, right: -140, top: '16%', filter: 'blur(115px)' }) }} />
+      <Orb mode={state.mode} style={{ background: colors[2], animation: `${driftA} 36s ease-in-out infinite reverse`, ...(isMobile ? { width: 'clamp(240px, 64vw, 360px)', height: 'clamp(240px, 64vw, 360px)', left: '22%', bottom: '-6%', filter: 'blur(64px)' } : { width: 640, height: 640, left: '32%', bottom: -200, filter: 'blur(120px)' }) }} />
       <Veil mode={state.mode} />
       <Frame>
       <SidebarDesign route={route} onRoute={onRoute} user={state.user} onProfile={onProfile} />
