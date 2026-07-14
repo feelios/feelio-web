@@ -209,6 +209,12 @@ export default function RecordPageDc({ actions, onSaved }) {
   const [addingTag, setAddingTag] = useState(null);
   const [addingText, setAddingText] = useState('');
 
+  const getInitialDate = () => {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    return new Date(now - tzOffset).toISOString().slice(0, 16);
+  };
+
   const [form, setForm] = useState({
     type: 'expense',
     amount: '',
@@ -216,7 +222,7 @@ export default function RecordPageDc({ actions, onSaved }) {
     emotion: null,
     situation: [],
     memo: '',
-    date: '2026-07-01T21:30'
+    date: getInitialDate()
   });
 
   const { data: metaData } = useMetadata();
@@ -473,7 +479,7 @@ export default function RecordPageDc({ actions, onSaved }) {
             />
             <label css={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)', fontSize: 12.5, color: 'var(--sub)' }}>
               <input type="datetime-local" value={form.date} onChange={event => setField('date', event.target.value)} css={{ background: 'transparent', border: 0, color: 'var(--sub)', outline: 0, fontFamily: 'inherit' }} />
-              <span css={{ color: selected.color, fontWeight: 900 }}>· 지금</span>
+              <button type="button" onClick={() => setField('date', getInitialDate())} css={{ background: 'transparent', border: 0, padding: 0, color: selected.color, fontWeight: 900, cursor: 'pointer' }}>· 지금</button>
             </label>
           </SideCard>
 
