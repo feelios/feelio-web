@@ -30,6 +30,7 @@ const Field = styled.input`
 
 const PrimaryButton = styled.button`
   width: 100%;
+  margin-top: auto;
   background: var(--ink);
   color: var(--on-ink);
   border: none;
