@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
@@ -370,7 +370,7 @@ function padDatePart(value) {
   return String(value).padStart(2, '0');
 }
 
-export default function TransactionsPageDesign({ onSelect }) {
+export default function TransactionsPageDesign({ onSelect, globalDate, setGlobalDate }) {
   const { data: metaData } = useMetadata();
   const categories = metaData?.categories || [];
   const emotions = metaData?.emotions || [];
@@ -380,8 +380,8 @@ export default function TransactionsPageDesign({ onSelect }) {
   const debouncedQuery = useDebounce(query, 500);
 
   const today = new Date();
-  const [year, setYear] = useState(String(today.getFullYear()));
-  const [month, setMonth] = useState(String(today.getMonth() + 1));
+  const [year, setYear] = useState(String(globalDate.getFullYear()));
+  const [month, setMonth] = useState(String(globalDate.getMonth() + 1));
   const [day, setDay] = useState('');
   const [sort, setSort] = useState('date-desc');
   const [categoryFilters, setCategoryFilters] = useState([]);
@@ -398,6 +398,13 @@ export default function TransactionsPageDesign({ onSelect }) {
     }
     return options;
   }, []);
+
+  // Sync local changes back to globalDate
+  useEffect(() => {
+    if (month !== 'all') {
+      setGlobalDate(new Date(Number(year), Number(month) - 1, 1));
+    }
+  }, [year, month, setGlobalDate]);
 
   const apiParams = useMemo(() => ({
     year,
