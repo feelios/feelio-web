@@ -6,6 +6,8 @@ import { EmotionBlob } from '../common/EmotionBlob.jsx';
 import { money, signedMoney } from '../../utils/format.js';
 import { useMetadata } from '../../hooks/queries/useMetadata.js';
 import { useTransactionDetailQuery, useUpdateTransactionMutation, useDeleteTransactionMutation } from '../../hooks/queries/useTransactions.js';
+import { useCategoriesQuery } from '../../hooks/queries/useCategories.js';
+import DatePickerDc from '../common/DatePickerDc.jsx';
 
 const Wrap = styled.div`
   padding: 26px 28px;
@@ -156,14 +158,16 @@ function dateLabel(value) {
 
 export default function TransactionDetailModal({ transaction: initialTxn, onClose }) {
   const { data: metaData } = useMetadata();
-  const categories = metaData?.categories || [];
   const emotions = metaData?.emotions || [];
 
   const { data: transaction } = useTransactionDetailQuery(initialTxn.transactionId, initialTxn);
+  const { data: categoryData } = useCategoriesQuery(transaction?.type);
+  const categories = categoryData?.categories || [];
   const updateTx = useUpdateTransactionMutation();
   const deleteTx = useDeleteTransactionMutation();
 
   const [mode, setMode] = useState('detail');
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [form, setForm] = useState({
     amount: String(transaction?.amount || 0),
     categoryId: transaction?.category?.categoryId || '',
@@ -252,7 +256,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
             <Field>카테고리
               <select value={form.categoryId} onChange={event => setField('categoryId', event.target.value)}>
                 <option value="" disabled>선택</option>
-                {categories.filter(c => c.type === transaction.type || !c.type).map(c => (
+                {categories.map(c => (
                   <option key={c.categoryId} value={c.categoryId}>{c.name}</option>
                 ))}
               </select>
@@ -277,7 +281,18 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
             </EmotionGrid>
           </div>
           <Field css={{ marginBottom: 16 }}>메모<input value={form.memo} onChange={event => setField('memo', event.target.value)} /></Field>
-          <Field css={{ marginBottom: 22 }}>날짜<input type="datetime-local" value={form.date} onChange={event => setField('date', event.target.value)} /></Field>
+          <Field css={{ position: 'relative', marginBottom: 22 }}>날짜
+            <button type="button" onClick={() => setIsDatePickerOpen(true)} css={{ border: '1px solid var(--line)', borderRadius: 12, padding: '12px 14px', background: 'var(--card)', color: 'var(--text)', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 }}>
+              {form.date.replace('T', ' ')}
+            </button>
+            {isDatePickerOpen && (
+              <DatePickerDc
+                value={form.date}
+                onChange={(newDate) => setField('date', newDate)}
+                onClose={() => setIsDatePickerOpen(false)}
+              />
+            )}
+          </Field>
           <Button type="button" primary onClick={save} disabled={updateTx.isPending}>저장</Button>
         </Wrap>
       )}

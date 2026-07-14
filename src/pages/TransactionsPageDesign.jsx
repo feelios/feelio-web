@@ -8,6 +8,8 @@ import { useDebounce } from '../hooks/useDebounce.js';
 import { useTransactionsQuery } from '../hooks/queries/useTransactions.js';
 import { useMetadata } from '../hooks/queries/useMetadata.js';
 import { TransactionListSkeleton } from '../components/common/Skeleton.jsx';
+import DatePickerDc from '../components/common/DatePickerDc.jsx';
+import SelectDc from '../components/common/SelectDc.jsx';
 
 const Wrap = styled.div`
   width: 100%;
@@ -395,6 +397,16 @@ export default function TransactionsPageDesign({ onSelect }) {
   const [emotionFilters, setEmotionFilters] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [openSelect, setOpenSelect] = useState('');
+  const [isMonthDayPickerOpen, setIsMonthDayPickerOpen] = useState(false);
+
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const options = [];
+    for (let y = currentYear - 6; y <= currentYear + 6; y++) {
+      options.push({ value: String(y), label: `${y}년` });
+    }
+    return options;
+  }, []);
 
   const apiParams = useMemo(() => ({
     year,
@@ -483,28 +495,25 @@ export default function TransactionsPageDesign({ onSelect }) {
       </Toolbar>
 
       {filtersOpen && <ControlGrid>
-        <SelectBox>
-          연도
-          <DatePickerShell>
-            {year}년
-            <NativeDateInput
-              type="date"
-              value={yearPickerValue}
-              onChange={event => handleYearPicker(event.target.value)}
-              aria-label="연도 선택"
-            />
-          </DatePickerShell>
-        </SelectBox>
+        <SelectDc
+          label="연도"
+          options={yearOptions}
+          value={year}
+          onChange={(val) => { if (val) handleYearPicker(`${val}-01-01`); }}
+        />
         <SelectBox>
           월-일
-          <DatePickerShell>
+          <DatePickerShell onClick={() => setIsMonthDayPickerOpen(true)}>
             {month}월{day ? ` ${day}일` : ''}
-            <NativeDateInput
-              type="date"
-              value={monthDayPickerValue}
-              onChange={event => handleMonthDayPicker(event.target.value)}
-              aria-label="월-일 선택"
-            />
+            {isMonthDayPickerOpen && (
+              <DatePickerDc
+                value={monthDayPickerValue}
+                onChange={(newDate) => { handleMonthDayPicker(newDate); }}
+                onClose={() => setIsMonthDayPickerOpen(false)}
+                scale={0.85}
+                placement="bottom"
+              />
+            )}
           </DatePickerShell>
         </SelectBox>
         <SelectLike>

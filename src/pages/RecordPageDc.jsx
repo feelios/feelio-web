@@ -12,6 +12,7 @@ import {
   useDeleteCategoryMutation,
   useUpdateCategoryOrderMutation
 } from '../hooks/queries/useCategories.js';
+import DatePickerDc from '../components/common/DatePickerDc.jsx';
 
 const Page = styled.div`
   width: 100%;
@@ -208,6 +209,7 @@ export default function RecordPageDc({ actions, onSaved }) {
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [addingTag, setAddingTag] = useState(null);
   const [addingText, setAddingText] = useState('');
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const getInitialDate = () => {
     const now = new Date();
@@ -477,9 +479,18 @@ export default function RecordPageDc({ actions, onSaved }) {
               placeholder="한 줄 메모 - 그 순간, 왜 그 마음이었을까요?"
               css={{ marginTop: 14, minHeight: 76, resize: 'none', width: '100%', boxSizing: 'border-box', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 13, padding: '12px 15px', color: 'var(--text)', outline: 0, fontFamily: 'inherit' }}
             />
-            <label css={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)', fontSize: 12.5, color: 'var(--sub)' }}>
-              <input type="datetime-local" value={form.date} onChange={event => setField('date', event.target.value)} css={{ background: 'transparent', border: 0, color: 'var(--sub)', outline: 0, fontFamily: 'inherit' }} />
+            <label css={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)', fontSize: 12.5, color: 'var(--sub)' }}>
+              <button type="button" onClick={() => setIsDatePickerOpen(true)} css={{ background: 'transparent', border: 0, padding: 0, color: 'var(--sub)', outline: 0, fontFamily: 'inherit', fontSize: 13, cursor: 'pointer', textAlign: 'left' }}>
+                {form.date.replace('T', ' ')}
+              </button>
               <button type="button" onClick={() => setField('date', getInitialDate())} css={{ background: 'transparent', border: 0, padding: 0, color: selected.color, fontWeight: 900, cursor: 'pointer' }}>· 지금</button>
+              {isDatePickerOpen && (
+                <DatePickerDc
+                  value={form.date}
+                  onChange={(newDate) => setField('date', newDate)}
+                  onClose={() => setIsDatePickerOpen(false)}
+                />
+              )}
             </label>
           </SideCard>
 
