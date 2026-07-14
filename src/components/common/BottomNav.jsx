@@ -1,5 +1,6 @@
 import styled from '@emotion/styled';
 import { routes } from '../../app/routes.js';
+import { MenuIcon } from './MenuIcon.jsx';
 
 const Bar = styled.nav`
   position: fixed;
@@ -46,7 +47,7 @@ export function BottomNav({ route, onRoute }) {
     <Bar>
       {routes.map(item => (
         <Button key={item.key} active={route === item.key} type="button" onClick={() => onRoute(item.key)}>
-          <span>{item.icon}</span>{item.label}
+          <MenuIcon name={item.key} size={20} />{item.label}
         </Button>
       ))}
     </Bar>
