@@ -8,6 +8,8 @@ import { useDebounce } from '../hooks/useDebounce.js';
 import { useTransactionsQuery } from '../hooks/queries/useTransactions.js';
 import { useMetadata } from '../hooks/queries/useMetadata.js';
 import { TransactionListSkeleton } from '../components/common/Skeleton.jsx';
+import DatePickerDc from '../components/common/DatePickerDc.jsx';
+import SelectDc from '../components/common/SelectDc.jsx';
 
 const Wrap = styled.div`
   width: 100%;
@@ -186,15 +188,6 @@ const SelectBox = styled.label`
     font-weight: 800;
     outline: 0;
   }
-`;
-
-const NativeDateInput = styled.input`
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
 `;
 
 const DatePickerShell = styled.div`
@@ -394,7 +387,7 @@ function padDatePart(value) {
   return String(value).padStart(2, '0');
 }
 
-export default function TransactionsPageDesign({ onSelect }) {
+export default function TransactionsPageDesign({ onSelect, globalDate, setGlobalDate }) {
   const { data: metaData } = useMetadata();
   const categories = metaData?.categories || [];
   const emotions = metaData?.emotions || [];
@@ -404,14 +397,31 @@ export default function TransactionsPageDesign({ onSelect }) {
   const debouncedQuery = useDebounce(query, 500);
 
   const today = new Date();
-  const [year, setYear] = useState(String(today.getFullYear()));
-  const [month, setMonth] = useState(String(today.getMonth() + 1));
+  const [year, setYear] = useState(String(globalDate.getFullYear()));
+  const [month, setMonth] = useState(String(globalDate.getMonth() + 1));
   const [day, setDay] = useState('');
   const [sort, setSort] = useState('date-desc');
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [emotionFilters, setEmotionFilters] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [openSelect, setOpenSelect] = useState('');
+  const [isMonthDayPickerOpen, setIsMonthDayPickerOpen] = useState(false);
+
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const options = [];
+    for (let y = currentYear - 6; y <= currentYear + 6; y++) {
+      options.push({ value: String(y), label: `${y}년` });
+    }
+    return options;
+  }, []);
+
+  // Sync local changes back to globalDate
+  useEffect(() => {
+    if (month !== 'all') {
+      setGlobalDate(new Date(Number(year), Number(month) - 1, 1));
+    }
+  }, [year, month, setGlobalDate]);
 
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 820);
   useEffect(() => {
@@ -441,7 +451,6 @@ export default function TransactionsPageDesign({ onSelect }) {
     setDay('');
   };
 
-  const yearPickerValue = `${year}-01-01`;
   const monthDayPickerValue = `${year}-${padDatePart(month === 'all' ? today.getMonth() + 1 : month)}-${padDatePart(day || 1)}`;
 
   const handleYearPicker = (value) => {
@@ -518,28 +527,25 @@ export default function TransactionsPageDesign({ onSelect }) {
       </Toolbar>
 
       {filtersOpen && <ControlGrid>
-        <SelectBox>
-          연도
-          <DatePickerShell>
-            {year}년
-            <NativeDateInput
-              type="date"
-              value={yearPickerValue}
-              onChange={event => handleYearPicker(event.target.value)}
-              aria-label="연도 선택"
-            />
-          </DatePickerShell>
-        </SelectBox>
+        <SelectDc
+          label="연도"
+          options={yearOptions}
+          value={year}
+          onChange={(val) => { if (val) handleYearPicker(`${val}-01-01`); }}
+        />
         <SelectBox>
           월-일
-          <DatePickerShell>
+          <DatePickerShell onClick={() => setIsMonthDayPickerOpen(true)}>
             {month}월{day ? ` ${day}일` : ''}
-            <NativeDateInput
-              type="date"
-              value={monthDayPickerValue}
-              onChange={event => handleMonthDayPicker(event.target.value)}
-              aria-label="월-일 선택"
-            />
+            {isMonthDayPickerOpen && (
+              <DatePickerDc
+                value={monthDayPickerValue}
+                onChange={(newDate) => { handleMonthDayPicker(newDate); }}
+                onClose={() => setIsMonthDayPickerOpen(false)}
+                scale={0.85}
+                placement="bottom"
+              />
+            )}
           </DatePickerShell>
         </SelectBox>
         <SelectLike>

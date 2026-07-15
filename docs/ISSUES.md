@@ -7,7 +7,11 @@
 > **Claude / Gemini 어떤 도구로 작업하든 이 표를 공통 기준으로 삼는다.**
 > 이슈 코드(예: F1-1)로 브랜치·계약(§)·계층·캐시키·상태·완료기준을 확정한다.
 > 규칙 전체는 [AGENTS.md](../AGENTS.md), API 계약은 [docs/API-CONTRACT.md](./API-CONTRACT.md)가 SSOT.
-> 코드 체계: F1=기반 안정화, F2=온보딩, F3=핵심 거래, F4=목표·분석·설정, F5=UX 고도화, F6=보안 및 아키텍처 리팩토링 (계약 우선순위와 정렬).
+> 코드 체계: 
+> - F1=기반 안정화, F2=온보딩, F3=핵심 거래, F4=목표·분석·설정, F5=UX 고도화, F6=보안 및 아키텍처 리팩토링, F7=추가 개선
+> - **F8=핫픽스 및 UX 폴리싱**: 사용자 경험에 직접적으로 영향을 미치는 버그와 간단한 UI/UX 개선
+> - **F9=데이터 시각화 및 대시보드 고도화**: 대시보드와 분석 페이지의 데이터 표시 방식 및 네비게이션 개선
+> - **F10=트랜잭션 관리 및 고급 API 연동**: 새로운 API(다중 삭제, 패턴 분석 등) 연동을 통한 복잡한 기능 구현
 > 상태: 완료(머지됨) · 예정 · 신규(백엔드 계약에 맞춰 신규 편성, 예정)
 
 | 코드 | 제목 | 브랜치 | 계약 | 계층 | 캐시키 | 상태 | 완료기준(핵심) |
@@ -35,6 +39,18 @@
 | F7-3 | AI 멘트 API 연동 및 더미 텍스트 제거 | `feat/analysis-ai-insights-api` | - | api·Page·Hook | `['aiInsights']` | 신규 | `AnalysisPageDc.jsx` 내 더미(`aiQuickInsights` 등) 전면 제거 → `useAiInsightsQuery` 훅 생성/바인딩 → Mock 갱신 시 UI 즉각 반영 |
 | F7-4 | 지출 추이 차트 API 연동 및 하드코딩 제거 | `feat/analysis-trend-api` | - | api·Page·Hook | `['analysis', 'trend']` | 신규 | 1. `api/analysis.js` 통신 함수 및 `useMonthlyTrendQuery` 훅 생성.<br>2. 타겟 파일(`AnalysisPageDc.jsx`) 내 하드코딩된 금액, 증감률, 7개월 치 더미 배열 전면 삭제.<br>3. API 응답 데이터(`currentTotalAmount`, `monthlyData` 등)를 기반으로 우측 상단 텍스트 및 차트 동적 바인딩.<br>4. 데이터 빈 배열 시 "데이터 수집 중" UI 방어 로직 정상 연결 확인. |
 | F7-5 | 예산 현황 UI 바인딩 및 프론트 임의 로직 제거 | `feat/analysis-budget-api` | - | api·Page·Hook | `['analysis', 'budget']` | 신규 | 1. `api/analysis.js` 통신 함수 및 `useBudgetStatusQuery` 훅 생성.<br>2. `AnalysisPageDc.jsx` 내부에서 임의로 95%(`prevAmount * 0.95`)를 곱해 예산을 산출하던 억지 연산 로직 완전 제거.<br>3. 서버 응답값(`budget`, `currentAmount`)을 온전히 사용하여 진행률 퍼센트 계산.<br>4. 진행률에 따른 "안정", "주의", "초과" 텍스트 및 분기 색상(`#E87573` 등) 렌더링 검증. |
+| F8-1 | 지출 수입 날짜 초기화 오류 수정 | `fix/transaction-date-init` | - | Component | - | 신규 | 날짜 선택기 저장 시 상태 유지 오류 수정 |
+| F8-2 | 거래 수정 카테고리 오류 해결 | `fix/transaction-category-edit` | - | Component | - | 신규 | 기존 카테고리 정상 렌더링 및 수정 API 연동 수정 |
+| F8-3 | 날짜 지정 달력 테마 수정 | `feat/transaction-calendar-theme` | - | Component | - | 신규 | 달력 날짜 클릭 시 하이라이트 테마/스타일링 적용 |
+| F8-4 | 달력 네비게이션 탭 구현 | `feat/calendar-time-tabs` | - | Component | - | 신규 | "지금" 버튼을 과거/지금/미래 탭으로 개편 및 라우팅 |
+| F9-1 | 소비 코어 감정 8종 노출 | `feat/core-emotion-display` | - | Component | - | 신규 | 데이터 0건인 감정도 누락 없이 8개 렌더링 처리 |
+| F9-2 | 감정 분석 퍼센트 로직 변경 | `feat/analysis-percentage-logic` | - | Utils·Component | - | 신규 | 분석 퍼센트를 금액 기준에서 횟수 기준으로 변경 |
+| F9-3 | 지출 추이 카드 클릭 이동 | `feat/monthly-trend-navigation` | - | Component | - | 신규 | 월별 바/포인트 클릭 시 해당 달 상세 뷰로 이동 |
+| F9-4 | AI 월별 분석 결과 연동 | `feat/ai-analysis-monthly-link` | - | Component | - | 신규 | AI 대시보드에 월별 리포트 이동 링크 추가 및 데이터 조회 연동 |
+| F10-1 | 거래내역 다중 삭제 UI | `feat/transaction-bulk-delete-ui` | - | api·Component | `['tx','list']` | 신규 | 체크박스 다중 선택 UI 및 삭제 API 연동 |
+| F10-2 | 패턴 분석 연동 및 UI | `feat/recurring-pattern-ui` | - | api·Component | `['analysis', 'pattern']` | 신규 | 패턴 API 응답 기반 반복 소비 패턴 시각화 |
+
+
 
 > **계층** = 프론트 레이어(`src/pages` · `src/hooks` · `src/api` · `src/store`). **캐시키** = TanStack Query Key(공유 자원 — 임의 생성 금지, 표의 배열을 정확히 사용).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.

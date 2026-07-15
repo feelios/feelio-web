@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
-import { getEmotion } from '../data/emotions.js';
+import { getEmotion, emotions } from '../data/emotions.js';
 import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
 
 const Page = styled.div`
@@ -112,28 +112,18 @@ const BarTrack = styled.div`
   background: var(--line);
 `;
 
-export default function AnalysisPageDc({ state }) {
+export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const isDark = state?.mode === 'dark';
   const [flippedCards, setFlippedCards] = useState({});
   const [activeChartTab, setActiveChartTab] = useState('emotion');
   const [patternFlipped, setPatternFlipped] = useState(false);
-  const [selectedMonthIdx, setSelectedMonthIdx] = useState(null);
 
-  const toggleFlip = (emotion) => {
-    setFlippedCards(prev => ({ ...prev, [emotion]: !prev[emotion] }));
-  };
-
-  const now = new Date();
-  const { data: analysis } = useMonthlyAnalysisQuery(now.getFullYear(), now.getMonth() + 1);
+  const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: insightsData } = useAiInsightsQuery();
   const { data: trendData } = useMonthlyTrendQuery();
   const { data: budgetData } = useBudgetStatusQuery();
-  
+
   const monthly = trendData?.monthlyData ?? [];
-  const monthSelIdx = (selectedMonthIdx != null && selectedMonthIdx < monthly.length) ? selectedMonthIdx : monthly.length - 1;
-  const selMonthData = monthly[monthSelIdx];
-  const selMonthPrev = monthly[monthSelIdx - 1];
-  const selMonthCompare = selMonthPrev && selMonthPrev.amount ? Math.round(((selMonthData.amount - selMonthPrev.amount) / selMonthPrev.amount) * 100) : null;
 
   const aiQuickInsights = insightsData?.aiQuickInsights?.length > 0 ? insightsData.aiQuickInsights : [
     { label: '위험 루트', value: '-', note: '-', color: 'var(--sub)', type: 'default' },
@@ -160,7 +150,21 @@ export default function AnalysisPageDc({ state }) {
     }));
   };
   const categorySegments = buildSegments([...(analysis?.byCategory ?? [])].sort(byAmountDesc));
-  const emotionSegments = buildSegments(analysis?.byEmotion ?? []); // 계약상 amount 내림차순
+  const emotionTotalCount = (analysis?.byEmotion ?? []).reduce((sum, item) => sum + item.count, 0);
+  const emotionSegments = emotions.map(emo => {
+    const found = (analysis?.byEmotion ?? []).find(item => (item.name ?? item.label) === emo.name);
+    const count = found ? found.count : 0;
+    const amount = found ? found.amount : 0;
+    return {
+      name: emo.name,
+      percent: emotionTotalCount ? Math.round((count / emotionTotalCount) * 100) : 0,
+      amount: `${amount.toLocaleString()}원`,
+      color: emo.color
+    };
+  }).sort((a, b) => {
+    if (b.percent !== a.percent) return b.percent - a.percent;
+    return b.amount - a.amount;
+  });
   const timeSegments = buildSegments([...(analysis?.byTimeSlot ?? [])].sort(byAmountDesc));
 
   const chartConfig = {
@@ -185,11 +189,10 @@ export default function AnalysisPageDc({ state }) {
   };
 
   // 감정소비 카드: 앞면(감정·비율·금액·색)은 §9 byEmotion 상위 3건, 뒷면 문구만 정적 카피(emotionCardsData).
-  const totalEmotionAmount = (analysis?.byEmotion ?? []).reduce((sum, item) => sum + item.amount, 0);
-  const emotionCards = (analysis?.byEmotion ?? []).slice(0, 3).map((item, index) => ({
+  const emotionCards = emotionSegments.slice(0, 3).map((item, index) => ({
     emotion: item.name,
-    percent: totalEmotionAmount ? Math.round((item.amount / totalEmotionAmount) * 100) : 0,
-    amount: `${item.amount.toLocaleString()}원`,
+    percent: item.percent,
+    amount: item.amount,
     color: item.color,
     title: emotionCardsData[index]?.title ?? '',
     desc: emotionCardsData[index]?.desc ?? ''
@@ -245,6 +248,10 @@ export default function AnalysisPageDc({ state }) {
       ))}
     </div>
   );
+
+  const toggleFlip = (emotion) => {
+    setFlippedCards(prev => ({ ...prev, [emotion]: !prev[emotion] }));
+  };
 
   return (
     <Page>
@@ -429,20 +436,34 @@ export default function AnalysisPageDc({ state }) {
               <p css={{ margin: 0, color: 'var(--sub)', fontSize: 12 }}>최근 7개월 흐름만 담백하게 보여줘요</p>
             </div>
             <div css={{ textAlign: 'right', flexShrink: 0 }}>
-              <div css={{ color: 'var(--text)', fontSize: 18, fontWeight: 950 }}>{monthly.length > 0 ? `${(selMonthData?.amount ?? 0).toLocaleString()}원` : '- 원'}</div>
+              <div css={{ color: 'var(--text)', fontSize: 18, fontWeight: 950 }}>{monthly.length > 0 ? `${(trendData?.currentTotalAmount ?? 0).toLocaleString()}원` : '- 원'}</div>
               <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 850, marginTop: 4 }}>
-                {monthly.length > 0 ? `${selMonthData?.label ?? ''}${selMonthCompare != null ? ` · 전월 ${selMonthCompare > 0 ? '+' : ''}${selMonthCompare}%` : ''}` : '데이터 수집 중'}
+                {monthly.length > 0 ? `전월 대비 ${trendData?.comparedToLastMonth > 0 ? '+' : ''}${trendData?.comparedToLastMonth ?? 0}%` : '데이터 수집 중'}
               </div>
             </div>
           </div>
           
           {monthly.length > 0 ? (
             <div css={{ display: 'grid', gap: 12 }}>
-              <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map((item, index) => {
-                const current = index === monthSelIdx;
+              <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map((item) => {
+                const match = item.label.match(/(\d+)월/);
+                const itemMonth = match ? parseInt(match[1], 10) - 1 : -1;
+                const current = itemMonth === globalDate.getMonth();
                 const maxAmount = Math.max(...monthly.map(m => m.amount)) || 1;
                 const heightPercent = Math.max((item.amount / maxAmount) * 100, 5);
-                return <div key={item.label} onClick={() => setSelectedMonthIdx(index)} css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0, cursor: 'pointer' }}>
+                return <div
+                  key={item.label}
+                  css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0, cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                  onClick={() => {
+                    if (match) {
+                      let y = new Date().getFullYear();
+                      if (itemMonth > new Date().getMonth()) {
+                        y -= 1;
+                      }
+                      setGlobalDate(new Date(y, itemMonth, 1));
+                    }
+                  }}
+                >
                   <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 10, fontWeight: current ? 900 : 750, marginBottom: 6, opacity: current ? 1 : 0.58 }}>{(item.amount / 10000).toFixed(1)}만</span>
                   <div css={{ width: '100%', height: `${heightPercent}%`, minHeight: 8, borderRadius: 8, background: current ? 'var(--text)' : 'var(--line)', opacity: current ? 0.86 : 0.72 }} />
                   <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 11, fontWeight: current ? 900 : 650, marginTop: 7 }}>{item.label}</span>

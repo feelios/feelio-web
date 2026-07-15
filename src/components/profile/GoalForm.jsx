@@ -1,5 +1,7 @@
 /** @jsxImportSource @emotion/react */
+
 import styled from '@emotion/styled';
+import SegmentDatePicker from '../common/SegmentDatePicker.jsx';
 
 const FieldLabel = styled.label`
   display: block;
@@ -73,10 +75,12 @@ export default function GoalForm({ goalForm, setGoalForm, onSubmit, disabled }) 
         onChange={updateField('current')}
       />
       <FieldLabel>마감 날짜</FieldLabel>
-      <Field
-        type="date"
+      <SegmentDatePicker
         value={goalForm.period}
-        onChange={updateField('period')}
+        onChange={(newDate) => {
+          setGoalForm((prev) => ({ ...prev, period: newDate }));
+        }}
+        disabled={disabled}
       />
       <PrimaryButton type="button" disabled={disabled} onClick={onSubmit}>
         저장
