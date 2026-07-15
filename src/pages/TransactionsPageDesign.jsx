@@ -14,71 +14,83 @@ import SelectDc from '../components/common/SelectDc.jsx';
 const Wrap = styled.div`
   width: 100%;
   margin: 0;
-`;
 
-const PageHeader = styled.div`
-  margin-bottom: 16px;
+  @media (max-width: 820px) {
+    padding-top: 22px;
+  }
 `;
 
 const MonthLine = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 6px 2px 4px;
+  gap: 4px;
+  padding: 2px 0;
 
   strong {
-    min-width: 168px;
-    padding: 11px 24px;
-    border-radius: 999px;
-    border: 1px solid var(--card-border);
-    background:
-      radial-gradient(120px 60px at 28% 0%, rgba(158,150,238,.18), transparent 68%),
-      radial-gradient(120px 70px at 78% 100%, rgba(130,226,194,.16), transparent 70%),
-      var(--card-strong);
-    box-shadow: 0 12px 34px rgba(70, 58, 42, .08);
-    backdrop-filter: blur(18px);
-    font-size: 20px;
+    padding: 0 4px;
+    font-size: 22px;
+    font-weight: 900;
     line-height: 1.2;
-    letter-spacing: 0;
-    text-align: center;
+    letter-spacing: -.03em;
+  }
+
+  @media (max-width: 820px) {
+    gap: 2px;
+    strong { font-size: 19px; padding: 0 2px; }
   }
 `;
 
 const MonthButton = styled.button`
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: var(--card-strong);
-  color: var(--text);
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--sub);
   display: grid;
   place-items: center;
-  font-family: inherit;
-  font-size: 20px;
-  font-weight: 900;
-  line-height: 1;
   cursor: pointer;
-  backdrop-filter: blur(18px);
-  transition: transform .16s ease, background .16s ease, border-color .16s ease;
+  transition: background .15s ease, color .15s ease;
+
+  svg { width: 18px; height: 18px; }
 
   &:hover {
-    transform: translateY(-1px);
-    border-color: var(--card-border);
-    background: var(--card);
+    background: var(--card-strong);
+    color: var(--ink);
+  }
+
+  @media (max-width: 820px) {
+    width: 24px;
+    height: 24px;
+    svg { width: 16px; height: 16px; }
   }
 `;
 
 const Toolbar = styled.div`
   display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 11px;
   margin: 0 0 14px;
-  padding: 12px;
+  padding: 11px 12px 12px 14px;
   border-radius: 18px;
   border: 1px solid var(--line);
   background: var(--card);
+`;
+
+const ToolbarControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const MonthTabRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 10px;
+  width: 100%;
+  flex-wrap: wrap;
 `;
 
 const ViewTabs = styled.div`
@@ -98,6 +110,11 @@ const ViewTab = styled.button`
   font-size: 13px;
   font-weight: 900;
   cursor: pointer;
+
+  @media (max-width: 820px) {
+    padding: 6px 11px;
+    font-size: 12.5px;
+  }
 `;
 
 const Search = styled.div`
@@ -406,6 +423,13 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
     }
   }, [year, month, setGlobalDate]);
 
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 820);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 820);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const apiParams = useMemo(() => ({
     year,
     month: month === 'all' ? undefined : month,
@@ -468,27 +492,38 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
       }));
   }, [transactions, view]);
 
+  const monthNav = (
+    <MonthLine>
+      <MonthButton type="button" onClick={() => moveMonth(-1)} aria-label="이전달">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+      </MonthButton>
+      <strong>{monthTitle(year, month)}</strong>
+      <MonthButton type="button" onClick={() => moveMonth(1)} aria-label="다음달">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      </MonthButton>
+    </MonthLine>
+  );
+
+  const viewTabsEl = (
+    <ViewTabs>
+      {viewTabs.map(item => <ViewTab key={item} active={view === item} onClick={() => setView(item)}>{item}</ViewTab>)}
+    </ViewTabs>
+  );
+
   return (
     <Wrap>
-      <PageHeader>
-        <MonthLine>
-          <MonthButton type="button" onClick={() => moveMonth(-1)} aria-label="이전달">&lt;</MonthButton>
-          <strong>{monthTitle(year, month)}</strong>
-          <MonthButton type="button" onClick={() => moveMonth(1)} aria-label="다음달">&gt;</MonthButton>
-        </MonthLine>
-      </PageHeader>
-
       <Toolbar>
-        <ViewTabs>
-          {viewTabs.map(item => <ViewTab key={item} active={view === item} onClick={() => setView(item)}>{item}</ViewTab>)}
-        </ViewTabs>
-        <Search>
-          <input placeholder="메모·카테고리 검색" value={query} onChange={event => setQuery(event.target.value)} />
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sub)" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-        </Search>
-        <FilterButton type="button" active={filtersOpen} onClick={() => setFiltersOpen(prev => !prev)}>
-          필터
-        </FilterButton>
+        {isMobile ? <MonthTabRow>{monthNav}{viewTabsEl}</MonthTabRow> : monthNav}
+        <ToolbarControls>
+          {!isMobile && viewTabsEl}
+          <Search>
+            <input placeholder="메모·카테고리 검색" value={query} onChange={event => setQuery(event.target.value)} />
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sub)" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          </Search>
+          <FilterButton type="button" active={filtersOpen} onClick={() => setFiltersOpen(prev => !prev)}>
+            필터
+          </FilterButton>
+        </ToolbarControls>
       </Toolbar>
 
       {filtersOpen && <ControlGrid>

@@ -11,6 +11,10 @@ const Page = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
+
+  @media (max-width: 820px) {
+    padding-top: 22px;
+  }
 `;
 
 const InsightRail = styled(GlassCard)`
@@ -21,12 +25,8 @@ const InsightRail = styled(GlassCard)`
   gap: 0;
   overflow: hidden;
 
-  @media (max-width: 960px) {
+  @media (max-width: 820px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @media (max-width: 560px) {
-    grid-template-columns: 1fr;
   }
 `;
 const InsightItem = styled.div`
@@ -42,20 +42,12 @@ const InsightItem = styled.div`
     border-right: 0;
   }
 
-  @media (max-width: 960px) {
+  @media (max-width: 820px) {
     &:nth-of-type(2) {
       border-right: 0;
     }
 
     &:nth-of-type(n + 3) {
-      border-top: 1px solid var(--line);
-    }
-  }
-
-  @media (max-width: 560px) {
-    border-right: 0;
-
-    &:nth-of-type(n + 2) {
       border-top: 1px solid var(--line);
     }
   }
@@ -104,7 +96,7 @@ const Duo = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 
-  @media (max-width: 900px) {
+  @media (max-width: 820px) {
     grid-template-columns: 1fr;
   }
 `;
@@ -130,7 +122,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const { data: insightsData } = useAiInsightsQuery();
   const { data: trendData } = useMonthlyTrendQuery();
   const { data: budgetData } = useBudgetStatusQuery();
-  
+
   const monthly = trendData?.monthlyData ?? [];
 
   const aiQuickInsights = insightsData?.aiQuickInsights?.length > 0 ? insightsData.aiQuickInsights : [
@@ -233,7 +225,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
       gap: 6, 
       marginTop: isMobile ? 12 : 6, 
       width: isMobile ? '100%' : 'auto',
-      '@media (max-width: 600px)': { display: isMobile ? 'grid' : 'none' }
+      '@media (max-width: 820px)': { display: isMobile ? 'grid' : 'none' }
     }}>
       {[
         { id: 'emotion', text: '감정' },
@@ -394,27 +386,28 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
             <span css={{ color: activeChart.color, fontSize: 12, fontWeight: 950 }}>{activeChart.helper}</span>
           </div>
 
-          <div css={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'minmax(230px, .85fr) 1fr', 
+          {renderTabs(true)}
+
+          <div css={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(230px, .85fr) 1fr',
             flex: 1, 
             gap: 24, 
             alignItems: 'center',
-            '@media (max-width: 600px)': { gridTemplateColumns: '1fr', gap: 20 }
+            '@media (max-width: 820px)': { gridTemplateColumns: 'auto 1fr', gap: 16, alignItems: 'center', marginTop: 18 }
           }}>
-            <div css={{ display: 'grid', justifyItems: 'center', gap: 12 }}>
-              <div css={{ fontFamily: 'var(--font-display)', color: activeChart.color, fontSize: 'clamp(46px, 8vw, 56px)', fontWeight: 950, lineHeight: .95 }}>{activeChart.percent}%</div>
+            <div css={{ display: 'grid', justifyItems: 'center', gap: 12, '@media (max-width: 820px)': { gap: 5 } }}>
+              <div css={{ fontFamily: 'var(--font-display)', color: activeChart.color, fontSize: 'clamp(46px, 8vw, 56px)', fontWeight: 950, lineHeight: .95, '@media (max-width: 820px)': { fontSize: 56 } }}>{activeChart.percent}%</div>
               <div css={{ color: 'var(--text)', fontSize: 'clamp(18px, 4vw, 20px)', fontWeight: 950 }}>{activeChart.label}</div>
-              <div css={{ maxWidth: 230, color: 'var(--sub)', fontSize: 12, fontWeight: 750, lineHeight: 1.55, textAlign: 'center' }}>{activeChart.focus}</div>
-              <div css={{ width: 'min(100%, 220px)', marginTop: 4 }}>
+              <div css={{ maxWidth: 230, color: 'var(--sub)', fontSize: 12, fontWeight: 750, lineHeight: 1.55, textAlign: 'center', '@media (max-width: 820px)': { display: 'none' } }}>{activeChart.focus}</div>
+              <div css={{ width: 'min(100%, 220px)', marginTop: 4, '@media (max-width: 820px)': { display: 'none' } }}>
                 <BarTrack css={{ height: 8, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(31,32,54,0.08)' }}>
                   <div css={{ width: `${activeChart.percent}%`, height: '100%', borderRadius: 99, background: activeChart.color, opacity: .86 }} />
                 </BarTrack>
               </div>
-              {renderTabs(true)}
             </div>
 
-            <div css={{ display: 'grid', gap: 14 }}>
+            <div css={{ display: 'grid', gap: 14, '@media (max-width: 820px)': { maxWidth: 165, width: '100%', justifySelf: 'end' } }}>
               <div css={{ display: 'grid', gap: 9 }}>
                 {activeChart.segments.map((seg, index) => {
                   const isPrimary = index === 0;
@@ -427,6 +420,10 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               </div>
               {renderTabs(false)}
             </div>
+          </div>
+          <div css={{ display: 'none', '@media (max-width: 820px)': { display: 'flex' }, alignItems: 'center', gap: 8, marginTop: 15, paddingTop: 13, borderTop: '1px solid var(--line)' }}>
+            <span css={{ width: 6, height: 6, borderRadius: '50%', background: activeChart.color, flexShrink: 0 }} />
+            <span css={{ color: 'var(--text)', fontSize: 12.5, fontWeight: 800, lineHeight: 1.5 }}>{activeChart.focus}</span>
           </div>
         </Card>
       </Duo>
@@ -454,8 +451,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                 const current = itemMonth === globalDate.getMonth();
                 const maxAmount = Math.max(...monthly.map(m => m.amount)) || 1;
                 const heightPercent = Math.max((item.amount / maxAmount) * 100, 5);
-                return <div 
-                  key={item.label} 
+                return <div
+                  key={item.label}
                   css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0, cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
                   onClick={() => {
                     if (match) {
@@ -487,15 +484,15 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
           <div css={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}><span css={{ width: 24, height: 24, borderRadius: 8, background: 'var(--ink)', color: 'var(--on-ink)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 900 }}>AI</span><b css={{ fontSize: 16 }}>감정소비 분석</b></div>
           <p css={{ color: 'var(--sub)', fontSize: 12, marginBottom: 20 }}>이번 달 지출에 가장 큰 영향을 미친 감정들이에요.</p>
           
-          <div css={{ 
-            display: 'flex', 
-            gap: 12, 
+          <div css={{
+            display: 'flex',
+            gap: 12,
             flex: 1
           }}>
             {emotionCards.map(insight => {
                const isFlipped = flippedCards[insight.emotion];
                return (
-                 <div 
+                 <div
                    key={insight.emotion}
                    css={{ flex: 1, perspective: 1200, minHeight: 180, cursor: 'pointer' }}
                    onClick={() => toggleFlip(insight.emotion)}
@@ -513,7 +510,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        background: 'var(--card)',
                        display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 3,
                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-                       '@media (max-width: 600px)': { padding: '16px 12px' }
+                       '@media (max-width: 820px)': { padding: '16px 12px' }
                      }}>
                        <span css={{ fontSize: 'clamp(13px, 3vw, 16px)', color: 'var(--sub)', fontWeight: 800 }}>{insight.emotion}</span>
                        <b css={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 5.5vw, 36px)', color: 'var(--text)', lineHeight: 1 }}>{insight.percent}%</b>
@@ -528,7 +525,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        background: insight.color + '15',
                        display: 'flex', flexDirection: 'column', justifyContent: 'center',
                        boxShadow: `0 8px 24px ${insight.color}20`,
-                       '@media (max-width: 600px)': { padding: '16px 10px' }
+                       '@media (max-width: 820px)': { padding: '16px 10px' }
                      }}>
                        <div css={{ fontSize: 'clamp(12px, 3.2vw, 16px)', fontWeight: 900, marginBottom: 'clamp(6px, 2vw, 12px)', color: 'var(--text)', wordBreak: 'keep-all', lineHeight: 1.3 }}>{insight.title}</div>
                        <div css={{ fontSize: 'clamp(10px, 2.5vw, 13px)', color: 'var(--sub)', lineHeight: 1.45, wordBreak: 'keep-all' }}>{insight.desc}</div>
@@ -544,17 +541,17 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
       <Card 
         css={{ 
           display: 'flex', flexDirection: 'column', minHeight: 390,
-          '@media (max-width: 900px)': { perspective: 1200, cursor: 'pointer', padding: 0 }
+          '@media (max-width: 820px)': { perspective: 1200, cursor: 'pointer', padding: 0 }
         }}
         onClick={() => {
-          if (window.innerWidth <= 900) {
+          if (window.innerWidth <= 820) {
             setPatternFlipped(!patternFlipped);
           }
         }}
       >
         <div css={{ 
           display: 'grid', gridTemplateColumns: 'minmax(280px, .9fr) 1fr', gap: 34, alignItems: 'stretch',
-          '@media (max-width: 900px)': {
+          '@media (max-width: 820px)': {
             display: 'block',
             position: 'relative',
             width: '100%',
@@ -566,7 +563,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
         }}>
           <div css={{ 
             display: 'flex', flexDirection: 'column', minWidth: 0,
-            '@media (max-width: 900px)': {
+            '@media (max-width: 820px)': {
               backfaceVisibility: 'hidden',
               padding: 24,
               minHeight: 390
@@ -615,20 +612,22 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               </p>
             </div>
             
-            <div css={{ display: 'none', '@media (max-width: 900px)': { display: 'block', textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--sub)', fontWeight: 800 } }}>
+            <div css={{ display: 'none', '@media (max-width: 820px)': { display: 'block', textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--sub)', fontWeight: 800 } }}>
               터치하여 소비 내역 보기 ↺
             </div>
           </div>
 
           <div css={{ 
             display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: '1px solid var(--line)', paddingLeft: 28,
-            '@media (max-width: 900px)': {
+            '@media (max-width: 820px)': {
               position: 'absolute', inset: 0,
               backfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)',
               padding: 24,
               borderLeft: 'none',
-              background: 'var(--card)'
+              background: 'var(--card)',
+              borderRadius: 26,
+              overflow: 'hidden'
             }
           }}>
             <div css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, padding: '0 0 12px', fontSize: 11, color: 'var(--sub)', fontWeight: 900, borderBottom: '1px solid var(--line)' }}>
@@ -649,7 +648,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               })}
             </div>
             
-            <div css={{ display: 'none', '@media (max-width: 900px)': { display: 'block', textAlign: 'center', marginTop: 12, fontSize: 12, color: 'var(--sub)', fontWeight: 800 } }}>
+            <div css={{ display: 'none', '@media (max-width: 820px)': { display: 'block', textAlign: 'center', marginTop: 12, fontSize: 12, color: 'var(--sub)', fontWeight: 800 } }}>
               돌아가기 ↺
             </div>
           </div>

@@ -24,6 +24,7 @@ const Page = styled.div`
 
   @media (max-width: 820px) {
     justify-content: flex-start;
+    padding-top: 26px;
   }
 `;
 
@@ -352,7 +353,7 @@ export default function RecordPageDc({ actions, onSaved }) {
           </TypeTabs>
 
           <div css={{ position: 'relative', marginTop: 'clamp(18px, 3vw, 28px)' }}>
-            <div css={{ fontSize: 13, color: 'var(--text)', fontWeight: 900, marginBottom: 11 }}>
+            <div css={{ fontSize: 13, color: 'var(--text)', fontWeight: 900, marginBottom: 11, '@media (max-width: 820px)': { fontSize: 18 } }}>
               {form.type === 'expense' ? '얼마나 썼어요?' : '얼마가 들어왔어요?'}
             </div>
             <AmountBox>

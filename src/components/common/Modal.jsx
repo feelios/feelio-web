@@ -23,6 +23,11 @@ const Panel = styled.div`
   box-shadow: var(--shadow);
   backdrop-filter: blur(28px) saturate(1.25);
   animation: ${modalIn} .24s ease;
+
+  @media (max-width: 820px) {
+    border-radius: 22px;
+    max-height: ${({ maxHeight }) => maxHeight || '88vh'};
+  }
 `;
 
 export function Modal({ children, onClose, width, height, maxHeight, overflow }) {

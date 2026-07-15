@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { EmptyEmotionBlob } from '../components/common/EmptyEmotionBlob.jsx';
@@ -55,8 +55,8 @@ const Stage = styled.div`
 
   @media (max-width: 980px) {
     align-content: start;
-    padding-top: 0;
-    margin-top: -10px;
+    padding-top: 30px;
+    margin-top: 0;
     order: 1;
   }
 `;
@@ -79,8 +79,9 @@ const BlobHalo = styled.div`
   }
 
   @media (max-width: 980px) {
-    width: clamp(260px, 55vw, 360px);
-    height: clamp(260px, 55vw, 360px);
+    width: clamp(252px, 62vw, 336px);
+    height: clamp(252px, 62vw, 336px);
+    overflow: visible;
   }
 `;
 
@@ -90,7 +91,7 @@ const Ridge = styled(GlassCard)`
   padding: ${({ expanded }) => expanded ? 'clamp(18px, 1.6vw, 22px) clamp(20px, 1.8vw, 26px) 0' : '22px'};
   border-radius: 26px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: padding 0.3s ease;
 
   @media (min-width: 981px) {
     cursor: default;
@@ -150,9 +151,7 @@ const Calendar = styled(GlassCard)`
   }
 
   @media (max-width: 980px) {
-    max-width: none;
-    margin: 0 auto;
-    order: 2;
+    order: 5;
   }
 `;
 
@@ -255,7 +254,9 @@ const Signal = styled(GlassCard)`
   border-radius: 24px;
 
   @media (max-width: 980px) {
-    order: 5;
+    order: 2;
+    margin-top: 14px;
+    padding: 20px 20px 18px;
   }
 `;
 
@@ -413,6 +414,12 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
   const lastClickTimeRef = useRef({});
   const [isRidgeExpanded, setIsRidgeExpanded] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 980);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 980);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   const [isCalendarExpanded, setIsCalendarExpanded] = useState(false);
 
   const [prevSelected, setPrevSelected] = useState(selected);
@@ -498,6 +505,25 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     }
   };
 
+  const renderCalendarBody = (onAfterSelect) => (
+    <>
+      <MonthBar>
+        <MonthButton type="button" onClick={() => moveMonth(-1)} aria-label="이전 달">‹</MonthButton>
+        <strong>{monthLabel}</strong>
+        <MonthButton type="button" onClick={() => moveMonth(1)} aria-label="다음 달">›</MonthButton>
+      </MonthBar>
+      <Week>{['일', '월', '화', '수', '목', '금', '토'].map(day => <span key={day}>{day}</span>)}</Week>
+      <PebbleGrid>
+        {days.map(item => {
+          if (item.empty) return <Pebble key={item.id} empty disabled aria-hidden="true" />;
+          const color = item.emotion ? getEmotion(item.emotion).color : undefined;
+          const dateKey = `${visibleMonth.getFullYear()}-${String(visibleMonth.getMonth() + 1).padStart(2, '0')}-${String(item.day).padStart(2, '0')}`;
+          return <Pebble key={item.id} color={color} strong={item.strong} selected={dateKey === selectedDayKey} today={item.today} dark={dark} onClick={event => { selectDay(item.day, dateKey, event.timeStamp); onAfterSelect?.(); }}>{item.day}</Pebble>;
+        })}
+      </PebbleGrid>
+    </>
+  );
+
   return (
     <Grid>
       <Left>
@@ -505,13 +531,13 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
         <Stage>
           <div>
             <BlobHalo color={topMeta.color}>
-              <div css={{ position: 'relative', display: 'grid', placeItems: 'center', width: 'clamp(320px, 28vw, 400px)', height: !showEmptyBlob ? 'clamp(360px, 31vw, 372px)' : 'clamp(330px, 28vw, 344px)' }}>
+              <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 224 : 'clamp(320px, 28vw, 400px)', height: isMobile ? 236 : (!showEmptyBlob ? 'clamp(360px, 31vw, 372px)' : 'clamp(330px, 28vw, 344px)') }}>
                 {!showEmptyBlob
-                  ? <EmotionBlob emotion={displayEmotion} size={360} />
-                  : <EmptyEmotionBlob size={330} dark={dark} />}
+                  ? <EmotionBlob emotion={displayEmotion} size={isMobile ? 210 : 360} />
+                  : <EmptyEmotionBlob size={isMobile ? 186 : 330} dark={dark} />}
               </div>
             </BlobHalo>
-            <div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 800, marginTop: -24 }}>
+            <div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 800, marginTop: isMobile ? 4 : -24 }}>
               {showEmptyBlob ? '아직 감정을 기다리는 중' : selectedDayEmotion ? '선택한 날에 가장 오래 머문 마음' : '선택한 날에는 감정 기록이 없어요'}
             </div>
             <div css={{ fontSize: 24, color: !showEmptyBlob ? topMeta.color : (dark ? '#9B8CFF' : '#7C6BE0'), fontWeight: 900, letterSpacing: '-.02em', marginTop: 2 }}>
@@ -538,7 +564,8 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
                   <span css={{ color: 'var(--sub)', fontSize: 16, '@media (min-width: 981px)': { display: 'none' } }}>{isRidgeExpanded ? '▴' : '▾'}</span>
                 </div>
               </AccordionSummary>
-              <div css={{ display: isRidgeExpanded ? 'block' : 'none', '@media (min-width: 981px)': { display: 'block' } }}>
+              <div css={{ display: 'grid', gridTemplateRows: isRidgeExpanded ? '1fr' : '0fr', transition: 'grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1)', '@media (min-width: 981px)': { gridTemplateRows: '1fr' } }}>
+               <div css={{ overflow: 'hidden', minHeight: 0 }}>
                 <div css={{ height: 150, position: 'relative', margin: '0', overflow: 'hidden' }}>
                   <svg viewBox="0 0 600 170" width="100%" height="100%" preserveAspectRatio="none" css={{ display: 'block', position: 'absolute', inset: 0 }}>
                     <defs>
@@ -559,6 +586,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
                   </svg>
                 </div>
                 <div css={{ fontSize: 12.5, color: 'var(--sub)', padding: '8px 22px 14px' }}>이번 달은 <b css={{ color: getEmotion(ridgePeak[0]).color }}>{ridgePeak[0]}</b>이 가장 높이 솟았어요</div>
+               </div>
               </div>
             </>
           ) : (
@@ -577,21 +605,10 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
             </div>
             <span css={{ color: 'var(--sub)', fontSize: 16, '@media (min-width: 981px)': { display: 'none' } }}>{isCalendarExpanded ? '▴' : '▾'}</span>
           </AccordionSummary>
-          <div onClick={e => e.stopPropagation()} css={{ cursor: 'default', display: isCalendarExpanded ? 'block' : 'none', '@media (min-width: 981px)': { display: 'block' } }}>
-            <MonthBar>
-              <MonthButton type="button" onClick={() => moveMonth(-1)} aria-label="이전 달">‹</MonthButton>
-              <strong>{monthLabel}</strong>
-              <MonthButton type="button" onClick={() => moveMonth(1)} aria-label="다음 달">›</MonthButton>
-            </MonthBar>
-            <Week>{['일', '월', '화', '수', '목', '금', '토'].map(day => <span key={day}>{day}</span>)}</Week>
-            <PebbleGrid>
-              {days.map(item => {
-                if (item.empty) return <Pebble key={item.id} empty disabled aria-hidden="true" />;
-                const color = item.emotion ? getEmotion(item.emotion).color : undefined;
-                const dateKey = `${visibleMonth.getFullYear()}-${String(visibleMonth.getMonth() + 1).padStart(2, '0')}-${String(item.day).padStart(2, '0')}`;
-                return <Pebble key={item.id} color={color} strong={item.strong} selected={dateKey === selectedDayKey} today={item.today} dark={dark} onClick={event => selectDay(item.day, dateKey, event.timeStamp)}>{item.day}</Pebble>;
-              })}
-            </PebbleGrid>
+          <div onClick={e => e.stopPropagation()} css={{ cursor: 'default', display: 'grid', gridTemplateRows: isCalendarExpanded ? '1fr' : '0fr', transition: 'grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1)', '@media (min-width: 981px)': { gridTemplateRows: '1fr' } }}>
+            <div css={{ overflow: 'hidden', minHeight: 0 }}>
+              {renderCalendarBody()}
+            </div>
           </div>
         </Calendar>
 
@@ -617,10 +634,10 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
           </div>
           {hasMonthlyTransactions ? (
             <>
-              <div css={{ fontSize: 14.5, fontWeight: 900, lineHeight: 1.35 }}>
-                {signals.length > 0 && signals[0].rate > 0 
-                  ? `이번 달은 ${signals[0].name} 소비가 조금 늘고 있어요.` 
-                  : '감정 소비가 안정적으로 관리되고 있어요.'}
+              <div css={{ fontSize: isMobile ? 18 : 14.5, fontWeight: 900, lineHeight: isMobile ? 1.42 : 1.35 }}>
+                {signals.length > 0 && signals[0].rate > 0
+                  ? (isMobile ? `이번 달은 ${signals[0].name} 소비가 조금 늘었어. 괜찮아, 같이 들여다보자.` : `이번 달은 ${signals[0].name} 소비가 조금 늘고 있어요.`)
+                  : (isMobile ? '감정 소비가 안정적으로 관리되고 있어. 이대로도 충분해.' : '감정 소비가 안정적으로 관리되고 있어요.')}
               </div>
               <div css={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '8px 0 7px', borderTop: '1px solid var(--line)', marginTop: 8 }}>
                 {signals.length > 0 ? (
@@ -637,8 +654,8 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
             </>
           ) : (
             <>
-              <div css={{ fontSize: 14.5, fontWeight: 900, lineHeight: 1.35 }}>아직 기록된 소비가 없어요.</div>
-              <div css={{ color: 'var(--sub)', fontSize: 12.5, lineHeight: 1.55, paddingTop: 8, borderTop: '1px solid var(--line)', marginTop: 8 }}>첫 기록을 남기면 감정 신호가 여기에서 천천히 보이기 시작해요.</div>
+              <div css={{ fontSize: isMobile ? 17 : 14.5, fontWeight: 900, lineHeight: 1.35 }}>{isMobile ? '아직 기록된 소비가 없어.' : '아직 기록된 소비가 없어요.'}</div>
+              <div css={{ color: 'var(--sub)', fontSize: 12.5, lineHeight: 1.55, paddingTop: 8, borderTop: '1px solid var(--line)', marginTop: 8 }}>{isMobile ? '첫 기록을 남기면 감정 신호가 여기서 천천히 보이기 시작할 거야.' : '첫 기록을 남기면 감정 신호가 여기에서 천천히 보이기 시작해요.'}</div>
             </>
           )}
         </Signal>
