@@ -16,51 +16,56 @@
 > - **F11=UI 고도화**: 글래스모피즘 등 프리미엄 디자인 룰 적용 및 화면 간 상태 연동 고도화
 > 상태: 완료(머지됨) · 예정 · 신규(백엔드 계약에 맞춰 신규 편성, 예정)
 
-| 코드 | 제목 | 브랜치 | 계약 | 계층 | 캐시키 | 상태 | 완료기준(핵심) |
-|---|---|---|---|---|---|---|---|
-| F1-1 | Axios 401 토큰 재발급(쿠키) | `fix/auth-interceptor-cookie` | §3 | api | — | 완료 | 로컬스토리지 토큰·Authorization 강제주입 제거 → 401 시 바디 없이 `/auth/token/refresh` 호출(쿠키 자동전송) → 원 요청 재시도 |
-| F1-2 | 메타데이터 폼 바인딩 | `fix/meta-form-binding` | §5 | Page·Hook·api | `['meta']` | 완료 | `RecordPage` 하드코딩 카테고리 제거, `useMetadata`로 감정·카테고리 옵션 바인딩, 등록 후 캐시 무효화 |
-| F2-1 | 온보딩 폼·닉네임 검증 | `feat/users-me` | §4 | Page·api·Store | `['user']` | 완료 | 닉네임 1~8자 검증 UI, 온보딩 API 연동 후 `{onboardingDone:true}` 갱신 → 홈 리다이렉트 |
-| F3-1 | 거래 목록·무한스크롤 | `feat/tx-list` | §6 | Page·Hook·api | `['tx','list']` | 완료 | `mockTransactions` 제거, `useTransactionsQuery` 연동, 무한스크롤 + 연/월 필터 + 검색어 디바운스 |
-| F3-2 | 거래 상세·수정·삭제 | `feat/tx-crud` | §6 | Page·Hook·api | `['tx','detail']` | 완료 | 상세 모달 바인딩, 수정/삭제 Mutation, 완료 시 목록 캐시 무효화 및 즉시 반영 |
-| F4-1 | 목표 CRUD·대표목표 | `feat/goals` | §7 | Page·Hook·api | `['goals']` | 완료 | 목표 입력 폼 분리 + CRUD 바인딩, `isMain` 설정/해제 토글 연동 |
-| F4-2 | 홈 캘린더 요약 | `feat/summary-cal` | §8 | Page·Hook·api | `['summary','calendar']` | 완료 | 일별 감정 아이콘·지출 합계 캘린더 매핑, 데이터 없는 날짜 예외처리 |
-| F4-3 | 감정 요약 차트·전월대비 | `feat/summary-emo` | §8 | Page·Hook·api | `['summary','emotion']` | 완료 | 차트(Recharts/D3) 바인딩, `prevMonth` 증감률 계산·렌더 |
-| F4-4 | 설정(테마)·회원탈퇴 | `feat/user-settings` | §4 | Page·api·Store | `['user']` | 예정 | 테마 설정 Store 즉시 반영, 탈퇴 API + 로컬·전역 Store·캐시 전체 파기 |
-| F4-5 | 평행우주 UI | `feat/universe` | §9 | Page·Hook·api | `['universe']` | 완료 | §9 시뮬 스키마 바인딩, 3D/인터랙티브 상태·애니메이션 연동 |
-| F4-6 | 월간 분석(analysis) 화면 | `feat/analysis` | §9 | Page·Hook·api | `['analysis']` | 신규 | §9 `/analysis/monthly` 연동(카테고리·시간대·감정 집계 + 인사이트). ※`AnalysisPage` 기존 상황(situation) 기반 evidence 제거·재연동 |
-| F4-7 | 커스텀 카테고리 설정 | `feat/custom-category` | §12 | Page·Hook·api | `['categories']` | 완료 | §12 커스텀 카테고리 추가/삭제 + 공통·커스텀 통합 정렬(드래그) 저장·반환 (커밋 b7b91e1: api/hook + RecordPage 연동) |
-| F5-1 | Skeleton/Suspense 로딩 | `feat/ux-loading` | — | Page·컴포넌트 | — | 예정 | `isLoading` + Suspense 바운더리, 메인/상세 스켈레톤 컴포넌트 노출 |
-| F5-2 | 전역 ErrorBoundary | `feat/ux-error` | §1 | 컴포넌트 | — | 예정 | 라우트 단위 ErrorBoundary, 500 등 오류 시 재시도 버튼 포함 Fallback UI |
-| F5-3 | 거래·목표 낙관적 업데이트 | `feat/ux-optimistic` | §10 | Hook | `['tx']`·`['goals']` | 예정 | `onMutate` 캐시 선반영, `onError` 시 이전 캐시로 롤백 |
-| F6-1 | 전역 상태(로컬 스토리지) 보안 및 최적화 | `refactor/storage-whitelist` | §13 | Store·Hook | — | 신규 | §13 민감/비즈니스 데이터 스토리지에서 제거 + UI 상태(themeMode, aurora 등)만 로컬 유지(partialize 적용) |
-| F6-2 | JWT 보안 통신 및 Silent Refresh 구현 | `feat/auth-interceptor` | §14 | api·Store | — | 신규 | §14 Access 토큰 메모리(전역 상태) 관리 + 401 에러 감지 시 토큰 재발급 Axios 인터셉터 구현 (withCredentials 포함) |
-| F6-3 | 결제/목표 데이터 서버 연동(Fetching) 전환 | `refactor/data-fetching` | §15 | Page·Hook | `['transactions']`, `['goals']` | 신규 | §15 로컬 스토리지 의존성 100% 제거 + HomePage 등 남은 화면 컴포넌트 마운트 시 API 패칭(React Query)으로 완전 전환 |
-| F7-1 | '저축' 기본 카테고리 전환 및 UI 개편 | `refactor/default-category-savings` | - | Component·Page·api | `['categories']`, `['transactions']` | 신규 | 커스텀 '저축' 생성 UI/POST 로직 제거 → 스타일 상수(아이콘/테마) 매핑 → 기본 카테고리 하단(Order 9) 노출 및 거래 생성 검증 |
-| F7-2 | AI 분석: 데이터 부족 시 빈 박스(Empty Box) 예외 처리 | `feat/analysis-empty-state` | - | Component·Page | - | 신규 | 데이터 부재(배열 0 or 총합 0) 판별 → 차트 Early Return → 문구/버튼 없이 기존 영역 크기 유지하는 빈 박스(Empty Box) 렌더링 |
-| F7-3 | AI 멘트 API 연동 및 더미 텍스트 제거 | `feat/analysis-ai-insights-api` | - | api·Page·Hook | `['aiInsights']` | 신규 | `AnalysisPageDc.jsx` 내 더미(`aiQuickInsights` 등) 전면 제거 → `useAiInsightsQuery` 훅 생성/바인딩 → Mock 갱신 시 UI 즉각 반영 |
-| F7-4 | 지출 추이 차트 API 연동 및 하드코딩 제거 | `feat/analysis-trend-api` | - | api·Page·Hook | `['analysis', 'trend']` | 신규 | 1. `api/analysis.js` 통신 함수 및 `useMonthlyTrendQuery` 훅 생성.<br>2. 타겟 파일(`AnalysisPageDc.jsx`) 내 하드코딩된 금액, 증감률, 7개월 치 더미 배열 전면 삭제.<br>3. API 응답 데이터(`currentTotalAmount`, `monthlyData` 등)를 기반으로 우측 상단 텍스트 및 차트 동적 바인딩.<br>4. 데이터 빈 배열 시 "데이터 수집 중" UI 방어 로직 정상 연결 확인. |
-| F7-5 | 예산 현황 UI 바인딩 및 프론트 임의 로직 제거 | `feat/analysis-budget-api` | - | api·Page·Hook | `['analysis', 'budget']` | 신규 | 1. `api/analysis.js` 통신 함수 및 `useBudgetStatusQuery` 훅 생성.<br>2. `AnalysisPageDc.jsx` 내부에서 임의로 95%(`prevAmount * 0.95`)를 곱해 예산을 산출하던 억지 연산 로직 완전 제거.<br>3. 서버 응답값(`budget`, `currentAmount`)을 온전히 사용하여 진행률 퍼센트 계산.<br>4. 진행률에 따른 "안정", "주의", "초과" 텍스트 및 분기 색상(`#E87573` 등) 렌더링 검증. |
-| F8-1 | 지출 수입 날짜 초기화 오류 수정 | `fix/transaction-date-init` | - | Component | - | 신규 | 날짜 선택기 저장 시 상태 유지 오류 수정 |
-| F8-2 | 거래 수정 카테고리 오류 해결 | `fix/transaction-category-edit` | - | Component | - | 신규 | 기존 카테고리 정상 렌더링 및 수정 API 연동 수정 |
-| F8-3 | 날짜 지정 달력 테마 수정 | `feat/transaction-calendar-theme` | - | Component | - | 신규 | 달력 날짜 클릭 시 하이라이트 테마/스타일링 적용 |
-| F8-4 | 달력 네비게이션 탭 구현 | `feat/calendar-time-tabs` | - | Component | - | 신규 | "지금" 버튼을 과거/지금/미래 탭으로 개편 및 라우팅 |
-| F9-1 | 소비 코어 감정 8종 노출 | `feat/core-emotion-display` | - | Component | - | 신규 | 데이터 0건인 감정도 누락 없이 8개 렌더링 처리 |
-| F9-2 | 감정 분석 퍼센트 로직 변경 | `feat/analysis-percentage-logic` | - | Utils·Component | - | 신규 | 분석 퍼센트를 금액 기준에서 횟수 기준으로 변경 |
-| F9-3 | 지출 추이 카드 클릭 이동 | `feat/monthly-trend-navigation` | - | Component | - | 신규 | 월별 바/포인트 클릭 시 해당 달 상세 뷰로 이동 |
-| F9-4 | AI 월별 분석 결과 연동 | `feat/ai-analysis-monthly-link` | - | Component | - | 신규 | AI 대시보드에 월별 리포트 이동 링크 추가 및 데이터 조회 연동 |
-| F10-1 | 거래내역 다중 삭제 UI | `feat/transaction-bulk-delete-ui` | - | api·Component | `['tx','list']` | 신규 | 체크박스 다중 선택 UI 및 삭제 API 연동 |
-| F10-2 | 패턴 분석 연동 및 UI | `feat/recurring-pattern-ui` | §analysis/pattern | api·Component | `['analysis', 'pattern']` | 진행 | 결정론 집계 방향 확정(조합·횟수·근거=GROUP BY, 문구만 서버 생성/AI). `GET /analysis/pattern` 계약 문서화 + `analysisAPI.getPattern`·`usePatternQuery`·AnalysisPageDc 바인딩 완료(evidence 객체 shape). 백엔드 엔드포인트 구현 대기 |
-| F8-5 | 목표 '모은 돈' 입력 버그 수정 | `fix/goal-amount-binding` | - | Component | - | 신규 | 목표 금액 입력 시 숫자 파싱 오류 및 NaN 방어 로직 추가 |
-| F8-6 | 거래 감정 Select 오류 수정 및 UI 확대 | `fix/transaction-emotion-select` | - | Component | - | 신규 | 감정 초기값 바인딩 오류 해결 및 카테고리/감정 Select 컴포넌트 터치 영역(패딩) 확대 (F8-2 연계) |
-| F11-1 | 목표 글래스모피즘 및 만료 상태 스타일 | `feat/goal-design-update` | - | Component | - | 신규 | 목표 폼 투명도 5% 적용 및 과거 목표 흑백(Grayscale) 처리 |
-| F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 보류 | 날짜 선택기(DatePickerDc) 글래스 시도(5%/모달+스크림)했으나 방향 미확정 → 현재 **불투명 원복**. 월/요일 한글화(2026년 N월 · 월 화 수 목 금 토 일)만 반영. ※모바일에서 시간 패널이 화면 밖으로 넘치는 레이아웃 버그 별도 발견 |
-| F11-3 | 활성 목표(isMain) 홈·평행우주 연동 | `feat/goal-main-sync` | - | Component | `['goals']` | 신규 | isMain=true 인 활성 목표 데이터를 실시간 구독하여 홈/우주에 렌더링 반영 |
-| F7-6 | 온보딩 '총자산' 폼 추가 | `feat/onboarding-total-asset` | - | Page·Component | - | 신규 | 온보딩 완료 시 총자산 데이터를 함께 입력받아 서버로 전송 |
-| F7-7 | 홈 화면 총자산·목표 스와이프 UI | `feat/home-asset-swipe` | - | Component | - | 신규 | 홈 화면 상단에 총자산 카드 및 개별 목표 카드들을 스와이프/토글로 넘겨보는 UI 구현 |
-| F7-8 | 거래 폼 '목표 선택(저축)' 동적 UI | `feat/transaction-goal-select` | - | Component | - | 신규 | 카테고리를 '저축'으로 선택 시 하단에 어떤 목표인지 맵핑하는 Select 드롭다운 노출 |
-| F7-9 | 목표 카드 다이렉트 저금 연동 | `feat/goal-direct-deposit` | - | Component | - | 신규 | 목표 카드 내 '저금하기' 버튼 클릭 시 카테고리(저축)/목표가 미리 선택된 상태로 거래 모달 팝업 |
-| F7-10 | 홈 화면 예산 달성/미달 동적 렌더링 | `feat/home-dynamic-budget-ui` | - | Component | `['analysis', 'budget']` | 신규 | 예산 초과 달성 및 미달 시나리오에 따라 차트와 알림 문구를 다르게 렌더링 |
+| 체크 | 이슈# | 코드 | 제목 | 브랜치 | 계약 | 계층 | 캐시키 | 상태 | 완료기준(핵심) |
+| [x] | - | F1-1 | Axios 401 토큰 재발급(쿠키) | `fix/auth-interceptor-cookie` | §3 | api | — | 완료 | 로컬스토리지 토큰·Authorization 강제주입 제거 → 401 시 바디 없이 `/auth/token/refresh` 호출(쿠키 자동전송) → 원 요청 재시도 |
+| [x] | - | F1-2 | 메타데이터 폼 바인딩 | `fix/meta-form-binding` | §5 | Page·Hook·api | `['meta']` | 완료 | `RecordPage` 하드코딩 카테고리 제거, `useMetadata`로 감정·카테고리 옵션 바인딩, 등록 후 캐시 무효화 |
+| [x] | - | F2-1 | 온보딩 폼·닉네임 검증 | `feat/users-me` | §4 | Page·api·Store | `['user']` | 완료 | 닉네임 1~8자 검증 UI, 온보딩 API 연동 후 `{onboardingDone:true}` 갱신 → 홈 리다이렉트 |
+| [x] | - | F3-1 | 거래 목록·무한스크롤 | `feat/tx-list` | §6 | Page·Hook·api | `['tx','list']` | 완료 | `mockTransactions` 제거, `useTransactionsQuery` 연동, 무한스크롤 + 연/월 필터 + 검색어 디바운스 |
+| [x] | - | F3-2 | 거래 상세·수정·삭제 | `feat/tx-crud` | §6 | Page·Hook·api | `['tx','detail']` | 완료 | 상세 모달 바인딩, 수정/삭제 Mutation, 완료 시 목록 캐시 무효화 및 즉시 반영 |
+| [x] | - | F4-1 | 목표 CRUD·대표목표 | `feat/goals` | §7 | Page·Hook·api | `['goals']` | 완료 | 목표 입력 폼 분리 + CRUD 바인딩, `isMain` 설정/해제 토글 연동 |
+| [x] | - | F4-2 | 홈 캘린더 요약 | `feat/summary-cal` | §8 | Page·Hook·api | `['summary','calendar']` | 완료 | 일별 감정 아이콘·지출 합계 캘린더 매핑, 데이터 없는 날짜 예외처리 |
+| [x] | - | F4-3 | 감정 요약 차트·전월대비 | `feat/summary-emo` | §8 | Page·Hook·api | `['summary','emotion']` | 완료 | 차트(Recharts/D3) 바인딩, `prevMonth` 증감률 계산·렌더 |
+| [ ] | - | F4-4 | 설정(테마)·회원탈퇴 | `feat/user-settings` | §4 | Page·api·Store | `['user']` | 예정 | 테마 설정 Store 즉시 반영, 탈퇴 API + 로컬·전역 Store·캐시 전체 파기 |
+| [x] | - | F4-5 | 평행우주 UI | `feat/universe` | §9 | Page·Hook·api | `['universe']` | 완료 | §9 시뮬 스키마 바인딩, 3D/인터랙티브 상태·애니메이션 연동 |
+| [ ] | - | F4-6 | 월간 분석(analysis) 화면 | `feat/analysis` | §9 | Page·Hook·api | `['analysis']` | 신규 | §9 `/analysis/monthly` 연동(카테고리·시간대·감정 집계 + 인사이트). ※`AnalysisPage` 기존 상황(situation) 기반 evidence 제거·재연동 |
+| [x] | - | F4-7 | 커스텀 카테고리 설정 | `feat/custom-category` | §12 | Page·Hook·api | `['categories']` | 완료 | §12 커스텀 카테고리 추가/삭제 + 공통·커스텀 통합 정렬(드래그) 저장·반환 (커밋 b7b91e1: api/hook + RecordPage 연동) |
+| [ ] | - | F5-1 | Skeleton/Suspense 로딩 | `feat/ux-loading` | — | Page·컴포넌트 | — | 예정 | `isLoading` + Suspense 바운더리, 메인/상세 스켈레톤 컴포넌트 노출 |
+| [ ] | - | F5-2 | 전역 ErrorBoundary | `feat/ux-error` | §1 | 컴포넌트 | — | 예정 | 라우트 단위 ErrorBoundary, 500 등 오류 시 재시도 버튼 포함 Fallback UI |
+| [ ] | - | F5-3 | 거래·목표 낙관적 업데이트 | `feat/ux-optimistic` | §10 | Hook | `['tx']`·`['goals']` | 예정 | `onMutate` 캐시 선반영, `onError` 시 이전 캐시로 롤백 |
+| [ ] | - | F6-1 | 전역 상태(로컬 스토리지) 보안 및 최적화 | `refactor/storage-whitelist` | §13 | Store·Hook | — | 신규 | §13 민감/비즈니스 데이터 스토리지에서 제거 + UI 상태(themeMode, aurora 등)만 로컬 유지(partialize 적용) |
+| [ ] | - | F6-2 | JWT 보안 통신 및 Silent Refresh 구현 | `feat/auth-interceptor` | §14 | api·Store | — | 신규 | §14 Access 토큰 메모리(전역 상태) 관리 + 401 에러 감지 시 토큰 재발급 Axios 인터셉터 구현 (withCredentials 포함) |
+| [ ] | - | F6-3 | 결제/목표 데이터 서버 연동(Fetching) 전환 | `refactor/data-fetching` | §15 | Page·Hook | `['transactions']`, `['goals']` | 신규 | §15 로컬 스토리지 의존성 100% 제거 + HomePage 등 남은 화면 컴포넌트 마운트 시 API 패칭(React Query)으로 완전 전환 |
+| [ ] | - | F7-1 | '저축' 기본 카테고리 전환 및 UI 개편 | `refactor/default-category-savings` | - | Component·Page·api | `['categories']`, `['transactions']` | 신규 | 커스텀 '저축' 생성 UI/POST 로직 제거 → 스타일 상수(아이콘/테마) 매핑 → 기본 카테고리 하단(Order 9) 노출 및 거래 생성 검증 |
+| [ ] | - | F7-2 | AI 분석: 데이터 부족 시 빈 박스(Empty Box) 예외 처리 | `feat/analysis-empty-state` | - | Component·Page | - | 신규 | 데이터 부재(배열 0 or 총합 0) 판별 → 차트 Early Return → 문구/버튼 없이 기존 영역 크기 유지하는 빈 박스(Empty Box) 렌더링 |
+| [ ] | - | F7-3 | AI 멘트 API 연동 및 더미 텍스트 제거 | `feat/analysis-ai-insights-api` | - | api·Page·Hook | `['aiInsights']` | 신규 | `AnalysisPageDc.jsx` 내 더미(`aiQuickInsights` 등) 전면 제거 → `useAiInsightsQuery` 훅 생성/바인딩 → Mock 갱신 시 UI 즉각 반영 |
+| [ ] | - | F7-4 | 지출 추이 차트 API 연동 및 하드코딩 제거 | `feat/analysis-trend-api` | - | api·Page·Hook | `['analysis', 'trend']` | 신규 | 1. `api/analysis.js` 통신 함수 및 `useMonthlyTrendQuery` 훅 생성.<br>2. 타겟 파일(`AnalysisPageDc.jsx`) 내 하드코딩된 금액, 증감률, 7개월 치 더미 배열 전면 삭제.<br>3. API 응답 데이터(`currentTotalAmount`, `monthlyData` 등)를 기반으로 우측 상단 텍스트 및 차트 동적 바인딩.<br>4. 데이터 빈 배열 시 "데이터 수집 중" UI 방어 로직 정상 연결 확인. |
+| [ ] | - | F7-5 | 예산 현황 UI 바인딩 및 프론트 임의 로직 제거 | `feat/analysis-budget-api` | - | api·Page·Hook | `['analysis', 'budget']` | 신규 | 1. `api/analysis.js` 통신 함수 및 `useBudgetStatusQuery` 훅 생성.<br>2. `AnalysisPageDc.jsx` 내부에서 임의로 95%(`prevAmount * 0.95`)를 곱해 예산을 산출하던 억지 연산 로직 완전 제거.<br>3. 서버 응답값(`budget`, `currentAmount`)을 온전히 사용하여 진행률 퍼센트 계산.<br>4. 진행률에 따른 "안정", "주의", "초과" 텍스트 및 분기 색상(`#E87573` 등) 렌더링 검증. |
+| [ ] | - | F7-6 | 온보딩 '총자산' 폼 추가 | `feat/onboarding-total-asset` | - | Page·Component | - | 신규 | 온보딩 완료 시 총자산 데이터를 함께 입력받아 서버로 전송 |
+| [ ] | - | F7-7 | 홈 화면 총자산·목표 스와이프 UI | `feat/home-asset-swipe` | - | Component | - | 신규 | 홈 화면 상단에 총자산 카드 및 개별 목표 카드들을 스와이프/토글로 넘겨보는 UI 구현 |
+| [ ] | - | F7-8 | 거래 폼 '목표 선택(저축)' 동적 UI | `feat/transaction-goal-select` | - | Component | - | 신규 | 카테고리를 '저축'으로 선택 시 하단에 어떤 목표인지 맵핑하는 Select 드롭다운 노출 |
+| [ ] | - | F7-9 | 목표 카드 다이렉트 저금 연동 | `feat/goal-direct-deposit` | - | Component | - | 신규 | 목표 카드 내 '저금하기' 버튼 클릭 시 카테고리(저축)/목표가 미리 선택된 상태로 거래 모달 팝업 |
+| [ ] | - | F7-10 | 홈 화면 예산 달성/미달 동적 렌더링 | `feat/home-dynamic-budget-ui` | - | Component | `['analysis', 'budget']` | 신규 | 예산 초과 달성 및 미달 시나리오에 따라 차트와 알림 문구를 다르게 렌더링 |
+| [ ] | - | F8-1 | 지출 수입 날짜 초기화 오류 수정 | `fix/transaction-date-init` | - | Component | - | 신규 | 날짜 선택기 저장 시 상태 유지 오류 수정 |
+| [ ] | - | F8-2 | 거래 수정 카테고리 오류 해결 | `fix/transaction-category-edit` | - | Component | - | 신규 | 기존 카테고리 정상 렌더링 및 수정 API 연동 수정 |
+| [ ] | - | F8-3 | 날짜 지정 달력 테마 수정 | `feat/transaction-calendar-theme` | - | Component | - | 신규 | 달력 날짜 클릭 시 하이라이트 테마/스타일링 적용 |
+| [ ] | - | F8-4 | 달력 네비게이션 탭 구현 | `feat/calendar-time-tabs` | - | Component | - | 신규 | "지금" 버튼을 과거/지금/미래 탭으로 개편 및 라우팅 |
+| [ ] | - | F8-5 | 목표 '모은 돈' 입력 버그 수정 | `fix/goal-amount-binding` | - | Component | - | 신규 | 목표 금액 입력 시 숫자 파싱 오류 및 NaN 방어 로직 추가 |
+| [ ] | - | F8-6 | 거래 감정 Select 오류 수정 및 UI 확대 | `fix/transaction-emotion-select` | - | Component | - | 신규 | 감정 초기값 바인딩 오류 해결 및 카테고리/감정 Select 컴포넌트 터치 영역(패딩) 확대 (F8-2 연계) |
+| [ ] | - | F8-7 | 캘린더 미래 날짜 선택 제한(Disabled) | `fix/calendar-future-disable` | - | Component | - | 신규 | 지출/수입 기록 캘린더 및 거래 수정 모달 내 캘린더에서 오늘 기준 '미래 날짜'는 클릭 불가능하도록(disabled) 방어 처리 |
+| [ ] | - | F8-8 | 거래 수정 캘린더 레이아웃 및 분 단위 추가 | `fix/transaction-edit-calendar` | - | Component | - | 신규 | 거래 수정 모달 내 캘린더 짤림 현상(CSS) 해결 및 기존 시간 선택 시 분(minute) 단위 설정 추가 |
+| [ ] | - | F8-9 | 거래 수정 폼 '수입/지출' 타입 변경 추가 | `feat/transaction-edit-type` | - | Component | - | 신규 | 거래 수정 모달 내부에 '수입/지출'을 변경할 수 있는 Select(혹은 탭) 추가 및 수정 API 연동 |
+| [ ] | - | F8-10 | 온보딩 '나만의 목표' 직접 입력 UI | `feat/onboarding-custom-goal` | - | Component | - | 신규 | 온보딩(2/6)에서 '나만의 목표' 클릭 시 텍스트 Input으로 전환되어 사용자가 직접 목표명을 작성하도록 구현 |
+| [ ] | - | F8-11 | 홈 화면 UI 버그 종합 수정(말랑이/달력) | `fix/home-ui-bugs` | - | Component | - | 신규 | 홈 말랑이 위로 스와이프 시 렌더링 버그 수정, 캘린더 우측 끝 짤림(레이아웃) 수정, 캘린더 선택 날짜(7월 1일 고정)를 오늘 날짜로 동적 수정 |
+| [ ] | - | F9-1 | 소비 코어 감정 8종 노출 | `feat/core-emotion-display` | - | Component | - | 신규 | 데이터 0건인 감정도 누락 없이 8개 렌더링 처리 |
+| [ ] | - | F9-2 | 감정 분석 퍼센트 로직 변경 | `feat/analysis-percentage-logic` | - | Utils·Component | - | 신규 | 분석 퍼센트를 금액 기준에서 횟수 기준으로 변경 |
+| [ ] | - | F9-3 | 지출 추이 카드 클릭 이동 | `feat/monthly-trend-navigation` | - | Component | - | 신규 | 월별 바/포인트 클릭 시 해당 달 상세 뷰로 이동 |
+| [ ] | - | F9-4 | AI 월별 분석 결과 연동 | `feat/ai-analysis-monthly-link` | - | Component | - | 신규 | AI 대시보드에 월별 리포트 이동 링크 추가 및 데이터 조회 연동 |
+| [ ] | - | F9-5 | 평행우주 REC 목표 선택 및 행성 동적 변경 | `feat/universe-rec-target-select` | - | Component | `['universe']` | 신규 | REC 버튼 클릭 시 화면 하단에 목표 리스트 노출 → 목표 선택 시 시뮬레이션 행성(조금 줄여본다면) 결과값 동적 변경 |
+| [ ] | - | F10-1 | 거래내역 다중 삭제 UI | `feat/transaction-bulk-delete-ui` | - | api·Component | `['tx','list']` | 신규 | 체크박스 다중 선택 UI 및 삭제 API 연동 |
+| [ ] | - | F10-2 | 패턴 분석 연동 및 UI | `feat/recurring-pattern-ui` | §analysis/pattern | api·Component | `['analysis', 'pattern']` | 진행 | 결정론 집계 방향 확정(조합·횟수·근거=GROUP BY, 문구만 서버 생성/AI). `GET /analysis/pattern` 계약 문서화 + `analysisAPI.getPattern`·`usePatternQuery`·AnalysisPageDc 바인딩 완료(evidence 객체 shape). 백엔드 엔드포인트 구현 대기 |
+| [ ] | - | F11-1 | 목표 글래스모피즘 및 만료 상태 스타일 | `feat/goal-design-update` | - | Component | - | 신규 | 목표 폼 투명도 5% 적용 및 과거 목표 흑백(Grayscale) 처리 |
+| [ ] | - | F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 보류 | 날짜 선택기(DatePickerDc) 글래스 시도(5%/모달+스크림)했으나 방향 미확정 → 현재 **불투명 원복**. 월/요일 한글화(2026년 N월 · 월 화 수 목 금 토 일)만 반영. ※모바일에서 시간 패널이 화면 밖으로 넘치는 레이아웃 버그 별도 발견 |
+| [ ] | - | F11-3 | 활성 목표(isMain) 홈·평행우주 연동 | `feat/goal-main-sync` | - | Component | `['goals']` | 신규 | isMain=true 인 활성 목표 데이터를 실시간 구독하여 홈/우주에 렌더링 반영 |
 
 
 
