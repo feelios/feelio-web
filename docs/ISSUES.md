@@ -53,7 +53,7 @@
 | F8-5 | 목표 '모은 돈' 입력 버그 수정 | `fix/goal-amount-binding` | - | Component | - | 신규 | 목표 금액 입력 시 숫자 파싱 오류 및 NaN 방어 로직 추가 |
 | F8-6 | 거래 감정 Select 오류 수정 및 UI 확대 | `fix/transaction-emotion-select` | - | Component | - | 신규 | 감정 초기값 바인딩 오류 해결 및 카테고리/감정 Select 컴포넌트 터치 영역(패딩) 확대 (F8-2 연계) |
 | F11-1 | 목표 글래스모피즘 및 만료 상태 스타일 | `feat/goal-design-update` | - | Component | - | 신규 | 목표 폼 투명도 5% 적용 및 과거 목표 흑백(Grayscale) 처리 |
-| F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 신규 | 달력 배경 투명도 5% 및 backdrop-filter 블러 적용 |
+| F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 보류 | 날짜 선택기(DatePickerDc) 글래스 시도(5%/모달+스크림)했으나 방향 미확정 → 현재 **불투명 원복**. 월/요일 한글화(2026년 N월 · 월 화 수 목 금 토 일)만 반영. ※모바일에서 시간 패널이 화면 밖으로 넘치는 레이아웃 버그 별도 발견 |
 | F11-3 | 활성 목표(isMain) 홈·평행우주 연동 | `feat/goal-main-sync` | - | Component | `['goals']` | 신규 | isMain=true 인 활성 목표 데이터를 실시간 구독하여 홈/우주에 렌더링 반영 |
 
 
