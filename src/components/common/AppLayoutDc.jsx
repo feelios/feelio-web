@@ -61,6 +61,11 @@ const Content = styled.div`
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+
+  @media (max-width: 820px) {
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
 `;
 
 const Frame = styled.div`
@@ -100,6 +105,13 @@ const Top = styled.header`
     font-size: 32px;
     letter-spacing: -.02em;
   }
+
+  @media (max-width: 820px) {
+    margin: 0 0 6px;
+
+    p { font-size: 12.5px; }
+    h1 { font-size: 22px; margin: 2px 0 0; }
+  }
 `;
 
 const IconButton = styled.button`
@@ -131,7 +143,9 @@ const MobileProfile = styled(IconButton)`
   font-weight: 900;
   font-size: 16px;
   border: 0;
-  
+  overflow: hidden;
+  padding: 0;
+
   @media (max-width: 820px) {
     display: flex;
     align-items: center;
@@ -155,6 +169,8 @@ export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, 
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  const [erroredAvatarUrl, setErroredAvatarUrl] = useState(null);
+
   return (
     <Shell mode={state.mode}>
       <Orb mode={state.mode} style={{ background: colors[0], animation: `${driftA} 28s ease-in-out infinite`, ...(isMobile ? { width: 'clamp(240px, 64vw, 360px)', height: 'clamp(240px, 64vw, 360px)', left: '-24%', top: '-3%', filter: 'blur(58px)' } : { width: 640, height: 640, left: -100, top: -180, filter: 'blur(110px)' }) }} />
@@ -173,9 +189,12 @@ export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, 
             <DarkModeToggle type="button" onClick={actions.toggleMode} aria-label="화면 모드 전환">
               {state.mode === 'dark' ? '☀' : '☾'}
             </DarkModeToggle>
-            <MobileProfile type="button" onClick={onProfile} aria-label="프로필 열기">
-              {state.user?.profileImageUrl
-                ? <img src={state.user.profileImageUrl} alt="프로필" referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+            <MobileProfile
+              type="button" onClick={onProfile} aria-label="프로필 열기"
+              style={(state.user?.profileImageUrl && erroredAvatarUrl !== state.user.profileImageUrl) ? { background: 'var(--card)' } : undefined}
+            >
+              {state.user?.profileImageUrl && erroredAvatarUrl !== state.user.profileImageUrl
+                ? <img src={state.user.profileImageUrl} alt="프로필" referrerPolicy="no-referrer" onError={() => setErroredAvatarUrl(state.user.profileImageUrl)} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', transform: 'scale(1.12)' }} />
                 : (state.user?.nickname?.slice(0, 1) || '나')}
             </MobileProfile>
           </TopRight>

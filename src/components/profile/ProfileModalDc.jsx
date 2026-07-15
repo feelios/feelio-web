@@ -25,6 +25,10 @@ const Screen = styled.div`
   padding: 26px 28px;
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 820px) {
+    padding: 20px 18px;
+  }
 `;
 
 const MainScreen = styled(Screen)`
