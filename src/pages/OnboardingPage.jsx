@@ -123,7 +123,8 @@ export default function OnboardingPage({ onComplete }) {
   const [duration, setDuration] = useState('1년');
   const [customDuration, setCustomDuration] = useState('');
   const [current, setCurrent] = useState(0);
-  
+  const [totalAsset, setTotalAsset] = useState(0);
+
   const updateMeMutation = useUpdateMeMutation();
   const createGoalMutation = useCreateGoalMutation();
   const completeOnboardingMutation = useCompleteOnboardingMutation();
@@ -136,9 +137,9 @@ export default function OnboardingPage({ onComplete }) {
   const handleNext = async () => {
     if (step === 0 && !isNicknameValid) return;
     
-    if (step >= 5) {
+    if (step >= 6) {
       try {
-        await updateMeMutation.mutateAsync({ nickname: nickname.trim() });
+        await updateMeMutation.mutateAsync({ nickname: nickname.trim(), totalAsset });
         
         // Calculate a dummy startDate and dueDate based on duration for API requirements.
         // The exact date logic isn't fully defined, so we just pass standard strings or assume backend allows omitting.
@@ -172,9 +173,9 @@ export default function OnboardingPage({ onComplete }) {
       <Panel strong>
         <div>
           <div css={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, color: 'var(--sub)', fontSize: 12, fontWeight: 800 }}>
-            <span>초기 설정</span><span>{step + 1} / 6</span>
+            <span>초기 설정</span><span>{step + 1} / 7</span>
           </div>
-          <Progress value={((step + 1) / 6) * 100}><span /></Progress>
+          <Progress value={((step + 1) / 7) * 100}><span /></Progress>
         </div>
         <Body>
           {step === 0 && (
@@ -269,32 +270,71 @@ export default function OnboardingPage({ onComplete }) {
 
           {step === 4 && (
             <div>
-              <h2>지금 어느 정도 모았나요?</h2>
-              <p>현재 위치를 알려주면 남은 흐름을 계산해요.</p>
-              <input 
+              <h2>여기까지 모아온 것들</h2>
+              <p>목표를 향해 쌓은 만큼을 담아주세요.</p>
+              <input
                 inputMode="numeric"
-                value={current ? Number(current).toLocaleString() : ''} 
-                onChange={event => setCurrent(Number(event.target.value.replace(/\D/g, '')) || 0)} 
-                css={{ 
-                  display: 'block', width: '100%', border: 0, borderBottom: '2px solid var(--line)', background: 'transparent', 
-                  padding: '12px 0', textAlign: 'center', fontSize: 'clamp(32px, 8vw, 42px)', margin: '18px 0', fontWeight: 800, color: 'var(--text)', outline: 'none'
-                }} 
+                value={current ? Number(current).toLocaleString() : ''}
+                onChange={event => setCurrent(Number(event.target.value.replace(/\D/g, '')) || 0)}
+                placeholder="0"
+                css={{
+                  display: 'block', width: '100%', border: 0, borderBottom: '2px solid var(--line)', background: 'transparent',
+                  padding: '12px 0', textAlign: 'center', fontSize: 'clamp(32px, 8vw, 42px)', margin: '18px 0 8px', fontWeight: 800, color: 'var(--text)', outline: 'none'
+                }}
               />
-              <input type="range" min="0" max={amount || 100000} value={current} onChange={event => setCurrent(Number(event.target.value))} css={{ width: '100%', accentColor: 'var(--ink)', cursor: 'pointer' }} />
+              <div css={{ textAlign: 'center', color: 'var(--sub)', fontSize: 13, fontWeight: 700 }}>
+                목표 {money(amount)}의 {amount > 0 ? Math.min(100, Math.round((current / amount) * 100)) : 0}%를 모았어요
+              </div>
+              <input type="range" min="0" max={amount || 100000} value={current} onChange={event => setCurrent(Number(event.target.value))} css={{ width: '100%', accentColor: 'var(--ink)', cursor: 'pointer', margin: '20px 0 4px' }} />
+              <ChoiceGrid>
+                {[0, 0.25, 0.5, 0.75].map(ratio => {
+                  const value = Math.round((amount || 0) * ratio);
+                  return (
+                    <Choice key={ratio} active={current === value} onClick={() => setCurrent(value)}>
+                      {ratio === 0 ? '아직 없어요' : `${Math.round(ratio * 100)}%`}
+                    </Choice>
+                  );
+                })}
+              </ChoiceGrid>
             </div>
           )}
 
           {step === 5 && (
             <div>
+              <h2>지금 내 곁의 자산</h2>
+              <p>목표와 별개로, 지금 가진 자산이에요.</p>
+              <input
+                inputMode="numeric"
+                value={totalAsset ? Number(totalAsset).toLocaleString() : ''}
+                onChange={event => setTotalAsset(Number(event.target.value.replace(/\D/g, '')) || 0)}
+                placeholder="예) 5,000,000"
+                css={{
+                  width: '100%', border: 0, borderBottom: '2px solid var(--line)', background: 'transparent',
+                  padding: 12, textAlign: 'center', fontSize: 'clamp(32px, 8vw, 42px)', fontWeight: 800, color: 'var(--text)', outline: 'none'
+                }}
+              />
+              <ChoiceGrid>
+                {[1000000, 3000000, 5000000, 10000000].map(v => (
+                  <Choice key={v} active={totalAsset === v} onClick={() => setTotalAsset(v)}>
+                    {money(v)}
+                  </Choice>
+                ))}
+              </ChoiceGrid>
+            </div>
+          )}
+
+          {step === 6 && (
+            <div>
               <h2>이 정도면 충분해요</h2>
               <p>이제 소비 흐름을 목표에 맞춰 분석해볼게요.</p>
               {[
                 ['닉네임', nickname],
-                ['목표', goal], 
+                ['목표', goal],
                 ['기간', duration === '기타' ? (customDuration || '설정안함') : duration],
-                ['목표 금액', money(amount)], 
-                ['현재 금액', money(current)], 
-                ['남은 금액', money(amount - current)]
+                ['목표 금액', money(amount)],
+                ['목표에 모은 돈', money(current)],
+                ['남은 금액', money(amount - current)],
+                ['자산', money(totalAsset)]
               ].map(([k, v]) => (
                 <div key={k} css={{ display: 'flex', justifyContent: 'space-between', padding: '13px 0', borderBottom: '1px solid var(--line)' }}>
                   <span css={{ color: 'var(--sub)' }}>{k}</span>
@@ -307,7 +347,7 @@ export default function OnboardingPage({ onComplete }) {
         <Footer>
           {step > 0 && <button type="button" onClick={() => setStep(prev => prev - 1)} disabled={isPending} css={{ background: 'var(--card)', color: 'var(--text)', border: '1px solid var(--line)' }}>이전</button>}
           <button type="button" onClick={handleNext} disabled={(step === 0 && !isNicknameValid) || isPending} css={{ background: 'var(--ink)', color: 'var(--on-ink)' }}>
-            {isPending ? '처리 중...' : (step >= 5 ? '시작하기' : '다음')}
+            {isPending ? '처리 중...' : (step >= 6 ? '시작하기' : '다음')}
           </button>
         </Footer>
       </Panel>
