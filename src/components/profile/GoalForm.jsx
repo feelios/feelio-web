@@ -33,7 +33,7 @@ const Field = styled.input`
 const PrimaryButton = styled.button`
   width: 100%;
   margin-top: auto;
-  background: var(--ink);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ink) 90%, white), var(--ink));
   color: var(--on-ink);
   border: none;
   border-radius: 14px;
@@ -41,6 +41,7 @@ const PrimaryButton = styled.button`
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 `;
 
 export default function GoalForm({ goalForm, setGoalForm, onSubmit, disabled }) {

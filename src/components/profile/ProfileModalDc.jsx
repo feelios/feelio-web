@@ -56,6 +56,36 @@ const Avatar = styled.span`
   flex-shrink: 0;
 `;
 
+// 설정 화면 공통 버튼 글래스 토큰 (모든 버튼 디자인 통일)
+const glassGhost = `
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+`;
+const glassPrimary = `
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ink) 90%, white), var(--ink));
+  border: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+`;
+const WithdrawButton = styled.button`
+  width: 100%;
+  margin-top: auto;
+  ${glassGhost}
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  color: #E87573;
+
+  &:disabled {
+    opacity: .7;
+    cursor: wait;
+  }
+`;
+
 const Close = styled.button`
   width: 34px;
   height: 34px;
@@ -116,8 +146,7 @@ const MenuRow = styled.button`
 const Logout = styled.button`
   width: 100%;
   margin-top: auto;
-  background: var(--card);
-  border: 1px solid var(--line);
+  ${glassGhost}
   border-radius: 14px;
   padding: 13px;
   font-size: 14px;
@@ -149,9 +178,8 @@ const BackHeader = styled.div`
 `;
 
 const PillButton = styled.button`
-  background: var(--ink);
+  ${glassPrimary}
   color: var(--on-ink);
-  border: none;
   border-radius: 999px;
   padding: 9px 16px;
   font-size: 13px;
@@ -189,9 +217,8 @@ const Field = styled.input`
 const PrimaryButton = styled.button`
   width: 100%;
   margin-top: auto;
-  background: var(--ink);
+  ${glassPrimary}
   color: var(--on-ink);
-  border: none;
   border-radius: 14px;
   padding: 15px;
   font-size: 15px;
@@ -200,22 +227,41 @@ const PrimaryButton = styled.button`
 `;
 
 const GoalCard = styled.div`
-  background: var(--card-strong);
-  border: 1px solid var(--line);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--card-border);
   border-radius: 18px;
   padding: 18px;
+  backdrop-filter: blur(26px) saturate(1.35);
+  -webkit-backdrop-filter: blur(26px) saturate(1.35);
+  box-shadow: 0 8px 24px rgba(60, 50, 35, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: border-color .2s ease, background .2s ease;
+  ${({ achieved }) => achieved && `
+    border-color: rgba(62, 149, 120, 0.55);
+    background: linear-gradient(135deg, rgba(131, 201, 176, 0.22), rgba(131, 201, 176, 0.06));
+  `}
+  ${({ expired }) => expired && `
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+    border-color: var(--line);
+    box-shadow: none;
+    opacity: 0.6;
+  `}
 `;
 
 const SmallAction = styled.button`
   flex: 1;
-  background: var(--card);
-  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 9px;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition: background .15s ease;
+  ${glassGhost}
   color: ${({ danger }) => danger ? '#E87573' : 'var(--text)'};
+
+  &:disabled {
+    opacity: .5;
+    cursor: default;
+  }
 `;
 
 const ToggleRow = styled.div`
@@ -254,8 +300,7 @@ const DataAction = styled.button`
   align-items: center;
   justify-content: space-between;
   padding: 16px 18px;
-  background: var(--card);
-  border: 1px solid var(--line);
+  ${glassGhost}
   border-radius: 14px;
   margin-bottom: 10px;
   cursor: pointer;
@@ -276,6 +321,17 @@ function cleanName(name) {
 }
 
 const EMPTY_GOALS = [];
+
+// 마감 날짜가 오늘보다 이전이면 '과거(만료) 목표'로 간주 (계약상 status는 ACTIVE만 → 날짜로 판별)
+function isPastGoal(dueDate) {
+  if (!dueDate) return false;
+  const due = new Date(dueDate);
+  if (isNaN(due.getTime())) return false;
+  due.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return due < today;
+}
 
 function Back({ title, children }) {
   return (
@@ -312,6 +368,17 @@ export default function ProfileModalDc({ state, actions, onClose }) {
     [goals],
   );
   const goalPct = percent(goal.currentAmount, goal.targetAmount);
+
+  // 진행 중 목표는 위, 처리된(달성·지남) 목표는 아래로 정렬 (sort는 안정 정렬 → 그룹 내 원래 순서 유지)
+  const sortedGoals = useMemo(() => {
+    const rank = (g) => {
+      const done = percent(g.currentAmount, g.targetAmount) >= 100;
+      if (done) return 1;                          // 달성
+      if (isPastGoal(g.dueDate)) return 2;         // 마감 지남(미달성)
+      return 0;                                    // 진행 중
+    };
+    return [...goals].sort((a, b) => rank(a) - rank(b));
+  }, [goals]);
   const provider = state.user.provider || 'Google';
   const email = state.user.email || 'seoyeon@feelio.app';
   const profileImageUrl = state.user.profileImageUrl;
@@ -341,6 +408,12 @@ export default function ProfileModalDc({ state, actions, onClose }) {
 
   async function saveGoal() {
     if (!goalForm.name.trim() || Number(goalForm.target) <= 0) return;
+
+    // 과거(마감 지난) 목표는 새로 만들거나 유지할 수 없다
+    if (goalForm.period && isPastGoal(goalForm.period)) {
+      actions.showToast('마감 날짜는 오늘 이후로 설정해 주세요');
+      return;
+    }
 
     try {
       if (editingGoalId === null) {
@@ -529,26 +602,38 @@ export default function ProfileModalDc({ state, actions, onClose }) {
           <div css={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {isGoalsLoading && <GoalCard>목표를 불러오는 중이에요.</GoalCard>}
             {isGoalsError && <GoalCard>목표를 불러오지 못했어요. 다시 시도해 주세요.</GoalCard>}
-            {!isGoalsLoading && !isGoalsError && goals.map(item => {
+            {!isGoalsLoading && !isGoalsError && sortedGoals.map(item => {
               const pct = percent(item.currentAmount, item.targetAmount);
+              const achieved = pct >= 100;
+              const expired = isPastGoal(item.dueDate) && !achieved;
+              const processed = achieved || expired;
               return (
-                <GoalCard 
+                <GoalCard
                   key={item.goalId}
-                  onClick={() => toggleMainGoal(item)}
-                  css={{ cursor: item.isMain || isGoalMutationPending ? 'default' : 'pointer', transition: 'background 0.2s', '&:hover': { background: 'rgba(255,255,255,0.08)' } }}
+                  achieved={achieved}
+                  expired={expired}
+                  onClick={() => { if (!processed) toggleMainGoal(item); }}
+                  css={{
+                    cursor: (item.isMain || processed || isGoalMutationPending) ? 'default' : 'pointer',
+                    '&:hover': processed ? undefined : { background: 'rgba(255,255,255,0.09)' },
+                  }}
                 >
-                  <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <span css={{ fontSize: 15, fontWeight: 700 }}>{item.name}</span>
-                    {item.isMain && <span css={{ fontSize: 10.5, fontWeight: 700, color: '#3E9578', background: '#83C9B033', padding: '2px 8px', borderRadius: 99 }}>대표</span>}
+                  <div>
+                    <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <span css={{ fontSize: 15, fontWeight: 700, color: expired ? 'var(--sub)' : undefined }}>{item.name}</span>
+                      {item.isMain && <span css={{ fontSize: 10.5, fontWeight: 700, color: '#3E9578', background: '#83C9B033', padding: '2px 8px', borderRadius: 99 }}>대표</span>}
+                      {achieved && <span css={{ fontSize: 10.5, fontWeight: 800, color: '#fff', background: '#3E9578', padding: '2px 9px', borderRadius: 99 }}>✓ 달성</span>}
+                      {expired && <span css={{ fontSize: 10.5, fontWeight: 700, color: 'var(--sub)', background: 'var(--line)', padding: '2px 9px', borderRadius: 99 }}>지난 목표</span>}
+                    </div>
+                    <div css={{ height: 8, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
+                      <div css={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: 99, background: expired ? 'var(--sub)' : achieved ? 'linear-gradient(90deg,#83C9B0,#3E9578)' : 'linear-gradient(90deg,#FF9F6E,#F28AB7)' }} />
+                    </div>
+                    <div css={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--sub)', marginTop: 7 }}>
+                      <span>{money(item.currentAmount)} / {money(item.targetAmount)}</span>
+                      <span css={{ color: achieved ? '#3E9578' : 'var(--sub)', fontWeight: achieved ? 800 : 700 }}>{pct}%</span>
+                    </div>
+                    {item.dueDate && <div css={{ fontSize: 12, color: 'var(--sub)', marginTop: 6, fontWeight: 700 }}>마감 날짜: {item.dueDate}</div>}
                   </div>
-                  <div css={{ height: 8, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
-                    <div css={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#FF9F6E,#F28AB7)' }} />
-                  </div>
-                  <div css={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--sub)', marginTop: 7 }}>
-                    <span>{money(item.currentAmount)} / {money(item.targetAmount)}</span>
-                    <span>{pct}%</span>
-                  </div>
-                  {item.dueDate && <div css={{ fontSize: 12, color: 'var(--sub)', marginTop: 6, fontWeight: 700 }}>마감 날짜: {item.dueDate}</div>}
                   <div css={{ display: 'flex', gap: 8, marginTop: 12 }} onClick={e => e.stopPropagation()}>
                     <SmallAction type="button" onClick={() => {
                       setGoalForm({ name: item.name, target: item.targetAmount, current: item.currentAmount, period: item.dueDate || '' });
@@ -630,7 +715,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
           <Back title="계정 관리"><button type="button" onClick={() => setView('profile')}>‹</button></Back>
           <div css={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '16px 18px', marginBottom: 10 }}><div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 700 }}>이메일</div><div css={{ fontSize: 14.5, fontWeight: 700, marginTop: 3 }}>{email}</div></div>
           <div css={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '16px 18px', marginBottom: 22 }}><div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 700 }}>가입 방식</div><div css={{ fontSize: 14.5, fontWeight: 700, marginTop: 3 }}>{provider} OAuth2</div></div>
-          <button type="button" onClick={handleWithdraw} disabled={isWithdrawing} css={{ width: '100%', marginTop: 'auto', background: 'rgba(232,117,115,0.08)', border: '1px solid rgba(232,117,115,0.38)', borderRadius: 14, padding: 14, fontSize: 14.5, fontWeight: 800, cursor: isWithdrawing ? 'wait' : 'pointer', color: '#E87573', opacity: isWithdrawing ? 0.7 : 1 }}>회원탈퇴</button>
+          <WithdrawButton type="button" onClick={handleWithdraw} disabled={isWithdrawing}>회원탈퇴</WithdrawButton>
         </Screen>
       )}
     </Modal>
