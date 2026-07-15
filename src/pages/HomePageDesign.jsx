@@ -259,20 +259,6 @@ const Signal = styled(GlassCard)`
   }
 `;
 
-const Goal = styled(GlassCard)`
-  min-height: 0;
-  padding: clamp(16px, 1.6vw, 22px);
-  border-radius: 24px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-
-  @media (max-width: 980px) {
-    order: 4;
-  }
-`;
-
 const Bar = styled.div`
   height: 9px;
   border-radius: 999px;
@@ -287,6 +273,187 @@ const Bar = styled.div`
     background: linear-gradient(90deg, #F2A65E, #F28AB7);
   }
 `;
+
+const Deck = styled.div`
+  min-height: 0;
+
+  @media (max-width: 980px) {
+    order: 4;
+  }
+`;
+
+const DeckTrack = styled.div`
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 4px 0;
+  scrollbar-width: none;
+  cursor: grab;
+
+  &:active { cursor: grabbing; }
+  &::-webkit-scrollbar { display: none; }
+`;
+
+const DeckCell = styled.div`
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+`;
+
+const DeckCard = styled(GlassCard)`
+  height: 100%;
+  min-height: 0;
+  padding: 18px 20px;
+  border-radius: 24px;
+  cursor: ${({ tappable }) => tappable ? 'pointer' : 'default'};
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+`;
+
+const DeckDots = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+`;
+
+const DeckSep = styled.span`
+  width: 1px;
+  height: 10px;
+  background: var(--line);
+  margin: 0 3px;
+`;
+
+const DeckDot = styled.button`
+  width: ${({ active }) => active ? 20 : 7}px;
+  height: 7px;
+  border-radius: 999px;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: ${({ active, first }) => active ? (first ? '#3E9578' : 'var(--ink)') : 'var(--line)'};
+  transition: width .25s ease, background .25s ease;
+`;
+
+function AssetGoalDeck({ totalAsset, goals, onRoute }) {
+  const trackRef = useRef(null);
+  const [active, setActive] = useState(0);
+
+  const savedTotal = goals.reduce((sum, g) => sum + (g.currentAmount || 0), 0);
+  const cards = [{ type: 'asset' }, ...goals.map((g) => ({ type: 'goal', goal: g }))];
+
+  const handleScroll = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    const center = el.scrollLeft + el.clientWidth / 2;
+    let best = 0;
+    let bestDist = Infinity;
+    Array.from(el.children).forEach((child, k) => {
+      const mid = child.offsetLeft + child.offsetWidth / 2;
+      const dist = Math.abs(mid - center);
+      if (dist < bestDist) { bestDist = dist; best = k; }
+    });
+    setActive((prev) => (prev === best ? prev : best));
+  };
+
+  const goTo = (k) => {
+    const el = trackRef.current;
+    const child = el?.children[k];
+    if (child) el.scrollTo({ left: child.offsetLeft - (el.clientWidth - child.offsetWidth) / 2, behavior: 'smooth' });
+  };
+
+  // 마우스 드래그로도 넘길 수 있게 (터치는 네이티브 스크롤 사용)
+  const dragRef = useRef({ down: false, startX: 0, startScroll: 0, moved: false });
+  const onPointerDown = (event) => {
+    if (event.pointerType !== 'mouse') return;
+    const el = trackRef.current;
+    dragRef.current = { down: true, startX: event.clientX, startScroll: el.scrollLeft, moved: false };
+    el.style.scrollSnapType = 'none';
+    el.setPointerCapture?.(event.pointerId);
+  };
+  const onPointerMove = (event) => {
+    const state = dragRef.current;
+    if (!state.down) return;
+    const dx = event.clientX - state.startX;
+    if (Math.abs(dx) > 4) state.moved = true;
+    trackRef.current.scrollLeft = state.startScroll - dx;
+  };
+  const onPointerUp = () => {
+    if (!dragRef.current.down) return;
+    dragRef.current.down = false;
+    const el = trackRef.current;
+    el.style.scrollSnapType = '';
+  };
+
+  return (
+    <Deck>
+      <DeckTrack
+        ref={trackRef}
+        onScroll={handleScroll}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
+      >
+        {cards.map((card) => (
+          <DeckCell key={card.type === 'goal' ? `g${card.goal.goalId}` : 'asset'}>
+            {card.type === 'asset' ? (
+              <DeckCard>
+                <div css={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span css={{ width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', background: '#83C9B033', color: '#3E9578', flex: '0 0 auto' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1"><rect x="3" y="6" width="18" height="13" rx="2.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M3 10h18" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                  <span css={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.1em', color: 'var(--sub)' }}>총자산</span>
+                </div>
+                <div css={{ fontSize: 28, fontWeight: 900, letterSpacing: '-.03em', marginTop: 8 }}>{money(totalAsset)}</div>
+                <div css={{ color: 'var(--sub)', fontSize: 11.5, fontWeight: 700, marginTop: 4 }}>목표와 별개로, 지금 내 곁의 자산이에요</div>
+                <div css={{ height: 1, background: 'var(--line)', margin: '13px 0 11px' }} />
+                <div css={{ display: 'flex', gap: 18 }}>
+                  <div><b css={{ display: 'block', fontSize: 13, fontWeight: 900 }}>{goals.length}개</b><span css={{ fontSize: 9.5, color: 'var(--sub)', fontWeight: 700 }}>진행 중 목표</span></div>
+                  <div><b css={{ display: 'block', fontSize: 13, fontWeight: 900 }}>{money(savedTotal)}</b><span css={{ fontSize: 9.5, color: 'var(--sub)', fontWeight: 700 }}>목표에 모은 돈</span></div>
+                </div>
+              </DeckCard>
+            ) : (
+              <DeckCard tappable onClick={() => { if (!dragRef.current.moved) onRoute('universe'); }}>
+                <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#83C9B0" strokeWidth="1.9"><circle cx="12" cy="12" r="4.5" /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
+                    <span css={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.goal.name}</span>
+                    {card.goal.isMain && <span css={{ flex: '0 0 auto', fontSize: 10, fontWeight: 800, color: '#3E9578', background: '#83C9B033', padding: '2px 7px', borderRadius: 99 }}>대표</span>}
+                  </div>
+                  <span css={{ color: '#3E9578', fontSize: 12.5, fontWeight: 900, flex: '0 0 auto' }}>{percent(card.goal.currentAmount, card.goal.targetAmount)}%</span>
+                </div>
+                <Bar value={percent(card.goal.currentAmount, card.goal.targetAmount)}><span /></Bar>
+                <div css={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 10, color: 'var(--sub)', fontSize: 12 }}>
+                  <span>{money(card.goal.currentAmount)} / {money(card.goal.targetAmount)}</span>
+                  <span>{money(Math.max(0, card.goal.targetAmount - card.goal.currentAmount))} 남음 →</span>
+                </div>
+              </DeckCard>
+            )}
+          </DeckCell>
+        ))}
+      </DeckTrack>
+      {cards.length > 1 && (
+        <DeckDots>
+          {cards.flatMap((card, i) => {
+            const dot = (
+              <DeckDot
+                key={card.type === 'goal' ? `d${card.goal.goalId}` : 'dasset'}
+                first={i === 0}
+                active={i === active}
+                onClick={() => goTo(i)}
+                aria-label={`${i + 1}번째 카드`}
+              />
+            );
+            return i === 1 ? [<DeckSep key="sep" />, dot] : [dot];
+          })}
+        </DeckDots>
+      )}
+    </Deck>
+  );
+}
 
 function EmptyRidge({ dark = false }) {
   const mist = useMemo(() => [{ x: 150, w: 230, h: 28 }, { x: 360, w: 250, h: 34 }, { x: 480, w: 220, h: 24 }], []);
@@ -474,14 +641,8 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
 
   // 서버 상태(['goals'])를 직접 구독 → 설정에서 대표목표(isMain) 변경 시 홈/우주 동시 실시간 반영
   const goals = goalsData?.goals || [];
-  const primaryGoal = goals.find(g => g.isMain) || goals[0];
-  const goal = primaryGoal ? {
-    name: primaryGoal.name,
-    current: primaryGoal.currentAmount ?? primaryGoal.current ?? 0,
-    target: primaryGoal.targetAmount ?? primaryGoal.target ?? 1
-  } : { name: '등록된 목표 없음', current: 0, target: 1 };
-  
-  const goalPct = percent(goal.current, goal.target);
+  const totalAsset = state.user?.totalAsset ?? 0;
+
   const days = getCalendarCells(serverDays, visibleMonth);
   const ridgeData = hasEnoughRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
   const ridgePeak = ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0]);
@@ -612,20 +773,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
           </div>
         </Calendar>
 
-        <Goal onClick={() => onRoute('universe')}>
-          <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div css={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#83C9B0" strokeWidth="1.9"><circle cx="12" cy="12" r="4.5" /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
-              <span css={{ fontSize: 14, fontWeight: 900 }}>{goal.name}</span>
-            </div>
-            <span css={{ color: '#3E9578', fontSize: 12.5, fontWeight: 900 }}>{goalPct}%</span>
-          </div>
-          <Bar value={goalPct}><span /></Bar>
-          <div css={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 10, color: 'var(--sub)', fontSize: 12 }}>
-            <span>{money(goal.current)} / {money(goal.target)}</span>
-            <span>{money(goal.target - goal.current)} 남음 →</span>
-          </div>
-        </Goal>
+        <AssetGoalDeck totalAsset={totalAsset} goals={goals} onRoute={onRoute} />
 
         <Signal>
           <div css={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 7 }}>
