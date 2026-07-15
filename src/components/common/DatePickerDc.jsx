@@ -4,11 +4,8 @@ import styled from "@emotion/styled";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const ACCENT_COLOR = "#3E5FF5";
-const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
-const MONTH_LABELS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 
 function buildMonthGrid(year, monthIndex) {
   const firstOfMonth = new Date(year, monthIndex, 1);
@@ -39,14 +36,26 @@ const PopoverWrapper = styled.div`
   /* TimeListPanel is positioned absolutely relative to this wrapper */
   transform: ${({ scale }) => scale !== 1 ? `scale(${scale})` : 'none'};
   transform-origin: ${({ placement }) => placement === 'bottom' ? 'top left' : 'bottom left'};
+  --date-card-w: 300px;
+
+  /* 모바일: 옆 시간기둥 대신 카드 안 인라인 시간 → 단일 카드 팝오버, 폭만 화면에 맞춤 */
+  @media (max-width: 560px) {
+    --date-card-w: min(300px, calc(100vw - 56px));
+  }
+`;
+
+const Backdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 99;
 `;
 
 const Card = styled.div`
-  width: 300px;
+  width: var(--date-card-w, 300px);
   background: color-mix(in srgb, var(--bg-1) 95%, transparent);
   border-radius: 28px;
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  padding: 20px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(12px);
@@ -95,27 +104,27 @@ const WeekRow = styled.div`
 
 const DayLabel = styled.div`
   text-align: center;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 500;
   color: var(--sub);
-  padding: 4px 0;
+  padding: 6px 0;
 `;
 
 const DateGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
 `;
 
 const DateCell = styled.button`
-  aspect-ratio: 1 / 1;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 0;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 500;
   transition: all 0.2s;
   cursor: pointer;
@@ -207,7 +216,7 @@ const TimeListPanel = styled.div`
   position: absolute;
   top: 0;
   bottom: 0;
-  left: calc(300px + 12px); /* Card width + gap */
+  left: calc(var(--date-card-w, 300px) + 12px); /* Card width + gap */
   width: 64px;
   background: color-mix(in srgb, var(--bg-1) 95%, transparent);
   border-radius: 24px;
@@ -225,11 +234,11 @@ const TimeSlot = styled.button`
   font-size: 11px;
   font-weight: 500;
   text-align: center;
-  padding: 8px 0;
+  padding: 6px 0;
   border-radius: 8px;
   border: 0;
   transition: all 0.2s;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   cursor: pointer;
   &:last-child { margin-bottom: 0; }
 
@@ -241,6 +250,31 @@ const TimeSlot = styled.button`
     background-color: transparent;
     &:hover { background-color: var(--line); }
   `}
+`;
+
+const InlineTimeScroll = styled.div`
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin-top: 12px;
+  padding: 12px 2px 2px;
+  border-top: 1px solid var(--line);
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+`;
+
+const InlineTimeSlot = styled.button`
+  flex: 0 0 auto;
+  min-width: 42px;
+  padding: 9px 0;
+  border-radius: 10px;
+  border: 1px solid ${({ active }) => active ? 'transparent' : 'var(--line)'};
+  background: ${({ active }) => active ? 'var(--accent)' : 'transparent'};
+  color: ${({ active }) => active ? '#fff' : 'var(--text)'};
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
 `;
 
 export default function DatePickerDc({ value, onChange, onClose, scale = 1, placement = 'top', initialTimePanelOpen = false }) {
@@ -262,7 +296,13 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
   const [selectedTime, setSelectedTime] = useState(String(h));
   const [period, setPeriod] = useState(p);
   const [timePanelOpen, setTimePanelOpen] = useState(initialTimePanelOpen);
- 
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 560);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 560);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const cells = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
  
   function goPrevMonth() {
@@ -312,10 +352,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
  
   return (
     <>
-      <div 
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }}
-        style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-      />
+      <Backdrop onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }} />
       <PopoverWrapper scale={scale} placement={placement} style={{ "--accent": ACCENT_COLOR }}>
         <Card>
         <MonthHeader>
@@ -323,7 +360,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
             <ChevronLeft size={16} />
           </NavBtn>
           <MonthTitle>
-            {MONTH_LABELS[viewMonth]} {viewYear}
+            {viewYear}년 {viewMonth + 1}월
           </MonthTitle>
           <NavBtn onClick={(e) => { e.preventDefault(); e.stopPropagation(); goNextMonth(); }} aria-label="Next month">
             <ChevronRight size={16} />
@@ -377,9 +414,24 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
             </PeriodBtn>
           </PeriodGroup>
         </TimeRow>
+
+        {isMobile && timePanelOpen && (
+          <InlineTimeScroll>
+            {HOUR_OPTIONS.map((time) => (
+              <InlineTimeSlot
+                key={time}
+                type="button"
+                active={time === selectedTime}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSelectTime(time); }}
+              >
+                {time}
+              </InlineTimeSlot>
+            ))}
+          </InlineTimeScroll>
+        )}
       </Card>
 
-      {timePanelOpen && (
+      {!isMobile && timePanelOpen && (
         <TimeListPanel>
           {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((time) => {
             const isSelected = time === selectedTime;
