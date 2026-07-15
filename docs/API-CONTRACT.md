@@ -276,6 +276,32 @@ Response(200) `data`:
 - `byTimeSlot.slot`: `occurred_at` 시(hour) 기준 4구간 — `DAWN`(0–5) · `MORNING`(6–11) · `AFTERNOON`(12–17) · `NIGHT`(18–23). `label`은 한글 표기.
 - `insights`: `ai_insights` 테이블 매핑(`insight_type`→`type`, `content`→`content`), 0..n건. 문구는 감정 중립(긍정 감정도 대상). 인사이트 생성 로직은 A3-2 소관.
 
+### GET /api/analysis/pattern · 인증 필요
+
+- 이번 달 거래를 `(감정, 카테고리, 시간대)` 조합으로 집계 → **가장 자주 반복된 조합 1건**과 그 근거 내역을 반환한다.
+- 조합·횟수·근거 집계는 **결정론적**(GROUP BY + COUNT)이며, 문구(`title`·`desc`)만 서버가 생성(템플릿 또는 AI)한다. **숫자(횟수 등)는 집계값을 그대로 사용**하며 LLM이 임의 변경하지 않는다.
+- 반복 조합이 임계 미만(예: 최다 조합 `count < 2`)이면 `pattern`은 `null`, `evidence`는 `[]`.
+
+Response(200) `data`:
+```json
+{
+  "pattern": {
+    "count": 7,
+    "emotion": "스트레스",
+    "category": "배달",
+    "time": "밤",
+    "title": "스트레스한 밤의 배달 소비",
+    "desc": "외로운 밤마다 배달 소비가 반복되고 있어요. 이번 달 7번 나타났어요."
+  },
+  "evidence": [
+    { "date": "07.14", "category": "배달", "emotion": "스트레스", "amount": 15000 }
+  ]
+}
+```
+- `pattern`: 최다 `(emotion, category, time)` 조합. `count`=반복 횟수(집계), `time`=시간대 한글 라벨(§monthly `byTimeSlot.label`과 동일: 새벽/아침/오후/밤). 반복 패턴 없으면 `null`.
+- `title`·`desc`: 서버 생성 문구. AI 미적용 시 템플릿(`${emotion}한 ${time}의 ${category} 소비`)으로 대체 가능.
+- `evidence`: 해당 조합에 속한 거래 내역(최신순). `date`=`MM.DD`, `amount`=지출 금액(양수, 원). 없으면 `[]`.
+
 ### GET /api/universe/simulation?goalId · 인증 필요
 
 - **goalId 필수**. 해당 목표에 대해 두 미래 시나리오(현재 소비 유지 / 소비를 줄임)를 비교한다.
