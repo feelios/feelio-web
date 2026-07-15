@@ -123,7 +123,8 @@ export default function OnboardingPage({ onComplete }) {
   const [duration, setDuration] = useState('1년');
   const [customDuration, setCustomDuration] = useState('');
   const [current, setCurrent] = useState(0);
-  
+  const [totalAsset, setTotalAsset] = useState(0);
+
   const updateMeMutation = useUpdateMeMutation();
   const createGoalMutation = useCreateGoalMutation();
   const completeOnboardingMutation = useCompleteOnboardingMutation();
@@ -136,9 +137,9 @@ export default function OnboardingPage({ onComplete }) {
   const handleNext = async () => {
     if (step === 0 && !isNicknameValid) return;
     
-    if (step >= 5) {
+    if (step >= 6) {
       try {
-        await updateMeMutation.mutateAsync({ nickname: nickname.trim() });
+        await updateMeMutation.mutateAsync({ nickname: nickname.trim(), totalAsset });
         
         // Calculate a dummy startDate and dueDate based on duration for API requirements.
         // The exact date logic isn't fully defined, so we just pass standard strings or assume backend allows omitting.
@@ -172,9 +173,9 @@ export default function OnboardingPage({ onComplete }) {
       <Panel strong>
         <div>
           <div css={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, color: 'var(--sub)', fontSize: 12, fontWeight: 800 }}>
-            <span>초기 설정</span><span>{step + 1} / 6</span>
+            <span>초기 설정</span><span>{step + 1} / 7</span>
           </div>
-          <Progress value={((step + 1) / 6) * 100}><span /></Progress>
+          <Progress value={((step + 1) / 7) * 100}><span /></Progress>
         </div>
         <Body>
           {step === 0 && (
@@ -286,15 +287,40 @@ export default function OnboardingPage({ onComplete }) {
 
           {step === 5 && (
             <div>
+              <h2>지금 가진 전체 자산은 얼마인가요?</h2>
+              <p>목표와 별개로, 현재 보유한 총 자산을 알려주면 자산 흐름을 함께 관리해요.</p>
+              <input
+                inputMode="numeric"
+                value={totalAsset ? Number(totalAsset).toLocaleString() : ''}
+                onChange={event => setTotalAsset(Number(event.target.value.replace(/\D/g, '')) || 0)}
+                placeholder="예) 5,000,000"
+                css={{
+                  width: '100%', border: 0, borderBottom: '2px solid var(--line)', background: 'transparent',
+                  padding: 12, textAlign: 'center', fontSize: 'clamp(32px, 8vw, 42px)', fontWeight: 800, color: 'var(--text)', outline: 'none'
+                }}
+              />
+              <ChoiceGrid>
+                {[1000000, 3000000, 5000000, 10000000].map(v => (
+                  <Choice key={v} active={totalAsset === v} onClick={() => setTotalAsset(v)}>
+                    {money(v)}
+                  </Choice>
+                ))}
+              </ChoiceGrid>
+            </div>
+          )}
+
+          {step === 6 && (
+            <div>
               <h2>이 정도면 충분해요</h2>
               <p>이제 소비 흐름을 목표에 맞춰 분석해볼게요.</p>
               {[
                 ['닉네임', nickname],
-                ['목표', goal], 
+                ['목표', goal],
                 ['기간', duration === '기타' ? (customDuration || '설정안함') : duration],
-                ['목표 금액', money(amount)], 
-                ['현재 금액', money(current)], 
-                ['남은 금액', money(amount - current)]
+                ['목표 금액', money(amount)],
+                ['현재 금액', money(current)],
+                ['남은 금액', money(amount - current)],
+                ['총자산', money(totalAsset)]
               ].map(([k, v]) => (
                 <div key={k} css={{ display: 'flex', justifyContent: 'space-between', padding: '13px 0', borderBottom: '1px solid var(--line)' }}>
                   <span css={{ color: 'var(--sub)' }}>{k}</span>
@@ -307,7 +333,7 @@ export default function OnboardingPage({ onComplete }) {
         <Footer>
           {step > 0 && <button type="button" onClick={() => setStep(prev => prev - 1)} disabled={isPending} css={{ background: 'var(--card)', color: 'var(--text)', border: '1px solid var(--line)' }}>이전</button>}
           <button type="button" onClick={handleNext} disabled={(step === 0 && !isNicknameValid) || isPending} css={{ background: 'var(--ink)', color: 'var(--on-ink)' }}>
-            {isPending ? '처리 중...' : (step >= 5 ? '시작하기' : '다음')}
+            {isPending ? '처리 중...' : (step >= 6 ? '시작하기' : '다음')}
           </button>
         </Footer>
       </Panel>
