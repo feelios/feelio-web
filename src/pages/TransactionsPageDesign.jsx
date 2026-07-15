@@ -5,7 +5,7 @@ import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
 import { money, signedMoney } from '../utils/format.js';
 import { useDebounce } from '../hooks/useDebounce.js';
-import { useTransactionsQuery } from '../hooks/queries/useTransactions.js';
+import { useTransactionsQuery, useBulkDeleteTransactionsMutation } from '../hooks/queries/useTransactions.js';
 import { useMetadata } from '../hooks/queries/useMetadata.js';
 import { TransactionListSkeleton } from '../components/common/Skeleton.jsx';
 import DatePickerDc from '../components/common/DatePickerDc.jsx';
@@ -326,18 +326,96 @@ const Group = styled.div`
 const Row = styled.button`
   width: 100%;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) max-content;
+  grid-template-columns: ${({ selecting }) => selecting ? '24px 42px minmax(0, 1fr) max-content' : '42px minmax(0, 1fr) max-content'};
   align-items: center;
   gap: 14px;
   border: 0;
   border-bottom: 1px solid var(--line);
-  background: transparent;
+  background: ${({ isChecked }) => isChecked ? 'var(--card-strong)' : 'transparent'};
   padding: 15px 18px;
   text-align: left;
   cursor: pointer;
+  transition: background .12s ease;
 
   &:last-child {
     border-bottom: 0;
+  }
+`;
+
+const Check = styled.span`
+  width: 20px;
+  height: 20px;
+  border-radius: 7px;
+  border: 2px solid ${({ isChecked }) => isChecked ? 'var(--accent)' : 'var(--line)'};
+  background: ${({ isChecked }) => isChecked ? 'var(--accent)' : 'transparent'};
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 12px;
+  flex: 0 0 auto;
+`;
+
+const SelectBar = styled.div`
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--card-border);
+  background: var(--card-strong);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(28px);
+
+  @media (max-width: 820px) {
+    left: 12px;
+    right: 12px;
+    transform: none;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    justify-content: space-between;
+    gap: 8px;
+  }
+`;
+
+const BarText = styled.span`
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--text);
+  white-space: nowrap;
+`;
+
+const BarGhost = styled.button`
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+`;
+
+const BarDanger = styled.button`
+  border: 0;
+  border-radius: 10px;
+  background: #E87573;
+  color: #fff;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: .5;
+    cursor: default;
   }
 `;
 
@@ -443,6 +521,49 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
   const { data: txData, isLoading } = useTransactionsQuery(apiParams);
   const transactions = useMemo(() => txData?.transactions || [], [txData?.transactions]);
 
+  // 다중 선택 삭제
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [confirming, setConfirming] = useState(false);
+  const bulkDeleteMutation = useBulkDeleteTransactionsMutation();
+
+  const visibleIds = useMemo(() => transactions.map(t => t.transactionId), [transactions]);
+  // 화면에 보이는 것만 유효 선택으로 간주 → 필터로 숨겨진 항목의 의도치 않은 삭제 방지
+  const selectedVisibleIds = useMemo(() => visibleIds.filter(id => selectedIds.has(id)), [visibleIds, selectedIds]);
+  const selectedCount = selectedVisibleIds.length;
+  const allSelected = visibleIds.length > 0 && selectedCount === visibleIds.length;
+
+  const toggleSelectMode = () => {
+    setSelectMode(prev => {
+      const next = !prev;
+      if (!next) { setSelectedIds(new Set()); setConfirming(false); }
+      return next;
+    });
+  };
+
+  const toggleSelectOne = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds(prev => (visibleIds.every(id => prev.has(id)) ? new Set() : new Set(visibleIds)));
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedCount) return;
+    try {
+      await bulkDeleteMutation.mutateAsync(selectedVisibleIds);
+      setSelectMode(false);
+      setSelectedIds(new Set());
+    } finally {
+      setConfirming(false);
+    }
+  };
+
   const moveMonth = (offset) => {
     const base = new Date(Number(year), month === 'all' ? today.getMonth() : Number(month) - 1, 1);
     base.setMonth(base.getMonth() + offset);
@@ -522,6 +643,9 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
           </Search>
           <FilterButton type="button" active={filtersOpen} onClick={() => setFiltersOpen(prev => !prev)}>
             필터
+          </FilterButton>
+          <FilterButton type="button" active={selectMode} onClick={toggleSelectMode}>
+            {selectMode ? '완료' : '선택'}
           </FilterButton>
         </ToolbarControls>
       </Toolbar>
@@ -637,8 +761,15 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
           <GlassCard padding={0}>
             {group.items.map(item => {
               const emo = getEmotion(item.emotion?.name || '평온');
+              const checked = selectedIds.has(item.transactionId);
               return (
-                <Row key={item.transactionId} onClick={() => onSelect(item)}>
+                <Row
+                  key={item.transactionId}
+                  selecting={selectMode}
+                  isChecked={selectMode && checked}
+                  onClick={() => selectMode ? toggleSelectOne(item.transactionId) : onSelect(item)}
+                >
+                  {selectMode && <Check isChecked={checked}>{checked ? '✓' : ''}</Check>}
                   <span css={{ width: 40, height: 40, borderRadius: 12, display: 'grid', placeItems: 'center', background: emo.light }}><i css={{ width: 15, height: 15, borderRadius: '50%', background: emo.color }} /></span>
                   <span css={{ minWidth: 0 }}><strong>{item.category?.name}</strong><small css={{ display: 'block', color: 'var(--sub)', marginTop: 3 }}>{item.emotion?.name}{item.memo ? ` · ${item.memo}` : ''}</small></span>
                   <b css={{ fontFamily: 'var(--font-display)', color: item.type === 'INCOME' ? '#3E9578' : 'var(--text)' }}>{signedMoney(item)}</b>
@@ -648,6 +779,29 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
           </GlassCard>
         </Group>
       ))}
+
+      {selectMode && (
+        <SelectBar>
+          <BarGhost type="button" onClick={toggleSelectAll}>
+            {allSelected ? '전체 해제' : '전체 선택'}
+          </BarGhost>
+          <BarText>{selectedCount}개 선택</BarText>
+          {confirming ? (
+            <>
+              <BarText>삭제할까요?</BarText>
+              <BarDanger type="button" disabled={bulkDeleteMutation.isPending} onClick={handleBulkDelete}>
+                {bulkDeleteMutation.isPending ? '삭제 중…' : '삭제'}
+              </BarDanger>
+              <BarGhost type="button" onClick={() => setConfirming(false)}>취소</BarGhost>
+            </>
+          ) : (
+            <>
+              <BarDanger type="button" disabled={!selectedCount} onClick={() => setConfirming(true)}>삭제</BarDanger>
+              <BarGhost type="button" onClick={toggleSelectMode}>취소</BarGhost>
+            </>
+          )}
+        </SelectBar>
+      )}
     </Wrap>
   );
 }

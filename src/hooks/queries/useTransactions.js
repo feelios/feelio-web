@@ -79,7 +79,32 @@ export const useDeleteTransactionMutation = () => {
   });
 };
 
-// 6. 거래 내역 전체 초기화 뮤테이션 훅
+// 6. 거래 내역 다중 삭제 뮤테이션 훅 (선택 삭제 · 단건 DELETE 병렬 + 낙관적 삭제/롤백)
+export const useBulkDeleteTransactionsMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    // 계약에 bulk 엔드포인트가 없어 단건 DELETE를 병렬 호출한다.
+    mutationFn: (ids) => Promise.all(ids.map((id) => transactionsAPI.deleteTransaction(id))),
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: ['tx', 'list'] });
+      const previous = queryClient.getQueriesData({ queryKey: ['tx', 'list'] });
+      const idSet = new Set(ids);
+      queryClient.setQueriesData({ queryKey: ['tx', 'list'] }, (old) => {
+        if (!old?.transactions) return old;
+        return { ...old, transactions: old.transactions.filter((t) => !idSet.has(t.transactionId)) };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      context?.previous?.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: () => {
+      invalidateRelatedQueries(queryClient);
+    },
+  });
+};
+
+// 7. 거래 내역 전체 초기화 뮤테이션 훅
 export const useClearTransactionsMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
