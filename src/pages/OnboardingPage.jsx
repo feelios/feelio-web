@@ -270,25 +270,39 @@ export default function OnboardingPage({ onComplete }) {
 
           {step === 4 && (
             <div>
-              <h2>지금 어느 정도 모았나요?</h2>
-              <p>현재 위치를 알려주면 남은 흐름을 계산해요.</p>
-              <input 
+              <h2>여기까지 모아온 것들</h2>
+              <p>목표를 향해 쌓은 만큼을 담아주세요.</p>
+              <input
                 inputMode="numeric"
-                value={current ? Number(current).toLocaleString() : ''} 
-                onChange={event => setCurrent(Number(event.target.value.replace(/\D/g, '')) || 0)} 
-                css={{ 
-                  display: 'block', width: '100%', border: 0, borderBottom: '2px solid var(--line)', background: 'transparent', 
-                  padding: '12px 0', textAlign: 'center', fontSize: 'clamp(32px, 8vw, 42px)', margin: '18px 0', fontWeight: 800, color: 'var(--text)', outline: 'none'
-                }} 
+                value={current ? Number(current).toLocaleString() : ''}
+                onChange={event => setCurrent(Number(event.target.value.replace(/\D/g, '')) || 0)}
+                placeholder="0"
+                css={{
+                  display: 'block', width: '100%', border: 0, borderBottom: '2px solid var(--line)', background: 'transparent',
+                  padding: '12px 0', textAlign: 'center', fontSize: 'clamp(32px, 8vw, 42px)', margin: '18px 0 8px', fontWeight: 800, color: 'var(--text)', outline: 'none'
+                }}
               />
-              <input type="range" min="0" max={amount || 100000} value={current} onChange={event => setCurrent(Number(event.target.value))} css={{ width: '100%', accentColor: 'var(--ink)', cursor: 'pointer' }} />
+              <div css={{ textAlign: 'center', color: 'var(--sub)', fontSize: 13, fontWeight: 700 }}>
+                목표 {money(amount)}의 {amount > 0 ? Math.min(100, Math.round((current / amount) * 100)) : 0}%를 모았어요
+              </div>
+              <input type="range" min="0" max={amount || 100000} value={current} onChange={event => setCurrent(Number(event.target.value))} css={{ width: '100%', accentColor: 'var(--ink)', cursor: 'pointer', margin: '20px 0 4px' }} />
+              <ChoiceGrid>
+                {[0, 0.25, 0.5, 0.75].map(ratio => {
+                  const value = Math.round((amount || 0) * ratio);
+                  return (
+                    <Choice key={ratio} active={current === value} onClick={() => setCurrent(value)}>
+                      {ratio === 0 ? '아직 없어요' : `${Math.round(ratio * 100)}%`}
+                    </Choice>
+                  );
+                })}
+              </ChoiceGrid>
             </div>
           )}
 
           {step === 5 && (
             <div>
-              <h2>지금 가진 전체 자산은 얼마인가요?</h2>
-              <p>목표와 별개로, 현재 보유한 총 자산을 알려주면 자산 흐름을 함께 관리해요.</p>
+              <h2>지금 내 곁의 자산</h2>
+              <p>목표와 별개로, 지금 가진 자산이에요.</p>
               <input
                 inputMode="numeric"
                 value={totalAsset ? Number(totalAsset).toLocaleString() : ''}
@@ -318,9 +332,9 @@ export default function OnboardingPage({ onComplete }) {
                 ['목표', goal],
                 ['기간', duration === '기타' ? (customDuration || '설정안함') : duration],
                 ['목표 금액', money(amount)],
-                ['현재 금액', money(current)],
+                ['목표에 모은 돈', money(current)],
                 ['남은 금액', money(amount - current)],
-                ['총자산', money(totalAsset)]
+                ['자산', money(totalAsset)]
               ].map(([k, v]) => (
                 <div key={k} css={{ display: 'flex', justifyContent: 'space-between', padding: '13px 0', borderBottom: '1px solid var(--line)' }}>
                   <span css={{ color: 'var(--sub)' }}>{k}</span>
