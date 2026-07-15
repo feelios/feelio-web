@@ -45,11 +45,19 @@ const PrimaryButton = styled.button`
 
 export default function GoalForm({ goalForm, setGoalForm, onSubmit, disabled }) {
   const updateField = (key) => (event) => {
-    const value = key === 'target' || key === 'current'
-      ? Number(event.target.value) || 0
-      : event.target.value;
-
-    setGoalForm((prev) => ({ ...prev, [key]: value }));
+    if (key === 'target' || key === 'current') {
+      const rawValue = event.target.value;
+      if (rawValue === '') {
+        setGoalForm((prev) => ({ ...prev, [key]: '' }));
+      } else {
+        const parsed = Number(rawValue);
+        if (!isNaN(parsed) && parsed >= 0) {
+          setGoalForm((prev) => ({ ...prev, [key]: parsed }));
+        }
+      }
+    } else {
+      setGoalForm((prev) => ({ ...prev, [key]: event.target.value }));
+    }
   };
 
   return (
@@ -64,14 +72,14 @@ export default function GoalForm({ goalForm, setGoalForm, onSubmit, disabled }) 
       <Field
         type="number"
         placeholder="예: 3000000"
-        value={goalForm.target || ''}
+        value={goalForm.target === '' || goalForm.target == null ? '' : goalForm.target}
         onChange={updateField('target')}
       />
       <FieldLabel>현재 모은 돈 (원)</FieldLabel>
       <Field
         type="number"
         placeholder="예: 500000"
-        value={goalForm.current || ''}
+        value={goalForm.current === '' || goalForm.current == null ? '' : goalForm.current}
         onChange={updateField('current')}
       />
       <FieldLabel>마감 날짜</FieldLabel>

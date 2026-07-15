@@ -12,6 +12,7 @@
 > - **F8=핫픽스 및 UX 폴리싱**: 사용자 경험에 직접적으로 영향을 미치는 버그와 간단한 UI/UX 개선
 > - **F9=데이터 시각화 및 대시보드 고도화**: 대시보드와 분석 페이지의 데이터 표시 방식 및 네비게이션 개선
 > - **F10=트랜잭션 관리 및 고급 API 연동**: 새로운 API(다중 삭제, 패턴 분석 등) 연동을 통한 복잡한 기능 구현
+> - **F11=UI 고도화**: 글래스모피즘 등 프리미엄 디자인 룰 적용 및 화면 간 상태 연동 고도화
 > 상태: 완료(머지됨) · 예정 · 신규(백엔드 계약에 맞춰 신규 편성, 예정)
 
 | 코드 | 제목 | 브랜치 | 계약 | 계층 | 캐시키 | 상태 | 완료기준(핵심) |
@@ -49,6 +50,11 @@
 | F9-4 | AI 월별 분석 결과 연동 | `feat/ai-analysis-monthly-link` | - | Component | - | 신규 | AI 대시보드에 월별 리포트 이동 링크 추가 및 데이터 조회 연동 |
 | F10-1 | 거래내역 다중 삭제 UI | `feat/transaction-bulk-delete-ui` | - | api·Component | `['tx','list']` | 신규 | 체크박스 다중 선택 UI 및 삭제 API 연동 |
 | F10-2 | 패턴 분석 연동 및 UI | `feat/recurring-pattern-ui` | §analysis/pattern | api·Component | `['analysis', 'pattern']` | 진행 | 결정론 집계 방향 확정(조합·횟수·근거=GROUP BY, 문구만 서버 생성/AI). `GET /analysis/pattern` 계약 문서화 + `analysisAPI.getPattern`·`usePatternQuery`·AnalysisPageDc 바인딩 완료(evidence 객체 shape). 백엔드 엔드포인트 구현 대기 |
+| F8-5 | 목표 '모은 돈' 입력 버그 수정 | `fix/goal-amount-binding` | - | Component | - | 신규 | 목표 금액 입력 시 숫자 파싱 오류 및 NaN 방어 로직 추가 |
+| F8-6 | 거래 감정 Select 오류 수정 및 UI 확대 | `fix/transaction-emotion-select` | - | Component | - | 신규 | 감정 초기값 바인딩 오류 해결 및 카테고리/감정 Select 컴포넌트 터치 영역(패딩) 확대 (F8-2 연계) |
+| F11-1 | 목표 글래스모피즘 및 만료 상태 스타일 | `feat/goal-design-update` | - | Component | - | 신규 | 목표 폼 투명도 5% 적용 및 과거 목표 흑백(Grayscale) 처리 |
+| F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 신규 | 달력 배경 투명도 5% 및 backdrop-filter 블러 적용 |
+| F11-3 | 활성 목표(isMain) 홈·평행우주 연동 | `feat/goal-main-sync` | - | Component | `['goals']` | 신규 | isMain=true 인 활성 목표 데이터를 실시간 구독하여 홈/우주에 렌더링 반영 |
 
 
 
