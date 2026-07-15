@@ -9,7 +9,6 @@ import { money, percent } from '../utils/format.js';
 import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
 import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
-import useStore from '../stores/useFeelioStore.js';
 
 const Grid = styled.div`
   width: 100%;
@@ -436,7 +435,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
 
   // Fetch emotion summary data from API
   const { data: emotionData, isLoading: isEmotionLoading } = useEmotionSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
-  const { isLoading: isGoalsLoading } = useGoalsQuery();
+  const { data: goalsData, isLoading: isGoalsLoading } = useGoalsQuery();
   
   const isSummaryLoading = isCalendarLoading || isEmotionLoading || isGoalsLoading;
   const serverEmotions = emotionData?.emotions || [];
@@ -473,12 +472,13 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const dark = state.mode === 'dark';
   const topMeta = showEmptyBlob ? { color: dark ? '#9B8CFF' : '#7C6BE0' } : getEmotion(displayEmotion);
 
-  const goals = useStore((store) => store.state.goals || []);
+  // 서버 상태(['goals'])를 직접 구독 → 설정에서 대표목표(isMain) 변경 시 홈/우주 동시 실시간 반영
+  const goals = goalsData?.goals || [];
   const primaryGoal = goals.find(g => g.isMain) || goals[0];
   const goal = primaryGoal ? {
     name: primaryGoal.name,
-    current: primaryGoal.current ?? primaryGoal.currentAmount ?? 0,
-    target: primaryGoal.target ?? primaryGoal.targetAmount ?? 1
+    current: primaryGoal.currentAmount ?? primaryGoal.current ?? 0,
+    target: primaryGoal.targetAmount ?? primaryGoal.target ?? 1
   } : { name: '등록된 목표 없음', current: 0, target: 1 };
   
   const goalPct = percent(goal.current, goal.target);
