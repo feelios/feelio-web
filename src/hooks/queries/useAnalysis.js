@@ -33,3 +33,11 @@ export const useBudgetStatusQuery = () => {
     staleTime: 1000 * 60 * 5, // 5분
   });
 };
+
+export const usePatternQuery = () => {
+  return useQuery({
+    queryKey: ['analysis', 'pattern'],
+    queryFn: () => analysisAPI.getPattern(),
+    staleTime: 1000 * 60 * 5, // 5분
+  });
+};

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
-import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
+import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, useBudgetStatusQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
 
 const Page = styled.div`
   width: 100%;
@@ -122,6 +122,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const { data: insightsData } = useAiInsightsQuery();
   const { data: trendData } = useMonthlyTrendQuery();
   const { data: budgetData } = useBudgetStatusQuery();
+  const { data: patternData } = usePatternQuery();
 
   const monthly = trendData?.monthlyData ?? [];
 
@@ -133,8 +134,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   ];
   
   const emotionCardsData = insightsData?.emotionCards ?? [];
-  const evidence = insightsData?.evidence ?? [];
-  const pattern = insightsData?.pattern ?? null;
+  const evidence = patternData?.evidence ?? [];
+  const pattern = patternData?.pattern ?? null;
   const hasPattern = pattern != null && pattern.count > 0;
 
   // §9(/analysis/monthly) 결정론적 집계 → 화면 뷰모델. 데이터 없으면 빈 배열/0으로 안전 처리.
@@ -634,16 +635,16 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               <span>날짜</span><span>내역</span><span>금액</span>
             </div>
             <div css={{ overflowY: 'auto', flex: 1, paddingBottom: 16 }}>
-              {evidence.map(([date, category, emotion, amount], idx) => {
-                const emo = getEmotion(emotion);
-                return <div key={`${date}-${idx}`} css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, alignItems: 'center', padding: '15px 0', borderBottom: '1px solid var(--line)' }}>
-                  <span css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 800 }}>{date}</span>
+              {evidence.map((ev, idx) => {
+                const emo = getEmotion(ev.emotion);
+                return <div key={`${ev.date}-${idx}`} css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, alignItems: 'center', padding: '15px 0', borderBottom: '1px solid var(--line)' }}>
+                  <span css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 800 }}>{ev.date}</span>
                   <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                     <span css={{ width: 7, height: 7, borderRadius: '50%', background: emo.color, flexShrink: 0 }} />
-                    <b css={{ color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{category}</b>
-                    <span css={{ display: 'none', '@media (min-width: 901px)': { display: 'inline' }, color: emo.text || emo.color, fontSize: 11, fontWeight: 900, flexShrink: 0 }}>{emotion}</span>
+                    <b css={{ color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.category}</b>
+                    <span css={{ display: 'none', '@media (min-width: 901px)': { display: 'inline' }, color: emo.text || emo.color, fontSize: 11, fontWeight: 900, flexShrink: 0 }}>{ev.emotion}</span>
                   </div>
-                  <b css={{ color: 'var(--text)' }}>{amount}</b>
+                  <b css={{ color: 'var(--text)' }}>-{Number(ev.amount).toLocaleString()}원</b>
                 </div>;
               })}
             </div>

@@ -16,5 +16,9 @@ export const analysisAPI = {
   getBudgetStatus: async () => {
     const response = await client.get('/analysis/budget');
     return response.data.data;
+  },
+  getPattern: async () => {
+    const response = await client.get('/analysis/pattern');
+    return response.data.data;
   }
 };

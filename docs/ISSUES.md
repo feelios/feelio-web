@@ -48,7 +48,7 @@
 | F9-3 | 지출 추이 카드 클릭 이동 | `feat/monthly-trend-navigation` | - | Component | - | 신규 | 월별 바/포인트 클릭 시 해당 달 상세 뷰로 이동 |
 | F9-4 | AI 월별 분석 결과 연동 | `feat/ai-analysis-monthly-link` | - | Component | - | 신규 | AI 대시보드에 월별 리포트 이동 링크 추가 및 데이터 조회 연동 |
 | F10-1 | 거래내역 다중 삭제 UI | `feat/transaction-bulk-delete-ui` | - | api·Component | `['tx','list']` | 신규 | 체크박스 다중 선택 UI 및 삭제 API 연동 |
-| F10-2 | 패턴 분석 연동 및 UI | `feat/recurring-pattern-ui` | - | api·Component | `['analysis', 'pattern']` | 신규 | 패턴 API 응답 기반 반복 소비 패턴 시각화 |
+| F10-2 | 패턴 분석 연동 및 UI | `feat/recurring-pattern-ui` | §analysis/pattern | api·Component | `['analysis', 'pattern']` | 진행 | 결정론 집계 방향 확정(조합·횟수·근거=GROUP BY, 문구만 서버 생성/AI). `GET /analysis/pattern` 계약 문서화 + `analysisAPI.getPattern`·`usePatternQuery`·AnalysisPageDc 바인딩 완료(evidence 객체 shape). 백엔드 엔드포인트 구현 대기 |
 
 
 
