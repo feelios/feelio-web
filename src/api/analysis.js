@@ -18,7 +18,7 @@ export const analysisAPI = {
     return response.data.data;
   },
   getPattern: async () => {
-    const response = await client.get('/analysis/pattern');
+    const response = await client.get('/transactions/patterns');
     return response.data.data;
   }
 };
