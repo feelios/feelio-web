@@ -276,6 +276,8 @@ const Bar = styled.div`
 
 const Deck = styled.div`
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -289,6 +291,8 @@ const DeckTrack = styled.div`
   display: flex;
   flex: 1;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
   gap: 14px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
