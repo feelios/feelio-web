@@ -67,6 +67,13 @@ export default function App() {
   const [globalDate, setGlobalDate] = useState(() => new Date());
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState(null);
+  const [recordPrefill, setRecordPrefill] = useState(null);
+
+  // 목표 카드 '저금하기' → 저축·해당 목표 프리필된 기록 화면으로 (F7-9)
+  const openRecordForGoal = (goalId) => {
+    setRecordPrefill({ goalId });
+    setRoute('record');
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -87,8 +94,8 @@ export default function App() {
   const colors = getAurora(state.aurora).colors;
 
   const content = {
-    home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={globalDate} onSelectDate={setGlobalDate} />,
-    record: <RecordPageDc state={state} actions={actions} onSaved={(date) => {
+    home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={globalDate} onSelectDate={setGlobalDate} onSaveToGoal={openRecordForGoal} />,
+    record: <RecordPageDc state={state} actions={actions} prefill={recordPrefill} onConsumePrefill={() => setRecordPrefill(null)} onSaved={(date) => {
       setGlobalDate(new Date(date));
     }} />,
     transactions: <TransactionsPageDesign state={state} onSelect={setSelectedTxn} globalDate={globalDate} setGlobalDate={setGlobalDate} />,

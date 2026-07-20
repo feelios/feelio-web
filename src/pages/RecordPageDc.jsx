@@ -218,7 +218,7 @@ const SAVING_MESSAGES = [
   '🏝️ 목표에 한 걸음 더 가까워졌어요',
 ];
 
-export default function RecordPageDc({ actions, onSaved }) {
+export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefill }) {
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [addingTag, setAddingTag] = useState(null);
   const [addingText, setAddingText] = useState('');
@@ -231,17 +231,24 @@ export default function RecordPageDc({ actions, onSaved }) {
     return new Date(now - tzOffset).toISOString().slice(0, 16);
   };
 
-  const [form, setForm] = useState({
+  // 목표 카드 '저금하기'로 진입 시 저축·목표·해당 goalId를 미리 선택 (F7-9)
+  const [form, setForm] = useState(() => ({
     type: 'expense',
     amount: '',
-    category: null,
+    category: prefill?.goalId != null ? '저축' : null,
     emotion: null,
     situation: [],
     memo: '',
-    savingsType: null,
-    goalId: null,
+    savingsType: prefill?.goalId != null ? '목표' : null,
+    goalId: prefill?.goalId ?? null,
     date: getInitialDate()
-  });
+  }));
+
+  // 프리필은 1회성 — 진입 직후 소비 처리해 다음 방문에 남지 않게
+  useEffect(() => {
+    if (prefill?.goalId != null) onConsumePrefill?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { data: metaData } = useMetadata();
   const emotions = metaData?.emotions || [];
