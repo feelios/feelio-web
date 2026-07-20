@@ -25,7 +25,7 @@ const Grid = styled.div`
 
   @media (max-width: 980px) {
     grid-template-columns: 1fr;
-    gap: 19px;
+    gap: 9px;
     height: auto;
     min-height: auto;
     overflow: visible;
@@ -122,9 +122,9 @@ const Right = styled.div`
   max-width: none;
   justify-self: stretch;
   display: grid;
-  grid-template-rows: auto auto clamp(142px, 17vh, 168px);
-  gap: clamp(12px, 1.4vw, 16px);
-  padding-top: clamp(14px, 3vh, 34px);
+  grid-template-rows: auto 1fr 1fr;
+  gap: clamp(10px, 1.1vw, 13px);
+  padding-top: clamp(8px, 1.4vh, 16px);
 
   @media (max-width: 980px) {
     padding-top: 0;
@@ -143,7 +143,7 @@ const Calendar = styled(GlassCard)`
     background: transparent;
     box-shadow: none;
     border: none;
-    padding: 0;
+    padding: 0 8px;
     cursor: default;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -276,6 +276,9 @@ const Bar = styled.div`
 
 const Deck = styled.div`
   min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 
   @media (max-width: 980px) {
     order: 4;
@@ -284,6 +287,8 @@ const Deck = styled.div`
 
 const DeckTrack = styled.div`
   display: flex;
+  flex: 1;
+  min-height: 0;
   gap: 14px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -302,8 +307,8 @@ const DeckCell = styled.div`
 
 const DeckCard = styled(GlassCard)`
   height: 100%;
-  min-height: 0;
-  padding: 18px 20px;
+  min-height: 140px;
+  padding: 28px 22px 14px;
   border-radius: 24px;
   cursor: ${({ tappable }) => tappable ? 'pointer' : 'default'};
   display: flex;
@@ -312,11 +317,15 @@ const DeckCard = styled(GlassCard)`
 `;
 
 const DeckDots = styled.div`
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 14px;
+  z-index: 2;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 6px;
-  margin-top: 12px;
 `;
 
 const DeckSep = styled.span`
@@ -405,15 +414,16 @@ function AssetGoalDeck({ totalAsset, goals, onRoute }) {
                   <span css={{ width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', background: '#83C9B033', color: '#3E9578', flex: '0 0 auto' }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1"><rect x="3" y="6" width="18" height="13" rx="2.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M3 10h18" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </span>
-                  <span css={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.1em', color: 'var(--sub)' }}>총자산</span>
+                  <span css={{ fontSize: 12, fontWeight: 800, color: 'var(--sub)' }}>총자산</span>
                 </div>
-                <div css={{ fontSize: 28, fontWeight: 900, letterSpacing: '-.03em', marginTop: 8 }}>{money(totalAsset)}</div>
-                <div css={{ color: 'var(--sub)', fontSize: 11.5, fontWeight: 700, marginTop: 4 }}>목표와 별개로, 지금 내 곁의 자산이에요</div>
-                <div css={{ height: 1, background: 'var(--line)', margin: '13px 0 11px' }} />
-                <div css={{ display: 'flex', gap: 18 }}>
-                  <div><b css={{ display: 'block', fontSize: 13, fontWeight: 900 }}>{goals.length}개</b><span css={{ fontSize: 9.5, color: 'var(--sub)', fontWeight: 700 }}>진행 중 목표</span></div>
-                  <div><b css={{ display: 'block', fontSize: 13, fontWeight: 900 }}>{money(savedTotal)}</b><span css={{ fontSize: 9.5, color: 'var(--sub)', fontWeight: 700 }}>목표에 모은 돈</span></div>
-                </div>
+                <div css={{ fontSize: 32, fontWeight: 900, letterSpacing: '-.035em', lineHeight: 1.05, marginTop: 10 }}>{money(totalAsset)}</div>
+                <div css={{ color: 'var(--sub)', fontSize: 12.5, fontWeight: 700, marginTop: 7 }}>목표와 별개인 나의 자산이에요</div>
+                {goals.length > 0 && (
+                  <div css={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontSize: 12, fontWeight: 800, color: 'var(--sub)' }}>
+                    <span css={{ width: 6, height: 6, borderRadius: '50%', background: '#83C9B0', flex: '0 0 auto' }} />
+                    목표 {goals.length}곳에 {money(savedTotal)} 모으는 중
+                  </div>
+                )}
               </DeckCard>
             ) : (
               <DeckCard tappable onClick={() => { if (!dragRef.current.moved) onRoute('universe'); }}>
@@ -766,8 +776,8 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
             </div>
             <span css={{ color: 'var(--sub)', fontSize: 16, '@media (min-width: 981px)': { display: 'none' } }}>{isCalendarExpanded ? '▴' : '▾'}</span>
           </AccordionSummary>
-          <div onClick={e => e.stopPropagation()} css={{ cursor: 'default', display: 'grid', gridTemplateRows: isCalendarExpanded ? '1fr' : '0fr', transition: 'grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1)', '@media (min-width: 981px)': { gridTemplateRows: '1fr' } }}>
-            <div css={{ overflow: 'hidden', minHeight: 0 }}>
+          <div onClick={e => e.stopPropagation()} css={{ cursor: 'default', display: 'grid', gridTemplateRows: isCalendarExpanded ? '1fr' : '0fr', transition: 'grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1)', '@media (min-width: 981px)': { gridTemplateRows: 'auto' } }}>
+            <div css={{ overflow: 'hidden', minHeight: 0, '@media (min-width: 981px)': { overflow: 'visible' } }}>
               {renderCalendarBody()}
             </div>
           </div>
