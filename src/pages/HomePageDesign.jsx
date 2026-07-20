@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
+import { keyframes } from '@emotion/react';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { EmptyEmotionBlob } from '../components/common/EmptyEmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
@@ -8,6 +9,7 @@ import { getEmotion } from '../data/emotions.js';
 import { money, percent } from '../utils/format.js';
 import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
 import { useGoalsQuery } from '../hooks/queries/useGoals.js';
+import { useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 
 const Grid = styled.div`
@@ -54,7 +56,7 @@ const Stage = styled.div`
 
   @media (max-width: 980px) {
     align-content: start;
-    padding-top: 30px;
+    padding-top: 64px;
     margin-top: 0;
     order: 1;
   }
@@ -259,6 +261,56 @@ const Signal = styled(GlassCard)`
   }
 `;
 
+const bubblePop = keyframes`
+  0% { transform: scale(1); }
+  28% { transform: scale(1.13) translateY(-3px); }
+  55% { transform: scale(.95) translateY(0); }
+  100% { transform: scale(1); }
+`;
+
+const BubbleStack = styled.div`
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  margin-left: -34px;
+
+  @media (max-width: 980px) {
+    align-items: center;
+    gap: 7px;
+    margin-left: 0;
+    margin-bottom: -20px;
+  }
+`;
+
+const Bubble = styled.div`
+  padding: 10px 16px;
+  border-radius: 20px;
+  white-space: nowrap;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .92), rgba(255, 255, 255, .66));
+  border: 1px solid rgba(255, 255, 255, .9);
+  color: #3A2F26;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: center;
+  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 1), inset 0 -3px 7px rgba(150, 120, 90, .12);
+  backdrop-filter: blur(16px) saturate(1.25);
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  cursor: default;
+  transition: transform .24s cubic-bezier(.34, 1.6, .64, 1);
+
+  &:hover { transform: translateY(-3px) scale(1.045); }
+  &:active { transform: scale(1.08, .9); }
+
+  @media (max-width: 980px) {
+    font-size: 11.5px;
+    padding: 8px 13px;
+    border-radius: 17px;
+  }
+`;
+
 const Bar = styled.div`
   height: 9px;
   border-radius: 999px;
@@ -448,7 +500,13 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal }) {
                 <button
                   type="button"
                   onClick={(event) => { event.stopPropagation(); onSaveToGoal?.(card.goal.goalId); }}
-                  css={{ marginTop: 12, border: 0, borderRadius: 12, background: '#83C9B0', color: '#fff', fontSize: 12.5, fontWeight: 800, padding: '10px 0', cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}
+                  css={{
+                    marginTop: 12, border: 0, borderRadius: 12, background: '#83C9B0', color: '#fff',
+                    fontSize: 12.5, fontWeight: 800, padding: '10px 0', cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+                    transition: 'background 0.15s ease, transform 0.1s ease',
+                    '&:hover': { background: '#6FB89D' },
+                    '&:active': { transform: 'scale(0.98)' },
+                  }}
                 >
                   저금하기
                 </button>
@@ -608,6 +666,15 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+  // 데스크톱: 12초마다 3개가 물결처럼 / 모바일: 4.5초마다 말풍선 1개 순환
+  const [budgetWave, setBudgetWave] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setBudgetWave(w => w + 1), isMobile ? 4500 : 12000);
+    return () => clearInterval(timer);
+  }, [isMobile]);
+  // 말랑이 드래그(늘리기)에 말풍선도 함께 밀리도록
+  const [blobDrag, setBlobDrag] = useState({ dx: 0, dy: 0, isDragging: false });
+  const handleBlobDrag = useCallback((d) => setBlobDrag(d), []);
   const [isCalendarExpanded, setIsCalendarExpanded] = useState(false);
 
   const [prevSelected, setPrevSelected] = useState(selected);
@@ -625,6 +692,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   // Fetch emotion summary data from API
   const { data: emotionData, isLoading: isEmotionLoading } = useEmotionSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
   const { data: goalsData, isLoading: isGoalsLoading } = useGoalsQuery();
+  const { data: budgetData } = useBudgetStatusQuery();
   
   const isSummaryLoading = isCalendarLoading || isEmotionLoading || isGoalsLoading;
   const serverEmotions = emotionData?.emotions || [];
@@ -664,6 +732,22 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   // 서버 상태(['goals'])를 직접 구독 → 설정에서 대표목표(isMain) 변경 시 홈/우주 동시 실시간 반영
   const goals = goalsData?.goals || [];
   const totalAsset = state.user?.totalAsset ?? 0;
+
+  // 예산 현황(['analysis','budget']) → 소진율로 상태 파생 후 말랑이 말풍선 문구 (F7-10)
+  const budgetValid = (budgetData?.budgetItems ?? []).filter(item => item.budget > 0);
+  const budgetTotal = budgetValid.reduce((sum, item) => sum + item.budget, 0);
+  const budgetSpent = budgetValid.reduce((sum, item) => sum + (item.currentAmount || 0), 0);
+  const budgetProgress = budgetTotal > 0 ? Math.round((budgetSpent / budgetTotal) * 100) : null;
+  const budgetState = budgetProgress == null ? 'measuring'
+    : budgetProgress > 100 ? 'over'
+    : budgetProgress < 85 ? 'surplus'
+    : 'ontrack';
+  const budgetPhrases = {
+    measuring: ['아직 예산을 재는 중이야 🌱', '며칠만 더 기록하면 시작할게!', '천천히, 같이 흐름을 만들자', '기록이 쌓일수록 똑똑해져 ✨', '오늘의 소비도 기록해줄래?'],
+    ontrack: [`예산 ${budgetProgress}%, 잘 가고 있어 👀`, '이대로면 목표가 쑥쑥 자라', '지금처럼만 해도 충분해!', '오늘도 잘 지켜냈네, 멋져', '작은 절약이 쌓이는 중 🌱'],
+    surplus: [`예산 ${budgetProgress}%밖에 안 썼어 ✨`, '아낀 만큼 목표에 더 담을까?', '이번 달은 여유가 생겼어!', '알뜰함 만렙이네 👏', '남는 돈은 미래의 나에게 🎁'],
+    over: [`앗, 예산을 ${budgetProgress}%나 썼어 😥`, '이대로면 저축이 잠깐 멈춰', '저금하기로 목표 채워줄래?', '조금만 아껴보자, 할 수 있어', '다음 주엔 살짝 브레이크 🛑'],
+  }[budgetState];
 
   const days = getCalendarCells(serverDays, visibleMonth);
   const ridgeData = hasEnoughRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
@@ -713,13 +797,31 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
         {isSummaryLoading ? <HomeSummarySkeleton /> : <>
         <Stage>
           <div>
-            <BlobHalo color={topMeta.color}>
-              <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 224 : 'clamp(320px, 28vw, 400px)', height: isMobile ? 236 : (!showEmptyBlob ? 'clamp(360px, 31vw, 372px)' : 'clamp(330px, 28vw, 344px)') }}>
-                {!showEmptyBlob
-                  ? <EmotionBlob emotion={displayEmotion} size={isMobile ? 210 : 360} />
-                  : <EmptyEmotionBlob size={isMobile ? 186 : 330} dark={dark} />}
-              </div>
-            </BlobHalo>
+            <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'center', '@media (max-width: 980px)': { flexDirection: 'column-reverse' } }}>
+              <BlobHalo color={topMeta.color}>
+                <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 272 : 'clamp(320px, 28vw, 400px)', height: isMobile ? 280 : (!showEmptyBlob ? 'clamp(360px, 31vw, 372px)' : 'clamp(330px, 28vw, 344px)') }}>
+                  {!showEmptyBlob
+                    ? <EmotionBlob emotion={displayEmotion} size={isMobile ? 264 : 410} onDragChange={handleBlobDrag} />
+                    : <EmptyEmotionBlob size={isMobile ? 236 : 380} dark={dark} />}
+                </div>
+              </BlobHalo>
+              <BubbleStack css={{ transform: `translate(${blobDrag.dx * (isMobile ? 0.4 : 0.5)}px, ${blobDrag.dy * (isMobile ? 0.4 : 0.5)}px)`, transition: blobDrag.isDragging ? 'none' : 'transform .4s cubic-bezier(.34, 1.4, .64, 1)' }}>
+                {isMobile ? (
+                  <Bubble key={budgetWave} css={{ animation: `${bubblePop} 0.5s cubic-bezier(.5, 1.5, .5, 1) backwards` }}>
+                    {budgetPhrases[budgetWave % budgetPhrases.length]}
+                  </Bubble>
+                ) : (
+                  [0, 1, 2].map((i) => {
+                    const phrase = budgetPhrases[(budgetWave + i) % budgetPhrases.length];
+                    return (
+                      <Bubble key={`${budgetWave}-${i}`} css={{ animation: `${bubblePop} 0.5s cubic-bezier(.5, 1.5, .5, 1) ${i * 0.22}s backwards` }}>
+                        {phrase}
+                      </Bubble>
+                    );
+                  })
+                )}
+              </BubbleStack>
+            </div>
             <div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 800, marginTop: isMobile ? 4 : -24 }}>
               {showEmptyBlob ? '아직 감정을 기다리는 중' : selectedDayEmotion ? '선택한 날에 가장 오래 머문 마음' : '선택한 날에는 감정 기록이 없어요'}
             </div>

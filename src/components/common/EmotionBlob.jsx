@@ -140,7 +140,7 @@ function Face({ face, ink }) {
   }
 }
 
-export function EmotionBlob({ emotion = '평온', size = 140, interactive = true }) {
+export function EmotionBlob({ emotion = '평온', size = 140, interactive = true, onDragChange }) {
   const emotionName = normalizeEmotion(emotion);
   const meta = EMOTIONS[emotionName];
   const idRef = useRef(`eb${uid++}`);
@@ -159,6 +159,11 @@ export function EmotionBlob({ emotion = '평온', size = 140, interactive = true
       poke();
     }
   }, [emotionName]);
+
+  // 드래그(늘리기) 값을 외부로 노출 → 말풍선 등 주변 요소가 함께 반응
+  useEffect(() => {
+    onDragChange?.({ dx: drag.dx, dy: drag.dy, isDragging: drag.isDragging });
+  }, [drag.dx, drag.dy, drag.isDragging, onDragChange]);
 
   useEffect(() => {
     let frame;
