@@ -439,6 +439,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
                 value={form.date}
                 onChange={(newDate) => setField('date', newDate)}
                 onClose={() => setIsDatePickerOpen(false)}
+                overlay
               />
             )}
           </Field>

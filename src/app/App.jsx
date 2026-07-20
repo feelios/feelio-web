@@ -104,7 +104,7 @@ export default function App() {
   }[route];
 
   return (
-    <Root mode={state.mode}>
+    <Root mode={state.mode} id="app-root">
       <GlobalStyles />
       {(!state.isLoggedIn || !state.onboardingDone) && (
         <>
