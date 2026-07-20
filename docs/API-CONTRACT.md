@@ -177,11 +177,13 @@ Request:
   "categoryId": 3,
   "emotionId": 4,
   "memo": "달달한 라떼와 케이크",
+  "goalId": 1,
   "occurredAt": "2026-07-01T21:30:00"
 }
 ```
 - 필수: type, amount(>0 정수), categoryId, emotionId, occurredAt
 - memo: 생략 시 **null 저장**(기본 문자열 저장 금지), 최대 200자
+- `goalId`: 카테고리가 **'저축'**인 지출일 때 어떤 목표에 저금하는지 매핑(goal_id). 그 외에는 생략/null. 저축 거래는 총자산에서 빠지지 않고 해당 목표의 `currentAmount`로 이동(F7 회계 규칙, ISSUES.md §자산 관리). (F7-8)
 - 서버: transactions 저장(단건). 메모의 HTML/Script 태그는 XSS 방어 필터 적용 필수.
 
 Response(201) `data`: 생성된 거래 객체. 에러: VALIDATION_ERROR

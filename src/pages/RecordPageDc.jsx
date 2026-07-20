@@ -13,6 +13,7 @@ import {
   useUpdateCategoryOrderMutation
 } from '../hooks/queries/useCategories.js';
 import DatePickerDc from '../components/common/DatePickerDc.jsx';
+import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 
 const Page = styled.div`
   width: 100%;
@@ -57,7 +58,7 @@ const FaintBlob = styled.div`
   right: -110px;
   top: -120px;
   border-radius: 50%;
-  background: radial-gradient(circle, ${({ color }) => color}44, transparent 68%);
+  background: radial-gradient(circle, ${({ color }) => color ? `${color}44` : 'transparent'}, transparent 68%);
   filter: blur(24px);
   pointer-events: none;
 `;
@@ -165,10 +166,10 @@ const ChipRow = styled.div`
 `;
 
 const Chip = styled.button`
-  border: 1.5px solid ${({ active, color }) => active ? color : 'var(--line)'};
+  border: 1.5px solid ${({ active, color }) => active ? (color || 'var(--ink)') : 'var(--line)'};
   border-radius: 999px;
   padding: 10px 16px;
-  background: ${({ active, color }) => active ? `${color}26` : 'transparent'};
+  background: ${({ active, color }) => active ? (color ? `${color}26` : 'var(--card-strong)') : 'transparent'};
   color: ${({ active }) => active ? 'var(--text)' : 'var(--sub)'};
   font-weight: 800;
   cursor: pointer;
@@ -178,11 +179,12 @@ const SaveButton = styled.button`
   border: 0;
   border-radius: 18px;
   padding: 18px;
-  background: ${({ disabled }) => disabled ? 'var(--line)' : 'var(--ink)'};
-  color: ${({ disabled }) => disabled ? 'var(--sub)' : 'var(--on-ink)'};
+  background: ${({ disabled, accent }) => disabled ? 'var(--line)' : (accent || 'var(--ink)')};
+  color: ${({ disabled }) => disabled ? 'var(--sub)' : '#fff'};
   font-size: 15px;
   font-weight: 900;
   cursor: ${({ disabled }) => disabled ? 'default' : 'pointer'};
+  transition: background 0.2s;
 `;
 
 const AddingInput = styled.input`
@@ -206,6 +208,16 @@ const AddingInput = styled.input`
   }
 `;
 
+const SAVING_MESSAGES = [
+  '🎁 미래의 나에게 주는 선물이에요',
+  '🌱 오늘의 저축이 내일의 나를 키워요',
+  '✨ 미래의 내가 고마워할 선택이에요',
+  '💪 꾸준함이 최고예요, 잘하고 있어요',
+  '☁️ 든든하게 차곡차곡 쌓이고 있어요',
+  '💛 나를 아끼는 방법 중 하나예요',
+  '🏝️ 목표에 한 걸음 더 가까워졌어요',
+];
+
 export default function RecordPageDc({ actions, onSaved }) {
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [addingTag, setAddingTag] = useState(null);
@@ -226,11 +238,25 @@ export default function RecordPageDc({ actions, onSaved }) {
     emotion: null,
     situation: [],
     memo: '',
+    savingsType: null,
+    goalId: null,
     date: getInitialDate()
   });
 
   const { data: metaData } = useMetadata();
   const emotions = metaData?.emotions || [];
+
+  // 저축을 연결할 목표 목록 (적금 = 목표 미지정)
+  const { data: goalsData } = useGoalsQuery();
+  const goals = goalsData?.goals || [];
+
+  // 저축 선택(적금/목표/각 목표)마다 다른 격려 문구
+  const savingMessage = (() => {
+    if (form.savingsType === '적금') return SAVING_MESSAGES[0];
+    const goalIndex = goals.findIndex(g => g.goalId === form.goalId);
+    const idx = (form.goalId != null && goalIndex >= 0) ? goalIndex + 2 : 1;
+    return SAVING_MESSAGES[idx % SAVING_MESSAGES.length];
+  })();
 
   const { data: categoryData } = useCategoriesQuery(form.type.toUpperCase());
   const customCategories = categoryData?.categories || [];
@@ -251,6 +277,8 @@ export default function RecordPageDc({ actions, onSaved }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   const selected = getEmotion(form.emotion || '스트레스');
+  // 감정을 고르기 전에는 무채색, 고른 뒤에는 말랑이(블롭) 색을 강조색으로 사용
+  const accent = form.emotion ? (selected.blob?.[1] || selected.color) : null;
   const canSave = form.amount && form.emotion && form.category;
 
   const startAdding = (type) => {
@@ -304,6 +332,13 @@ export default function RecordPageDc({ actions, onSaved }) {
 
   const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
 
+  // 저축 방식(적금/목표) 선택 — 같은 걸 다시 누르면 해제
+  const selectSaving = (type) => setForm(prev => {
+    const isActive = prev.category === '저축' && prev.savingsType === type;
+    if (isActive) return { ...prev, category: null, savingsType: null, goalId: null };
+    return { ...prev, category: '저축', savingsType: type, goalId: null };
+  });
+
   const save = () => {
     if (!canSave || mutation.isPending) return;
 
@@ -319,6 +354,12 @@ export default function RecordPageDc({ actions, onSaved }) {
       return;
     }
 
+    const isGoalSaving = form.category === '저축' && form.savingsType === '목표';
+    if (isGoalSaving && !form.goalId) {
+      actions.showToast('어떤 목표에 저축할지 선택해주세요.');
+      return;
+    }
+
     mutation.mutate({
       type: form.type.toUpperCase(),
       amount: Number(form.amount),
@@ -326,12 +367,13 @@ export default function RecordPageDc({ actions, onSaved }) {
       emotionId: matchedEmotion.emotionId,
       situationIds: [],
       memo: form.memo || null,
+      goalId: isGoalSaving ? form.goalId : undefined,
       occurredAt: new Date(form.date).toISOString()
     }, {
       onSuccess: () => {
         actions.showToast('기록 저장됨');
         onSaved?.(form.date);
-        setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '' }));
+        setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '', savingsType: null, goalId: null }));
       },
       onError: (error) => {
         actions.showToast(error.response?.data?.error?.message || '기록 저장에 실패했습니다.');
@@ -346,7 +388,7 @@ export default function RecordPageDc({ actions, onSaved }) {
     <Page>
       <Grid>
         <MainPanel strong>
-          <FaintBlob color={selected.color} />
+          <FaintBlob color={accent} />
           <TypeTabs>
             <TypeTab active={form.type === 'expense'} onClick={() => setForm(prev => prev.type === 'expense' ? prev : { ...prev, type: 'expense', category: null })}>지출</TypeTab>
             <TypeTab active={form.type === 'income'} onClick={() => setForm(prev => prev.type === 'income' ? prev : { ...prev, type: 'income', category: null })}>수입</TypeTab>
@@ -394,15 +436,15 @@ export default function RecordPageDc({ actions, onSaved }) {
         <Side css={{ flex: 1 }}>
           <SideCard css={{ flex: 1 }}>
             <div css={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 13 }}>
-              <h3 css={{ margin: 0, fontSize: 13 }}>어디에 썼어요 <span css={{ color: 'var(--sub)', fontWeight: 600 }}>· 필수</span></h3>
+              <h3 css={{ margin: 0, fontSize: 13 }}>어디에 썼어요</h3>
               <button type="button" onClick={() => setIsEditingCategory(!isEditingCategory)} css={{ background: 'transparent', border: 0, color: isEditingCategory ? 'var(--text)' : 'var(--sub)', cursor: 'pointer', fontSize: 16 }}>✎</button>
             </div>
             <ChipRow>
               {customCategories.filter(c => c.name !== '저축').map((item, index) => {
                 return isEditingCategory ? (
-                  <Chip 
-                    key={item.categoryId} color={selected.color} active 
-                    draggable 
+                  <Chip
+                    key={item.categoryId} color={accent} active
+                    draggable
                     onDragStart={(e) => handleDragStart(e, index)}
                     onDragEnter={() => handleDragEnter(index)}
                     onDragEnd={handleDropCategory}
@@ -413,10 +455,10 @@ export default function RecordPageDc({ actions, onSaved }) {
                     {item.isCustom && <span onClick={() => handleRemoveCategory(item)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>}
                   </Chip>
                 ) : (
-                  <Chip key={item.categoryId} color={selected.color} active={form.category === item.name} onClick={() => setField('category', form.category === item.name ? null : item.name)}>{item.name}</Chip>
+                  <Chip key={item.categoryId} color={accent} active={form.category === item.name} onClick={() => setField('category', form.category === item.name ? null : item.name)}>{item.name}</Chip>
                 );
               })}
-              {!isEditingCategory && addingTag !== 'category' && <Chip color={selected.color} onClick={() => startAdding('category')}>+</Chip>}
+              {!isEditingCategory && addingTag !== 'category' && <Chip color={accent} onClick={() => startAdding('category')}>+</Chip>}
               {addingTag === 'category' && (
                 <form onSubmit={handleAddSubmit} css={{ display: 'inline-block', margin: 0 }}>
                   <AddingInput
@@ -426,7 +468,7 @@ export default function RecordPageDc({ actions, onSaved }) {
                     onBlur={handleAddSubmit}
                     maxLength={5}
                     placeholder="입력..."
-                    color={selected.color}
+                    color={accent || '#B0AAA2'}
                   />
                 </form>
               )}
@@ -434,28 +476,12 @@ export default function RecordPageDc({ actions, onSaved }) {
 
             {form.type === 'expense' && (
               <div css={{ marginTop: 'auto', paddingTop: 24 }}>
-                <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <span css={{ color: '#8a837a', fontSize: 11, fontWeight: 800 }}>적금</span>
-                  {form.category === '저축' && (
-                    <span css={{ 
-                      color: '#76A7E8', 
-                      fontSize: 11, 
-                      fontWeight: 700, 
-                      animation: 'fadeIn 0.3s ease-out forwards',
-                      '@keyframes fadeIn': {
-                        from: { opacity: 0, transform: 'translateX(-5px)' },
-                        to: { opacity: 1, transform: 'translateX(0)' }
-                      }
-                    }}>
-                      👉 미래의 나에게 든든한 선물을 하셨네요! 멋져요 ✨
-                    </span>
-                  )}
-                </div>
                 <div css={{ height: 1, background: 'var(--line)', marginBottom: 14 }} />
-                <div css={{ display: 'flex' }}>
-                  {isEditingCategory ? (
-                    <Chip 
-                      color={selected.color} active 
+                <h3 css={{ margin: '0 0 13px', fontSize: 13 }}>저축 <span css={{ color: 'var(--sub)', fontWeight: 600 }}>· 선택</span></h3>
+                {isEditingCategory ? (
+                  <div css={{ display: 'flex' }}>
+                    <Chip
+                      color={accent} active
                       draggable={savingCatIndex >= 0}
                       onDragStart={(e) => savingCatIndex >= 0 && handleDragStart(e, savingCatIndex)}
                       onDragEnter={() => savingCatIndex >= 0 && handleDragEnter(savingCatIndex)}
@@ -466,10 +492,36 @@ export default function RecordPageDc({ actions, onSaved }) {
                       <span>저축</span>
                       {savingCat?.isCustom && <span onClick={() => handleRemoveCategory(savingCat)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>}
                     </Chip>
-                  ) : (
-                    <Chip color={selected.color} active={form.category === '저축'} onClick={() => setField('category', form.category === '저축' ? null : '저축')}>저축</Chip>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <>
+                    <ChipRow>
+                      <Chip color={accent} active={form.category === '저축' && form.savingsType === '적금'} onClick={() => selectSaving('적금')}>적금</Chip>
+                      <Chip color={accent} active={form.category === '저축' && form.savingsType === '목표'} onClick={() => selectSaving('목표')}>목표</Chip>
+                    </ChipRow>
+
+                    {form.category === '저축' && form.savingsType === '목표' && (
+                      <div css={{ marginTop: 14 }}>
+                        <div css={{ fontSize: 11.5, color: 'var(--sub)', fontWeight: 800, marginBottom: 9 }}>어떤 목표에 저축할까요?</div>
+                        {goals.length > 0 ? (
+                          <ChipRow>
+                            {goals.map(g => (
+                              <Chip key={g.goalId} color={accent} active={form.goalId === g.goalId} onClick={() => setField('goalId', g.goalId)}>{g.name}</Chip>
+                            ))}
+                          </ChipRow>
+                        ) : (
+                          <div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 700 }}>먼저 목표를 만들면 연결할 수 있어요.</div>
+                        )}
+                      </div>
+                    )}
+
+                    {form.category === '저축' && (
+                      <div css={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontSize: 11.5, fontWeight: 700, color: 'var(--sub)' }}>
+                        {savingMessage}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </SideCard>
@@ -488,7 +540,7 @@ export default function RecordPageDc({ actions, onSaved }) {
                   onClick={() => setField('date', getInitialDate())}
                   css={{ 
                     padding: '6px 14px', borderRadius: 10, border: 0, 
-                    background: form.date === getInitialDate() || new Date(form.date).toDateString() === new Date().toDateString() ? selected.color : 'transparent', 
+                    background: form.date === getInitialDate() || new Date(form.date).toDateString() === new Date().toDateString() ? (accent || 'var(--ink)') : 'transparent',
                     color: form.date === getInitialDate() || new Date(form.date).toDateString() === new Date().toDateString() ? '#fff' : 'var(--sub)', 
                     fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s'
                   }}
@@ -500,7 +552,7 @@ export default function RecordPageDc({ actions, onSaved }) {
                   onClick={() => setIsDatePickerOpen(true)}
                   css={{ 
                     padding: '6px 14px', borderRadius: 10, border: 0, 
-                    background: new Date(form.date).toDateString() !== new Date().toDateString() ? selected.color : 'transparent', 
+                    background: new Date(form.date).toDateString() !== new Date().toDateString() ? (accent || 'var(--ink)') : 'transparent',
                     color: new Date(form.date).toDateString() !== new Date().toDateString() ? '#fff' : 'var(--sub)', 
                     fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s'
                   }}
@@ -529,7 +581,7 @@ export default function RecordPageDc({ actions, onSaved }) {
             </label>
           </SideCard>
 
-          <SaveButton disabled={!canSave} onClick={save}>
+          <SaveButton disabled={!canSave} onClick={save} accent={accent}>
             {canSave ? '감정 기록 저장하기' : '금액·감정·카테고리를 골라주세요'}
           </SaveButton>
         </Side>
