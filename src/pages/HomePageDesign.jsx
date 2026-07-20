@@ -350,7 +350,7 @@ const DeckDot = styled.button`
   transition: width .25s ease, background .25s ease;
 `;
 
-function AssetGoalDeck({ totalAsset, goals, onRoute }) {
+function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal }) {
   const trackRef = useRef(null);
   const [active, setActive] = useState(0);
 
@@ -381,6 +381,7 @@ function AssetGoalDeck({ totalAsset, goals, onRoute }) {
   const dragRef = useRef({ down: false, startX: 0, startScroll: 0, moved: false });
   const onPointerDown = (event) => {
     if (event.pointerType !== 'mouse') return;
+    if (event.target.closest('button')) return; // 카드 안 버튼(저금하기 등) 클릭은 드래그로 가로채지 않음
     const el = trackRef.current;
     dragRef.current = { down: true, startX: event.clientX, startScroll: el.scrollLeft, moved: false };
     el.style.scrollSnapType = 'none';
@@ -442,8 +443,15 @@ function AssetGoalDeck({ totalAsset, goals, onRoute }) {
                 <Bar value={percent(card.goal.currentAmount, card.goal.targetAmount)}><span /></Bar>
                 <div css={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 10, color: 'var(--sub)', fontSize: 12 }}>
                   <span>{money(card.goal.currentAmount)} / {money(card.goal.targetAmount)}</span>
-                  <span>{money(Math.max(0, card.goal.targetAmount - card.goal.currentAmount))} 남음 →</span>
+                  <span>{money(Math.max(0, card.goal.targetAmount - card.goal.currentAmount))} 남음</span>
                 </div>
+                <button
+                  type="button"
+                  onClick={(event) => { event.stopPropagation(); onSaveToGoal?.(card.goal.goalId); }}
+                  css={{ marginTop: 12, border: 0, borderRadius: 12, background: '#83C9B0', color: '#fff', fontSize: 12.5, fontWeight: 800, padding: '10px 0', cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}
+                >
+                  저금하기
+                </button>
               </DeckCard>
             )}
           </DeckCell>
@@ -588,7 +596,7 @@ function ridgePath(cx, width, height, base = 172) {
   return `M ${(cx - width).toFixed(1)} ${base} C ${(cx - width * .42).toFixed(1)} ${base} ${(cx - width * .32).toFixed(1)} ${(base - height).toFixed(1)} ${cx.toFixed(1)} ${(base - height).toFixed(1)} C ${(cx + width * .32).toFixed(1)} ${(base - height).toFixed(1)} ${(cx + width * .42).toFixed(1)} ${base} ${(cx + width).toFixed(1)} ${base} Z`;
 }
 
-export default function HomePageDesign({ state, onRoute, selectedDate, onSelectDate }) {
+export default function HomePageDesign({ state, onRoute, selectedDate, onSelectDate, onSaveToGoal }) {
   const [fallbackDate] = useState(() => new Date(2026, 6, 1));
   const selected = selectedDate || fallbackDate;
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
@@ -787,7 +795,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
           </div>
         </Calendar>
 
-        <AssetGoalDeck totalAsset={totalAsset} goals={goals} onRoute={onRoute} />
+        <AssetGoalDeck totalAsset={totalAsset} goals={goals} onRoute={onRoute} onSaveToGoal={onSaveToGoal} />
 
         <Signal>
           <div css={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 7 }}>
