@@ -28,6 +28,17 @@ function isSameDay(a, b) {
   );
 }
 
+function isAfterDay(date, referenceDate) {
+  if (!date || !referenceDate) return false;
+  const dateAtMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const referenceAtMidnight = new Date(
+    referenceDate.getFullYear(),
+    referenceDate.getMonth(),
+    referenceDate.getDate()
+  );
+  return dateAtMidnight > referenceAtMidnight;
+}
+
 const PopoverWrapper = styled.div`
   position: absolute;
   ${({ placement }) => placement === 'bottom' ? 'top: calc(100% + 8px);' : 'bottom: calc(100% + 8px);'}
@@ -154,6 +165,17 @@ const DateCell = styled.button`
       }
     `;
   }}
+
+  &:disabled {
+    color: var(--sub);
+    background-color: transparent;
+    cursor: not-allowed;
+    opacity: 0.38;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
 `;
 
 const TimeRow = styled.div`
@@ -342,6 +364,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
   }, [selectedDate, selectedTime, period, onChange]);
 
   function handleSelectDate(date) {
+    if (isAfterDay(date, today)) return;
     setSelectedDate(date);
   }
  
@@ -378,6 +401,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
             if (!date) return <div key={`blank-${idx}`} />;
             const isSelected = isSameDay(date, selectedDate);
             const isToday = isSameDay(date, today);
+            const isFutureDate = isAfterDay(date, today);
 
             return (
               <DateCell
@@ -385,6 +409,8 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSelectDate(date); }}
                 isSelected={isSelected}
                 isToday={isToday}
+                disabled={isFutureDate}
+                aria-label={isFutureDate ? `${date.getDate()}일, 선택할 수 없는 미래 날짜` : undefined}
               >
                 {date.getDate()}
               </DateCell>
