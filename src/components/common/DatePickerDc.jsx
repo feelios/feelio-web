@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import styled from "@emotion/styled";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -8,6 +8,7 @@ const ACCENT_COLOR = "#3E5FF5";
 const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
+const ITEM_H = 34; // 휠 아이템 높이(px) — 밴드 중앙 정렬 계산 기준
 
 function buildMonthGrid(year, monthIndex) {
   const firstOfMonth = new Date(year, monthIndex, 1);
@@ -54,6 +55,9 @@ const PopoverWrapper = styled.div`
     : (scale !== 1 ? `scale(${scale})` : 'none')};
   transform-origin: ${({ overlay, placement }) => overlay ? 'center' : (placement === 'bottom' ? 'top left' : 'bottom left')};
   --date-card-w: 300px;
+
+  /* overlay: 캘린더 카드 + 옆 시간 패널을 한 묶음으로 중앙 정렬 (패널이 flex 자식으로 붙음) */
+  ${({ overlay }) => overlay ? 'display: flex; align-items: flex-start; gap: 12px;' : ''}
 
   /* 모바일: 옆 시간기둥 대신 카드 안 인라인 시간 → 단일 카드 팝오버, 폭만 화면에 맞춤 */
   @media (max-width: 560px) {
@@ -248,13 +252,21 @@ const PeriodBtn = styled.button`
 `;
 
 const TimeListPanel = styled.div`
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(var(--date-card-w, 300px) + 12px); /* Card width + gap */
-  width: 140px;
+  /* non-overlay(팝오버): 카드 오른쪽에 absolute로 붙음 / overlay(모달): flex 자식으로 카드 옆에, 카드와 동일 높이 */
+  ${({ overlay }) => overlay ? `
+    position: relative;
+    align-self: stretch;
+    min-height: 0;
+  ` : `
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--date-card-w, 300px) + 12px); /* Card width + gap */
+  `}
+  width: 150px;
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  overflow: hidden;
   background: color-mix(in srgb, var(--bg-1) 95%, transparent);
   border-radius: 24px;
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
@@ -263,48 +275,66 @@ const TimeListPanel = styled.div`
   -webkit-backdrop-filter: blur(12px);
 `;
 
-const TimeCol = styled.div`
+const WheelHeadRow = styled.div`
+  display: flex;
+  flex: 0 0 auto;
+  padding-bottom: 6px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--line);
+
+  span {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--text);
+  }
+`;
+
+const WheelBody = styled.div`
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+`;
+
+const WheelBand = styled.div`
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 50%;
+  height: ${ITEM_H}px;
+  transform: translateY(-50%);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-radius: 10px;
+  pointer-events: none;
+`;
+
+const WheelColScroll = styled.div`
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
   overflow-y: auto;
   scrollbar-width: none;
+  scroll-snap-type: y mandatory;
   &::-webkit-scrollbar { display: none; }
+  -webkit-overflow-scrolling: touch;
+
+  & + & { border-left: 1px solid var(--line); }
 `;
 
-const TimeColLabel = styled.div`
-  position: sticky;
-  top: 0;
-  text-align: center;
-  font-size: 9.5px;
-  font-weight: 700;
-  color: var(--sub);
-  padding: 2px 0 5px;
-  background: color-mix(in srgb, var(--bg-1) 95%, transparent);
-`;
-
-const TimeSlot = styled.button`
+const WheelItem = styled.button`
+  display: block;
   width: 100%;
-  font-size: 11px;
-  font-weight: 500;
-  text-align: center;
-  padding: 6px 0;
-  border-radius: 8px;
+  height: ${ITEM_H}px;
   border: 0;
-  transition: all 0.2s;
-  margin-bottom: 3px;
+  background: transparent;
+  font-family: inherit;
+  scroll-snap-align: center;
   cursor: pointer;
-  &:last-child { margin-bottom: 0; }
-
-  ${({ active }) => active ? `
-    color: #ffffff;
-    background-color: var(--accent);
-  ` : `
-    color: var(--text);
-    background-color: transparent;
-    &:hover { background-color: var(--line); }
-  `}
+  font-size: ${({ active }) => active ? '16px' : '13px'};
+  font-weight: ${({ active }) => active ? 900 : 600};
+  color: ${({ active }) => active ? 'var(--accent)' : 'var(--sub)'};
+  transition: color .15s, font-size .15s, font-weight .15s;
 `;
 
 const InlineTimeWrap = styled.div`
@@ -324,16 +354,19 @@ const InlineTimeScroll = styled.div`
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding-bottom: 2px;
+  padding: 2px 2px 4px;
+  scroll-snap-type: x proximity;
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
+  -webkit-overflow-scrolling: touch;
 `;
 
 const InlineTimeSlot = styled.button`
   flex: 0 0 auto;
-  min-width: 42px;
+  min-width: 44px;
   padding: 9px 0;
   border-radius: 10px;
+  scroll-snap-align: center;
   border: 1px solid ${({ active }) => active ? 'transparent' : 'var(--line)'};
   background: ${({ active }) => active ? 'var(--accent)' : 'transparent'};
   color: ${({ active }) => active ? '#fff' : 'var(--text)'};
@@ -341,7 +374,60 @@ const InlineTimeSlot = styled.button`
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
+  transition: background .15s, border-color .15s;
 `;
+
+// 세로 밴드 휠: 스크롤이 멈추면 가운데 밴드에 온 값이 선택됨. 항목 클릭 시 해당 값으로 스크롤.
+function WheelColumn({ options, value, onSelect }) {
+  const ref = useRef(null);
+  const [pad, setPad] = useState(0);
+  const settleRef = useRef(null);
+
+  // 스크롤 뷰 높이에 맞춰 위·아래 여백 → 첫/마지막 항목도 밴드 중앙까지 올 수 있게
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setPad(Math.max(0, (el.clientHeight - ITEM_H) / 2));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // 여백이 정해진 뒤(또는 리사이즈) 현재값을 밴드 중앙으로 위치
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || pad === 0) return;
+    const idx = options.indexOf(value);
+    if (idx >= 0) el.scrollTop = idx * ITEM_H;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pad]);
+
+  const handleScroll = () => {
+    const el = ref.current;
+    if (!el) return;
+    if (settleRef.current) clearTimeout(settleRef.current);
+    settleRef.current = setTimeout(() => {
+      const idx = Math.max(0, Math.min(options.length - 1, Math.round(el.scrollTop / ITEM_H)));
+      if (options[idx] !== value) onSelect(options[idx]);
+    }, 100);
+  };
+
+  return (
+    <WheelColScroll ref={ref} onScroll={handleScroll} style={{ paddingTop: pad, paddingBottom: pad }}>
+      {options.map((opt, i) => (
+        <WheelItem
+          key={opt}
+          type="button"
+          active={opt === value}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); ref.current?.scrollTo({ top: i * ITEM_H, behavior: 'smooth' }); }}
+        >
+          {opt}
+        </WheelItem>
+      ))}
+    </WheelColScroll>
+  );
+}
 
 export default function DatePickerDc({ value, onChange, onClose, scale = 1, placement = 'top', initialTimePanelOpen = false, overlay = false }) {
   const initDate = value && !isNaN(new Date(value).getTime()) ? new Date(value) : new Date();
@@ -364,15 +450,32 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
     String(Math.min(55, Math.round(initDate.getMinutes() / 5) * 5)).padStart(2, "0")
   );
   const [period, setPeriod] = useState(p);
-  const [timePanelOpen, setTimePanelOpen] = useState(initialTimePanelOpen);
+  const [timePanelOpen, setTimePanelOpen] = useState(initialTimePanelOpen || overlay);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 560);
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth <= 560);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
-  // overlay(모달) 또는 모바일에서는 카드 안 인라인 시/분 선택으로 → 옆 패널이 화면 밖으로 안 나감
-  const useInline = isMobile || overlay;
+  // 모바일에서만 카드 안 인라인 시/분 선택 (데스크톱은 모달이어도 옆 시간 패널 사용)
+  const useInline = isMobile;
+
+  // 인라인 시/분 스와이프: 열 때 현재 선택값이 가운데 오도록 스크롤
+  const hourScrollRef = useRef(null);
+  const minuteScrollRef = useRef(null);
+  useEffect(() => {
+    if (!timePanelOpen || !useInline) return;
+    const centerOn = (node, index) => {
+      if (!node) return;
+      const child = node.children[index];
+      if (!child) return;
+      node.scrollLeft = child.offsetLeft - node.clientWidth / 2 + child.offsetWidth / 2;
+    };
+    centerOn(hourScrollRef.current, HOUR_OPTIONS.indexOf(selectedTime));
+    centerOn(minuteScrollRef.current, MINUTE_OPTIONS.indexOf(selectedMinute));
+    // 열릴 때 한 번만 정렬 (선택 시마다 재정렬하면 튐)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timePanelOpen, useInline]);
 
   const cells = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
  
@@ -496,7 +599,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
         {useInline && timePanelOpen && (
           <InlineTimeWrap>
             <InlineTimeLabel>시</InlineTimeLabel>
-            <InlineTimeScroll>
+            <InlineTimeScroll ref={hourScrollRef}>
               {HOUR_OPTIONS.map((time) => (
                 <InlineTimeSlot
                   key={time}
@@ -509,7 +612,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
               ))}
             </InlineTimeScroll>
             <InlineTimeLabel css={{ marginTop: 10 }}>분</InlineTimeLabel>
-            <InlineTimeScroll>
+            <InlineTimeScroll ref={minuteScrollRef}>
               {MINUTE_OPTIONS.map((minute) => (
                 <InlineTimeSlot
                   key={minute}
@@ -526,31 +629,13 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
       </Card>
 
       {!useInline && timePanelOpen && (
-        <TimeListPanel>
-          <TimeCol>
-            <TimeColLabel>시</TimeColLabel>
-            {HOUR_OPTIONS.map((time) => (
-              <TimeSlot
-                key={time}
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSelectTime(time); }}
-                active={time === selectedTime}
-              >
-                {time}
-              </TimeSlot>
-            ))}
-          </TimeCol>
-          <TimeCol>
-            <TimeColLabel>분</TimeColLabel>
-            {MINUTE_OPTIONS.map((minute) => (
-              <TimeSlot
-                key={minute}
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSelectMinute(minute); }}
-                active={minute === selectedMinute}
-              >
-                {minute}
-              </TimeSlot>
-            ))}
-          </TimeCol>
+        <TimeListPanel overlay={overlay}>
+          <WheelHeadRow><span>시</span><span>분</span></WheelHeadRow>
+          <WheelBody>
+            <WheelBand />
+            <WheelColumn options={HOUR_OPTIONS} value={selectedTime} onSelect={handleSelectTime} />
+            <WheelColumn options={MINUTE_OPTIONS} value={selectedMinute} onSelect={handleSelectMinute} />
+          </WheelBody>
         </TimeListPanel>
       )}
     </PopoverWrapper>
