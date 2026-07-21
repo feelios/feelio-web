@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import styled from '@emotion/styled';
+import { keyframes } from '@emotion/react';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
@@ -168,6 +169,23 @@ const ChipRow = styled.div`
   gap: 8px;
 `;
 
+// 편집(순서 변경) 모드 티내기 — 살짝 흔들리는 지글 애니메이션
+const wiggle = keyframes`
+  0%, 100% { transform: rotate(-1.1deg); }
+  50% { transform: rotate(1.1deg); }
+`;
+
+// 드래그 정렬 중 삽입 위치를 보여주는 세로 인디케이터
+const DropLine = styled.div`
+  align-self: stretch;
+  width: 3px;
+  min-height: 30px;
+  border-radius: 2px;
+  background: var(--text);
+  opacity: .85;
+  transition: opacity .1s ease;
+`;
+
 const Chip = styled.button`
   border: 1.5px solid ${({ active, color }) => active ? (color || 'var(--ink)') : 'var(--line)'};
   border-radius: 999px;
@@ -279,8 +297,8 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
   const updateCategoryOrderMutation = useUpdateCategoryOrderMutation();
   const mutation = useCreateTransactionMutation();
 
-  const dragItemRef = useRef(null);
-  const dragOverItemRef = useRef(null);
+  const [dragIndex, setDragIndex] = useState(null);   // 드래그 중인 카테고리(표시 리스트 기준)
+  const [dropIndex, setDropIndex] = useState(null);   // 삽입될 위치(표시 리스트 기준, 0~length)
 
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 560);
 
@@ -321,26 +339,36 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
   };
 
   const handleDragStart = (e, index) => {
-    dragItemRef.current = index;
+    setDragIndex(index);
     if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragEnter = (index) => {
-    dragOverItemRef.current = index;
+  // 칩 위에서 마우스 X로 앞/뒤 삽입 위치 판정 → 인디케이터 갱신
+  const handleDragOverChip = (e, index) => {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const after = e.clientX > rect.left + rect.width / 2;
+    setDropIndex(after ? index + 1 : index);
   };
 
   const handleDropCategory = () => {
-    if (dragItemRef.current === null || dragOverItemRef.current === null) return;
-    if (dragItemRef.current !== dragOverItemRef.current) {
-      const newCats = [...customCategories];
-      const [dragItem] = newCats.splice(dragItemRef.current, 1);
-      newCats.splice(dragOverItemRef.current, 0, dragItem);
-      
-      const orders = newCats.map((c, idx) => ({ categoryId: c.categoryId, isCustom: c.isCustom, sortOrder: idx + 1 }));
-      updateCategoryOrderMutation.mutate({ type: form.type.toUpperCase(), orders });
+    const displayed = customCategories.filter(c => c.name !== '저축' && c.name !== '정산금');
+    if (dragIndex !== null && dropIndex !== null) {
+      const item = displayed[dragIndex];
+      const fromReal = item ? customCategories.indexOf(item) : -1;
+      const target = displayed[dropIndex];                 // 삽입 지점의 현재 항목(끝이면 undefined)
+      const toReal = target ? customCategories.indexOf(target) : customCategories.length;
+      // 제자리(자기 앞/뒤)면 무시
+      if (item && fromReal !== -1 && toReal !== fromReal && toReal !== fromReal + 1) {
+        const next = [...customCategories];
+        next.splice(fromReal, 1);
+        next.splice(toReal > fromReal ? toReal - 1 : toReal, 0, item);
+        const orders = next.map((c, idx) => ({ categoryId: c.categoryId, isCustom: c.isCustom, sortOrder: idx + 1 }));
+        updateCategoryOrderMutation.mutate({ type: form.type.toUpperCase(), orders });
+      }
     }
-    dragItemRef.current = null;
-    dragOverItemRef.current = null;
+    setDragIndex(null);
+    setDropIndex(null);
   };
 
   const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
@@ -415,6 +443,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
 
   const savingCatIndex = customCategories.findIndex(c => c.name === '저축');
   const savingCat = customCategories[savingCatIndex];
+  const displayedCategories = customCategories.filter(c => c.name !== '저축' && c.name !== '정산금');
 
   return (
     <Page>
@@ -482,24 +511,27 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
               <button type="button" onClick={() => setIsEditingCategory(!isEditingCategory)} css={{ background: 'transparent', border: 0, color: isEditingCategory ? 'var(--text)' : 'var(--sub)', cursor: 'pointer', fontSize: 16 }}>✎</button>
             </div>
             <ChipRow>
-              {customCategories.filter(c => c.name !== '저축' && c.name !== '정산금').map((item, index) => {
-                return isEditingCategory ? (
-                  <Chip
-                    key={item.categoryId} color={accent} active
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, index)}
-                    onDragEnter={() => handleDragEnter(index)}
-                    onDragEnd={handleDropCategory}
-                    onDragOver={(e) => e.preventDefault()}
-                    css={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', cursor: 'grab', '&:active': { cursor: 'grabbing' } }}
-                  >
-                    <span>{item.name}</span>
-                    {item.isCustom && <span onClick={() => handleRemoveCategory(item)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>}
-                  </Chip>
-                ) : (
-                  <Chip key={item.categoryId} color={accent} active={form.category === item.name} onClick={() => setField('category', form.category === item.name ? null : item.name)}>{item.name}</Chip>
-                );
-              })}
+              {displayedCategories.map((item, index) => (
+                <Fragment key={item.categoryId}>
+                  {isEditingCategory && dragIndex !== null && dropIndex === index && <DropLine />}
+                  {isEditingCategory ? (
+                    <Chip
+                      color={accent}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOverChip(e, index)}
+                      onDragEnd={handleDropCategory}
+                      css={{ display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'grab', opacity: dragIndex === index ? 0.4 : 1, transition: 'opacity .15s', animation: dragIndex === index ? 'none' : `${wiggle} .5s ease-in-out infinite`, animationDelay: `${(index % 2) * 0.13}s`, '@media (prefers-reduced-motion: reduce)': { animation: 'none' }, '&:active': { cursor: 'grabbing' } }}
+                    >
+                      <span>{item.name}</span>
+                      {item.isCustom && <span onClick={() => handleRemoveCategory(item)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>}
+                    </Chip>
+                  ) : (
+                    <Chip color={accent} active={form.category === item.name} onClick={() => setField('category', form.category === item.name ? null : item.name)}>{item.name}</Chip>
+                  )}
+                </Fragment>
+              ))}
+              {isEditingCategory && dragIndex !== null && dropIndex === displayedCategories.length && <DropLine />}
               {!isEditingCategory && addingTag !== 'category' && <Chip color={accent} onClick={() => startAdding('category')}>+</Chip>}
               {addingTag === 'category' && (
                 <form onSubmit={handleAddSubmit} css={{ display: 'inline-block', margin: 0 }}>
@@ -523,13 +555,8 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
                 {isEditingCategory ? (
                   <div css={{ display: 'flex' }}>
                     <Chip
-                      color={accent} active
-                      draggable={savingCatIndex >= 0}
-                      onDragStart={(e) => savingCatIndex >= 0 && handleDragStart(e, savingCatIndex)}
-                      onDragEnter={() => savingCatIndex >= 0 && handleDragEnter(savingCatIndex)}
-                      onDragEnd={handleDropCategory}
-                      onDragOver={(e) => e.preventDefault()}
-                      css={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', cursor: savingCatIndex >= 0 ? 'grab' : 'default', '&:active': { cursor: savingCatIndex >= 0 ? 'grabbing' : 'default' } }}
+                      color={accent}
+                      css={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                     >
                       <span>저축</span>
                       {savingCat?.isCustom && <span onClick={() => handleRemoveCategory(savingCat)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>}
