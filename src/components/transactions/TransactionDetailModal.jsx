@@ -271,6 +271,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
 
   const [mode, setMode] = useState('detail');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const dateFieldRef = useRef(null);
   const [form, setForm] = useState({
     amount: String(transaction?.amount || 0),
     categoryId: transaction?.category?.categoryId || '',
@@ -431,7 +432,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
           </div>
           <Field css={{ marginBottom: isMobile ? 6 : 16 }}>메모<input value={form.memo} onChange={event => setField('memo', event.target.value)} /></Field>
           <Field css={{ position: 'relative', marginBottom: isMobile ? 6 : 22 }}>날짜
-            <button type="button" onClick={() => setIsDatePickerOpen(true)} css={{ border: '1px solid var(--line)', borderRadius: 12, padding: '12px 14px', background: 'var(--card)', color: 'var(--text)', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 }}>
+            <button ref={dateFieldRef} type="button" onClick={() => setIsDatePickerOpen(true)} css={{ border: '1px solid var(--line)', borderRadius: 12, padding: '12px 14px', background: 'var(--card)', color: 'var(--text)', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 }}>
               {form.date.replace('T', ' ')}
             </button>
             {isDatePickerOpen && (
@@ -440,6 +441,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
                 onChange={(newDate) => setField('date', newDate)}
                 onClose={() => setIsDatePickerOpen(false)}
                 overlay
+                anchorRef={dateFieldRef}
               />
             )}
           </Field>

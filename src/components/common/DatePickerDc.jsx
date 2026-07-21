@@ -76,7 +76,7 @@ const Card = styled.div`
   background: color-mix(in srgb, var(--bg-1) 95%, transparent);
   border-radius: 28px;
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  padding: 18px;
+  padding: 14px 15px;
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(12px);
@@ -94,7 +94,7 @@ const MonthHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   flex-shrink: 0;
 `;
 
@@ -118,6 +118,7 @@ const NavBtn = styled.button`
 
 const MonthTitle = styled.h2`
   margin: 0;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 13px;
   font-weight: 700;
   color: var(--text);
@@ -135,18 +136,18 @@ const DayLabel = styled.div`
   font-size: 10px;
   font-weight: 500;
   color: var(--sub);
-  padding: 6px 0;
+  padding: 4px 0;
 `;
 
 const DateGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  gap: 5px;
   flex-shrink: 0;
 `;
 
 const DateCell = styled.button`
-  height: 34px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -196,8 +197,8 @@ const DateCell = styled.button`
 `;
 
 const TimeRow = styled.div`
-  margin-top: 16px;
-  padding-top: 12px;
+  margin-top: 12px;
+  padding-top: 11px;
   border-top: 1px solid var(--line);
   flex-shrink: 0;
   display: flex;
@@ -255,7 +256,6 @@ const TimeListPanel = styled.div`
   /* non-overlay(팝오버): 카드 오른쪽에 absolute로 붙음 / overlay(모달): flex 자식으로 카드 옆에, 카드와 동일 높이 */
   ${({ overlay }) => overlay ? `
     position: relative;
-    align-self: stretch;
     min-height: 0;
   ` : `
     position: absolute;
@@ -311,11 +311,12 @@ const WheelBand = styled.div`
 `;
 
 const WheelColScroll = styled.div`
+  position: relative;
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow-y: auto;
   scrollbar-width: none;
-  scroll-snap-type: y mandatory;
   &::-webkit-scrollbar { display: none; }
   -webkit-overflow-scrolling: touch;
 
@@ -329,7 +330,6 @@ const WheelItem = styled.button`
   border: 0;
   background: transparent;
   font-family: inherit;
-  scroll-snap-align: center;
   cursor: pointer;
   font-size: ${({ active }) => active ? '16px' : '13px'};
   font-weight: ${({ active }) => active ? 900 : 600};
@@ -378,49 +378,102 @@ const InlineTimeSlot = styled.button`
 `;
 
 // 세로 밴드 휠: 스크롤이 멈추면 가운데 밴드에 온 값이 선택됨. 항목 클릭 시 해당 값으로 스크롤.
-function WheelColumn({ options, value, onSelect }) {
+function WheelColumn({ options, value, onSelect, bandRef }) {
   const ref = useRef(null);
-  const [pad, setPad] = useState(0);
   const settleRef = useRef(null);
+  const lockRef = useRef(false); // 프로그램 스크롤 중 onScroll 무시(피드백 방지)
 
-  // 스크롤 뷰 높이에 맞춰 위·아래 여백 → 첫/마지막 항목도 밴드 중앙까지 올 수 있게
+  // 정렬 목표 = 실제 밴드 요소의 화면상 세로 중앙 (없으면 스크롤 뷰 중앙)
+  const bandMid = () => {
+    const b = bandRef?.current?.getBoundingClientRect();
+    if (b) return b.top + b.height / 2;
+    const er = ref.current.getBoundingClientRect();
+    return er.top + er.height / 2;
+  };
+
+  // 밴드 위치 기준으로 위·아래 여백 계산 → 첫·마지막 값도 밴드까지 스크롤 도달 가능
+  const applyPadding = () => {
+    const el = ref.current;
+    if (!el) return;
+    const er = el.getBoundingClientRect();
+    const mid = bandMid();
+    el.style.paddingTop = `${Math.max(0, mid - er.top - ITEM_H / 2)}px`;
+    el.style.paddingBottom = `${Math.max(0, er.bottom - mid - ITEM_H / 2)}px`;
+  };
+
+  // 항목 idx를 밴드 정중앙에 오도록 화면 좌표 기준으로 이동
+  const centerIdx = (idx, smooth) => {
+    const el = ref.current;
+    const child = el?.children[idx];
+    if (!el || !child) return;
+    const cr = child.getBoundingClientRect();
+    const delta = (cr.top + cr.height / 2) - bandMid();
+    if (Math.abs(delta) < 0.5) return;
+    lockRef.current = true;
+    el.scrollBy({ top: delta, behavior: smooth ? 'smooth' : 'auto' });
+    if (settleRef.current) clearTimeout(settleRef.current);
+    settleRef.current = setTimeout(() => { lockRef.current = false; }, smooth ? 340 : 60);
+  };
+
+  const layout = () => {
+    applyPadding();
+    const idx = options.indexOf(value);
+    if (idx >= 0) centerIdx(idx, false);
+  };
+
+  // 마운트/크기변화 시 여백 재계산 + 현재값 정렬
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const measure = () => setPad(Math.max(0, (el.clientHeight - ITEM_H) / 2));
-    measure();
-    const ro = new ResizeObserver(measure);
+    layout();
+    const ro = new ResizeObserver(() => layout());
     ro.observe(el);
+    if (bandRef?.current) ro.observe(bandRef.current);
     return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 여백이 정해진 뒤(또는 리사이즈) 현재값을 밴드 중앙으로 위치
+  // 값 변경 시 재정렬
   useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el || pad === 0) return;
-    const idx = options.indexOf(value);
-    if (idx >= 0) el.scrollTop = idx * ITEM_H;
+    layout();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pad]);
+  }, [value]);
+
+  // overlay 패널 높이는 비동기로 확정 → 열린 뒤 몇 프레임 후 한 번 더
+  useEffect(() => {
+    const t1 = setTimeout(layout, 40);
+    const t2 = setTimeout(layout, 160);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleScroll = () => {
+    if (lockRef.current) return;
     const el = ref.current;
     if (!el) return;
     if (settleRef.current) clearTimeout(settleRef.current);
     settleRef.current = setTimeout(() => {
-      const idx = Math.max(0, Math.min(options.length - 1, Math.round(el.scrollTop / ITEM_H)));
-      if (options[idx] !== value) onSelect(options[idx]);
-    }, 100);
+      // 밴드 중앙에 가장 가까운 항목 실측(화면 좌표)
+      const mid = bandMid();
+      let best = 0, bestD = Infinity;
+      for (let i = 0; i < el.children.length; i++) {
+        const cr = el.children[i].getBoundingClientRect();
+        const d = Math.abs((cr.top + cr.height / 2) - mid);
+        if (d < bestD) { bestD = d; best = i; }
+      }
+      centerIdx(best, true);
+      if (options[best] !== value) onSelect(options[best]);
+    }, 120);
   };
 
   return (
-    <WheelColScroll ref={ref} onScroll={handleScroll} style={{ paddingTop: pad, paddingBottom: pad }}>
+    <WheelColScroll ref={ref} onScroll={handleScroll}>
       {options.map((opt, i) => (
         <WheelItem
           key={opt}
           type="button"
           active={opt === value}
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); ref.current?.scrollTo({ top: i * ITEM_H, behavior: 'smooth' }); }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); centerIdx(i, true); onSelect(opt); }}
         >
           {opt}
         </WheelItem>
@@ -429,7 +482,7 @@ function WheelColumn({ options, value, onSelect }) {
   );
 }
 
-export default function DatePickerDc({ value, onChange, onClose, scale = 1, placement = 'top', initialTimePanelOpen = false, overlay = false }) {
+export default function DatePickerDc({ value, onChange, onClose, scale = 1, placement = 'top', initialTimePanelOpen = false, overlay = false, anchorRef = null }) {
   const initDate = value && !isNaN(new Date(value).getTime()) ? new Date(value) : new Date();
   
   const today = useMemo(() => new Date(), []);
@@ -459,6 +512,36 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
   }, []);
   // 모바일에서만 카드 안 인라인 시/분 선택 (데스크톱은 모달이어도 옆 시간 패널 사용)
   const useInline = isMobile;
+
+  // overlay 휠 패널 높이를 달력 카드와 동일하게 (달력은 월에 따라 5~6줄로 높이가 달라짐)
+  const cardRef = useRef(null);
+  const bandRef = useRef(null);
+  const [panelH, setPanelH] = useState(null);
+  useLayoutEffect(() => {
+    if (!overlay || useInline) return;
+    const measure = () => { if (cardRef.current) setPanelH(cardRef.current.offsetHeight); };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [overlay, useInline, timePanelOpen, viewMonth, viewYear]);
+
+  // overlay + anchorRef: 트리거(날짜 필드) 바로 위에 좌측 정렬로 위치 (포털이라 모달에 안 잘림)
+  const [anchorStyle, setAnchorStyle] = useState(null);
+  useLayoutEffect(() => {
+    if (!overlay || !anchorRef?.current) return;
+    const measure = () => {
+      const el = anchorRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const GAP = 10, M = 12, ASSEMBLY_W = 474; // 카드(300)+gap(12)+휠(150) + 여유
+      const left = Math.max(M, Math.min(rect.left, window.innerWidth - ASSEMBLY_W - M));
+      const bottom = window.innerHeight - rect.top + GAP; // 필드 위쪽에 조립 하단을 붙임
+      setAnchorStyle({ left, bottom });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [overlay, anchorRef, timePanelOpen, panelH]);
 
   // 인라인 시/분 스와이프: 열 때 현재 선택값이 가운데 오도록 스크롤
   const hourScrollRef = useRef(null);
@@ -531,8 +614,22 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
   const tree = (
     <>
       <Backdrop overlay={overlay} onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }} />
-      <PopoverWrapper scale={scale} placement={placement} overlay={overlay} style={{ "--accent": ACCENT_COLOR }}>
-        <Card overlay={overlay}>
+      <PopoverWrapper
+        scale={scale}
+        placement={placement}
+        overlay={overlay}
+        style={{
+          "--accent": ACCENT_COLOR,
+          ...(overlay && anchorStyle ? {
+            left: anchorStyle.left,
+            top: 'auto',
+            bottom: anchorStyle.bottom,
+            transform: scale !== 1 ? `scale(${scale})` : 'none',
+            transformOrigin: 'bottom left',
+          } : {}),
+        }}
+      >
+        <Card overlay={overlay} ref={cardRef}>
         <MonthHeader>
           <NavBtn onClick={(e) => { e.preventDefault(); e.stopPropagation(); goPrevMonth(); }} aria-label="Previous month">
             <ChevronLeft size={16} />
@@ -629,12 +726,12 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
       </Card>
 
       {!useInline && timePanelOpen && (
-        <TimeListPanel overlay={overlay}>
+        <TimeListPanel overlay={overlay} style={overlay && panelH ? { height: panelH } : undefined}>
           <WheelHeadRow><span>시</span><span>분</span></WheelHeadRow>
           <WheelBody>
-            <WheelBand />
-            <WheelColumn options={HOUR_OPTIONS} value={selectedTime} onSelect={handleSelectTime} />
-            <WheelColumn options={MINUTE_OPTIONS} value={selectedMinute} onSelect={handleSelectMinute} />
+            <WheelBand ref={bandRef} />
+            <WheelColumn options={HOUR_OPTIONS} value={selectedTime} onSelect={handleSelectTime} bandRef={bandRef} />
+            <WheelColumn options={MINUTE_OPTIONS} value={selectedMinute} onSelect={handleSelectMinute} bandRef={bandRef} />
           </WheelBody>
         </TimeListPanel>
       )}
