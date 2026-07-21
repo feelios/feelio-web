@@ -8,7 +8,6 @@ import { useDebounce } from '../hooks/useDebounce.js';
 import { useTransactionsQuery, useBulkDeleteTransactionsMutation, useUpdateTransactionMutation } from '../hooks/queries/useTransactions.js';
 import { useMetadata } from '../hooks/queries/useMetadata.js';
 import { TransactionListSkeleton } from '../components/common/Skeleton.jsx';
-import DatePickerDc from '../components/common/DatePickerDc.jsx';
 import SelectDc from '../components/common/SelectDc.jsx';
 
 const Wrap = styled.div`
@@ -144,7 +143,7 @@ const Search = styled.div`
 
 const ControlGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  grid-template-columns: repeat(6, minmax(130px, 1fr));
   gap: 10px;
   margin-bottom: 16px;
   padding: 14px;
@@ -157,153 +156,7 @@ const ControlGrid = styled.div`
   }
 
   @media (max-width: 560px) {
-    grid-template-columns: repeat(6, 1fr);
     gap: 8px;
-    & > *:nth-of-type(1), & > *:nth-of-type(2) {
-      grid-column: span 3;
-    }
-    & > *:nth-of-type(3), & > *:nth-of-type(4), & > *:nth-of-type(5) {
-      grid-column: span 2;
-    }
-  }
-`;
-
-const SelectBox = styled.label`
-  display: grid;
-  gap: 6px;
-  color: var(--sub);
-  font-size: 11.5px;
-  font-weight: 900;
-
-  select,
-  input {
-    width: 100%;
-    box-sizing: border-box;
-    border: 1px solid var(--line);
-    border-radius: 13px;
-    background: var(--card);
-    color: var(--text);
-    padding: 10px 12px;
-    font-family: inherit;
-    font-weight: 800;
-    outline: 0;
-  }
-`;
-
-const DatePickerShell = styled.div`
-  position: relative;
-  min-height: 41px;
-  border: 1px solid var(--line);
-  border-radius: 13px;
-  background: var(--card);
-  color: var(--text);
-  padding: 10px 36px 10px 12px;
-  box-sizing: border-box;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 900;
-  cursor: pointer;
-
-  &::after {
-    content: '';
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    width: 7px;
-    height: 7px;
-    border-right: 2px solid var(--sub);
-    border-bottom: 2px solid var(--sub);
-    transform: translateY(-65%) rotate(45deg);
-    pointer-events: none;
-  }
-`;
-
-const SelectLike = styled.div`
-  position: relative;
-  display: grid;
-  gap: 6px;
-  color: var(--sub);
-  font-size: 11.5px;
-  font-weight: 900;
-`;
-
-const SelectButton = styled.button`
-  width: 100%;
-  min-height: 41px;
-  border: 1px solid var(--line);
-  border-radius: 13px;
-  background: var(--card);
-  color: var(--text);
-  padding: 10px 36px 10px 12px;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 900;
-  text-align: left;
-  cursor: pointer;
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    width: 7px;
-    height: 7px;
-    border-right: 2px solid var(--sub);
-    border-bottom: 2px solid var(--sub);
-    transform: translateY(-65%) rotate(45deg);
-  }
-`;
-
-const SelectMenu = styled.div`
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(100% + 8px);
-  z-index: 20;
-  display: grid;
-  gap: 6px;
-  max-height: 230px;
-  overflow: auto;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--card-strong);
-  box-shadow: 0 18px 45px rgba(60, 50, 35, .14);
-  backdrop-filter: blur(18px);
-`;
-
-const SelectOption = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  border: 0;
-  border-radius: 10px;
-  background: ${({ active }) => active ? 'rgba(158,150,238,.16)' : 'transparent'};
-  color: var(--text);
-  padding: 9px 10px;
-  font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 900;
-  text-align: left;
-  cursor: pointer;
-
-  &:hover {
-    background: rgba(255, 255, 255, .14);
-  }
-
-  span {
-    width: 16px;
-    height: 16px;
-    border-radius: 6px;
-    border: 1px solid ${({ active }) => active ? 'rgba(158,150,238,.8)' : 'var(--line)'};
-    background: ${({ active }) => active ? 'rgba(158,150,238,.28)' : 'var(--card)'};
-    display: grid;
-    place-items: center;
-    color: ${({ active }) => active ? 'var(--text)' : 'transparent'};
-    font-size: 11px;
-    flex: 0 0 auto;
   }
 `;
 
@@ -468,10 +321,6 @@ function monthTitle(year, month) {
   return `${year}년 ${month}월`;
 }
 
-function padDatePart(value) {
-  return String(value).padStart(2, '0');
-}
-
 export default function TransactionsPageDesign({ onSelect, globalDate, setGlobalDate }) {
   const { data: metaData } = useMetadata();
   const categories = metaData?.categories || [];
@@ -489,8 +338,6 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [emotionFilters, setEmotionFilters] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [openSelect, setOpenSelect] = useState('');
-  const [isMonthDayPickerOpen, setIsMonthDayPickerOpen] = useState(false);
 
   const yearOptions = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -631,24 +478,40 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
     setDay('');
   };
 
-  const monthDayPickerValue = `${year}-${padDatePart(month === 'all' ? today.getMonth() + 1 : month)}-${padDatePart(day || 1)}`;
+  // 선택된 연·월의 실제 일수 (윤년 2월 반영) → 일 선택기 옵션을 동적으로 렌더 (#157)
+  const daysInSelectedMonth = useMemo(() => {
+    if (month === 'all') return 31;
+    return new Date(Number(year), Number(month), 0).getDate();
+  }, [year, month]);
+
+  const monthOptions = useMemo(() => (
+    [{ value: 'all', label: '전체' }, ...Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `${i + 1}월` }))]
+  ), []);
+
+  const dayOptions = useMemo(() => (
+    [{ value: '', label: '전체' }, ...Array.from({ length: daysInSelectedMonth }, (_, i) => ({ value: String(i + 1), label: `${i + 1}일` }))]
+  ), [daysInSelectedMonth]);
+
+  const clampDay = (nextYear, nextMonth, currentDay) => {
+    if (nextMonth === 'all' || !currentDay) return '';
+    const dim = new Date(Number(nextYear), Number(nextMonth), 0).getDate();
+    return Number(currentDay) > dim ? '' : currentDay;
+  };
 
   const handleYearPicker = (value) => {
     if (!value) return;
-    setYear(String(new Date(value).getFullYear()));
+    const nextYear = String(new Date(value).getFullYear());
+    setYear(nextYear);
+    setDay(clampDay(nextYear, month, day)); // 연 변경으로 2/29 등이 사라지면 일 초기화
   };
 
-  const handleMonthDayPicker = (value) => {
-    if (!value) return;
-    const nextDate = new Date(value);
-    setMonth(String(nextDate.getMonth() + 1));
-    setDay(String(nextDate.getDate()));
+  const handleMonthChange = (value) => {
+    setMonth(value);
+    setDay(clampDay(year, value, day)); // 월 변경 시 일수 초과분·전체월이면 일 초기화
   };
 
-  const toggleFilter = (value, selected, setSelected) => {
-    setSelected(selected.includes(value)
-      ? selected.filter(item => item !== value)
-      : [...selected, value]);
+  const handleDayChange = (value) => {
+    setDay(value);
   };
 
   const groups = useMemo(() => {
@@ -716,95 +579,41 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
           value={year}
           onChange={(val) => { if (val) handleYearPicker(`${val}-01-01`); }}
         />
-        <SelectBox>
-          월-일
-          <DatePickerShell onClick={() => setIsMonthDayPickerOpen(true)}>
-            {month}월{day ? ` ${day}일` : ''}
-            {isMonthDayPickerOpen && (
-              <DatePickerDc
-                value={monthDayPickerValue}
-                onChange={(newDate) => { handleMonthDayPicker(newDate); }}
-                onClose={() => setIsMonthDayPickerOpen(false)}
-                scale={0.85}
-                placement="bottom"
-              />
-            )}
-          </DatePickerShell>
-        </SelectBox>
-        <SelectLike>
-          정렬
-          <SelectButton type="button" onClick={() => setOpenSelect(openSelect === 'sort' ? '' : 'sort')}>
-            {sortOptions.find(([key]) => key === sort)?.[1]}
-          </SelectButton>
-          {openSelect === 'sort' && (
-            <SelectMenu>
-              {sortOptions.map(([key, label]) => (
-                <SelectOption
-                  key={key}
-                  type="button"
-                  active={sort === key}
-                  onClick={() => {
-                    setSort(key);
-                    setOpenSelect('');
-                  }}
-                >
-                  {label}
-                  <span>✓</span>
-                </SelectOption>
-              ))}
-            </SelectMenu>
-          )}
-        </SelectLike>
-        <SelectLike>
-          카테고리 상세
-          <SelectButton type="button" onClick={() => setOpenSelect(openSelect === 'category' ? '' : 'category')}>
-            {categoryFilters.length ? `${categoryFilters.length}개 선택` : '전체 카테고리'}
-          </SelectButton>
-          {openSelect === 'category' && (
-            <SelectMenu>
-              <SelectOption type="button" active={!categoryFilters.length} onClick={() => setCategoryFilters([])}>
-                전체 카테고리
-                <span>✓</span>
-              </SelectOption>
-              {categories.map(item => (
-                <SelectOption
-                  key={item.categoryId}
-                  type="button"
-                  active={categoryFilters.includes(item.categoryId)}
-                  onClick={() => toggleFilter(item.categoryId, categoryFilters, setCategoryFilters)}
-                >
-                  {item.name}
-                  <span>✓</span>
-                </SelectOption>
-              ))}
-            </SelectMenu>
-          )}
-        </SelectLike>
-        <SelectLike>
-          감정 상세
-          <SelectButton type="button" onClick={() => setOpenSelect(openSelect === 'emotion' ? '' : 'emotion')}>
-            {emotionFilters.length ? `${emotionFilters.length}개 선택` : '전체 감정'}
-          </SelectButton>
-          {openSelect === 'emotion' && (
-            <SelectMenu>
-              <SelectOption type="button" active={!emotionFilters.length} onClick={() => setEmotionFilters([])}>
-                전체 감정
-                <span>✓</span>
-              </SelectOption>
-              {emotions.map(item => (
-                <SelectOption
-                  key={item.emotionId}
-                  type="button"
-                  active={emotionFilters.includes(item.emotionId)}
-                  onClick={() => toggleFilter(item.emotionId, emotionFilters, setEmotionFilters)}
-                >
-                  {item.name}
-                  <span>✓</span>
-                </SelectOption>
-              ))}
-            </SelectMenu>
-          )}
-        </SelectLike>
+        <SelectDc
+          label="월"
+          options={monthOptions}
+          value={month}
+          onChange={(val) => handleMonthChange(val ?? 'all')}
+        />
+        <SelectDc
+          label="일"
+          options={dayOptions}
+          value={day}
+          onChange={(val) => handleDayChange(val ?? '')}
+          disabled={month === 'all'}
+        />
+        <SelectDc
+          label="정렬"
+          options={sortOptions.map(([value, label]) => ({ value, label }))}
+          value={sort}
+          onChange={(val) => { if (val) setSort(val); }}
+        />
+        <SelectDc
+          label="카테고리 상세"
+          multiple
+          placeholder="전체 카테고리"
+          options={categories.map(item => ({ value: item.categoryId, label: item.name }))}
+          value={categoryFilters}
+          onChange={setCategoryFilters}
+        />
+        <SelectDc
+          label="감정 상세"
+          multiple
+          placeholder="전체 감정"
+          options={emotions.map(item => ({ value: item.emotionId, label: item.name }))}
+          value={emotionFilters}
+          onChange={setEmotionFilters}
+        />
       </ControlGrid>}
 
       {isLoading && <TransactionListSkeleton />}

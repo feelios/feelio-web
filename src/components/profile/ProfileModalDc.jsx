@@ -535,6 +535,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
       height="min(620px, calc(100dvh - 40px))"
       maxHeight="min(720px, calc(100dvh - 40px))"
       overflow="auto"
+      hideScrollbar
     >
       {view === 'profile' && (
         <MainScreen>
