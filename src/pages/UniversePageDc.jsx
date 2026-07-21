@@ -72,8 +72,12 @@ export default function UniversePageDc() {
   const { data: goalsData } = useGoalsQuery();
   const goalsList = goalsData?.goals || [];
   const mainGoal = goalsList.find(g => g.isMain) || goalsList[0] || null;
-  
-  const { data: universeData, isLoading: isUniverseLoading } = useUniverseQuery(mainGoal?.goalId);
+
+  // 하단 목표 리스트에서 고른 목표로 시뮬레이션 전환 (미선택 시 대표 목표)
+  const [selectedGoalId, setSelectedGoalId] = useState(null);
+  const activeGoalId = selectedGoalId ?? mainGoal?.goalId ?? null;
+
+  const { data: universeData, isLoading: isUniverseLoading } = useUniverseQuery(activeGoalId);
 
   const U_DATA = useMemo(() => {
     if (!universeData) return null;
@@ -167,6 +171,14 @@ export default function UniversePageDc() {
 
   const reset = () => {
     if (tRef.current) clearTimeout(tRef.current);
+    setPhase("idle"); setSelected(""); setFrom("");
+  };
+
+  // 하단 목표 선택 → 해당 goalId로 시뮬레이션 전환(항해 상태 초기화)
+  const selectGoal = (goalId) => {
+    if (goalId === activeGoalId) return;
+    if (tRef.current) clearTimeout(tRef.current);
+    setSelectedGoalId(goalId);
     setPhase("idle"); setSelected(""); setFrom("");
   };
 
@@ -459,6 +471,36 @@ export default function UniversePageDc() {
               eggDistB={((calc / 100) * 7.81).toFixed(2)} eggTimeB={Math.round((calc / 100) * 63)}
               eggCurv={((calc / 100) * 0.83).toFixed(2)}
             />
+          )}
+
+          {phase === "idle" && goalsList.length > 0 && (
+            <div style={{ position: "absolute", top: isMobile ? 20 : 24, right: isMobile ? 16 : 26, zIndex: 16, display: "flex", justifyContent: "flex-end", maxWidth: "68%", pointerEvents: "auto" }}>
+              <div style={{ display: "inline-flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 3, padding: 4, borderRadius: 999, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
+                {goalsList.map(g => {
+                  const on = g.goalId === activeGoalId;
+                  return (
+                    <button
+                      key={g.goalId}
+                      type="button"
+                      onClick={() => selectGoal(g.goalId)}
+                      style={{
+                        border: 0,
+                        borderRadius: 999,
+                        padding: isMobile ? "6px 12px" : "6px 15px",
+                        cursor: "pointer",
+                        background: on ? "rgba(255,255,255,.92)" : "transparent",
+                        color: on ? "#1b1622" : "#b8b3c4",
+                        font: `${on ? 800 : 600} 12px system-ui`,
+                        whiteSpace: "nowrap",
+                        transition: "all .2s ease"
+                      }}
+                    >
+                      {g.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </PageWrapper>
         </div>
