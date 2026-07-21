@@ -161,7 +161,7 @@ const DateCell = styled.button`
   ${({ isSelected, isToday }) => {
     if (isSelected) {
       return `
-        color: #ffffff;
+        color: var(--text);
         background-color: var(--accent);
       `;
     }
@@ -218,7 +218,7 @@ const TimePill = styled.button`
   cursor: pointer;
 
   ${({ active }) => active ? `
-    color: #ffffff;
+    color: var(--text);
     background-color: var(--accent);
   ` : `
     background-color: var(--line);
@@ -243,7 +243,7 @@ const PeriodBtn = styled.button`
   cursor: pointer;
 
   ${({ active }) => active ? `
-    color: #ffffff;
+    color: var(--text);
     background-color: var(--accent);
   ` : `
     color: var(--sub);
@@ -369,7 +369,7 @@ const InlineTimeSlot = styled.button`
   scroll-snap-align: center;
   border: 1px solid ${({ active }) => active ? 'transparent' : 'var(--line)'};
   background: ${({ active }) => active ? 'var(--accent)' : 'transparent'};
-  color: ${({ active }) => active ? '#fff' : 'var(--text)'};
+  color: ${({ active }) => active ? 'var(--text)' : 'var(--text)'};
   font-size: 13px;
   font-weight: 700;
   font-family: inherit;

@@ -58,6 +58,7 @@
 | [ ] | #126 | F8-11 | 홈 화면 UI 버그 종합 수정(말랑이/달력) | `fix/home-ui-bugs` | - | Component | - | 신규 | 홈 말랑이 위로 스와이프 시 렌더링 버그 수정, 캘린더 우측 끝 짤림(레이아웃) 수정, 캘린더 선택 날짜(7월 1일 고정)를 오늘 날짜로 동적 수정 |
 | [ ] | - | F8-12 | 온보딩 완료 요청의 totalAsset 누락 수정 | `fix/onboarding-completion-request` | §4·§7 | Page·Hook·api·docs | `['users','me']` | 신규 | 온보딩 완료 요청에 `{totalAsset}` 전달 → 신규·재가입 사용자 `onboardingDone:true` 반영 및 홈 진입 → API 계약 문서 동기화, lint·build 통과 |
 | [ ] | - | F8-13 | 온보딩 목표 생성 요청의 마감일 누락 수정 | `fix/onboarding-goal-due-date` | §7 | Page·Component·docs | `['goals']`·`['universe']` | 신규 | 온보딩 기간을 `YYYY-MM-DD` 형식의 `dueDate`로 변환해 목표 생성 요청에 전달 → 기타 선택 시 공통 `SegmentDatePicker` 재사용 → 과거 날짜 제출 방지 및 API 계약 문서 동기화 |
+| [x] | - | F8-14 | 전역 하드코딩 색상 테마 스크립트 전환 | `fix/hardcoded-colors` | - | Page·Component | - | 완료 | 전역에 남은/하드코딩된 HEX 컬러를 var(--bg-1), var(--text) 등 CSS 테마 변수로 치환 |
 
 | [ ] | - | F9-1 | 소비 코어 감정 8종 노출 | `feat/core-emotion-display` | - | Component | - | 신규 | 데이터 0건인 감정도 누락 없이 8개 렌더링 처리 |
 | [ ] | - | F9-2 | 감정 분석 퍼센트 로직 변경 | `feat/analysis-percentage-logic` | - | Utils·Component | - | 신규 | 분석 퍼센트를 금액 기준에서 횟수 기준으로 변경 |
@@ -78,6 +79,8 @@
 | [ ] | - | F12-7 | 거래내역 수정 정산금 합치기(Merge) UI 및 토글 삭제 | feat/transaction-edit-merge | - | Component·api | ['tx'] | 신규 | 더치페이 미정산 리스트 및 수입/지출 토글 기능 완전 삭제. 수정 모달 내에 정산받은 금액 입력(Merge) UI 신설 및 차감 API 연동 |
 | [ ] | - | F12-8 | 거래내역 월별 필터 및 연월 선택기 UI 개선 | feat/tx-list-month-nav | - | Page·Component | - | 신규 | 월별 필터 1~12월 노출, 연월 선택기 추가 |
 | [ ] | - | F12-9 | 거래내역 필터 내 월/일 개별 선택 기능 | feat/tx-list-month-day-filter | - | Page·Component | - | 신규 | 필터에서 월과 일을 각각 선택하는 UI 구현. (⚠️ 주의: 작업 전 반드시 담당 팀원에게 디자인 시안을 문의 후 작업할 것) |
+| [ ] | - | F12-10 | 대표 목표 설정 UX 변경 및 금액 입력창 고도화 | feat/goal-main-toggle | - | Component | ['goals'] | 신규 | 목표 카드 더블클릭 UX 제거 및 폼 내 토글 추가. 목표 금액 입력 시 3자리 콤마(,) 포맷팅 적용 및 기본 숫자 스피너(위아래 버튼) 제거 |
+| [ ] | - | F12-11 | 평행우주 REC 애니메이션 원복 | fix/universe-rec-animation | - | Component | - | 신규 | 평행우주 화면의 REC 요소 애니메이션을 원래 상태로 되돌리기 |
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.
 > **F4-6**: ISSUES.md에만 있고 GitHub 미등록 (백엔드 §9 analysis 선행 필요) → 착수 전 이슈 등록 필요.
