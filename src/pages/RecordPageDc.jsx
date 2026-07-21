@@ -475,7 +475,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
               <button type="button" onClick={() => setIsEditingCategory(!isEditingCategory)} css={{ background: 'transparent', border: 0, color: isEditingCategory ? 'var(--text)' : 'var(--sub)', cursor: 'pointer', fontSize: 16 }}>✎</button>
             </div>
             <ChipRow>
-              {displayedCategories.filter(c => c.name !== '저축').map((item, index, filteredArray) => (
+              {displayedCategories.filter(c => c.name !== '저축').map((item, index) => (
                 <Fragment key={item.categoryId}>
                   {isEditingCategory && dragIndex !== null && dropIndex === index && <DropLine />}
                   {isEditingCategory ? (

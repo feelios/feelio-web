@@ -8,6 +8,7 @@ import { theme } from '../styles/theme.js';
 import { driftA, driftB } from '../styles/animations.js';
 import { useFeelioStore } from '../stores/useFeelioStore.js';
 import { AppLayoutDc } from '../components/common/AppLayoutDc.jsx';
+import { BudgetSync } from '../components/common/BudgetSync.jsx';
 import { ErrorBoundary } from '../components/common/ErrorBoundary.jsx';
 import { Toast } from '../components/common/Toast.jsx';
 import ProfileModalDc from '../components/profile/ProfileModalDc.jsx';
@@ -119,6 +120,7 @@ export default function App() {
       {state.isLoggedIn && !state.onboardingDone && (
         <OnboardingPage onComplete={actions.completeOnboarding} />
       )}
+      {state.isLoggedIn && state.onboardingDone && <BudgetSync />}
       {state.isLoggedIn && state.onboardingDone && (
         <AppLayoutDc
           route={route}

@@ -3,7 +3,8 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
-import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, useBudgetStatusQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
+import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
+import { useBudgetStore } from '../stores/budgetStore.js';
 
 const Page = styled.div`
   width: 100%;
@@ -121,7 +122,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: insightsData } = useAiInsightsQuery();
   const { data: trendData } = useMonthlyTrendQuery();
-  const { data: budgetData } = useBudgetStatusQuery();
+  // 예산 현황은 전역 스토어(BudgetSync가 동기화)를 구독한다 (#145)
+  const serverBudgetItems = useBudgetStore((s) => s.budgetItems);
   const { data: patternData } = usePatternQuery();
 
   const monthly = trendData?.monthlyData ?? [];
@@ -199,7 +201,6 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
     desc: emotionCardsData[index]?.desc ?? ''
   }));
   const activeChart = chartConfig[activeChartTab];
-  const serverBudgetItems = budgetData?.budgetItems ?? [];
   const budgetItems = serverBudgetItems
     .map(data => {
       const emo = getEmotion(data.emotion);
@@ -215,9 +216,12 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
     });
   const overBudgetItem = budgetItems.find(item => item.isOver);
   const validBudgetItems = budgetItems.filter(item => !item.isMeasuring);
-  const budgetAverage = validBudgetItems.length > 0 
-    ? Math.round(validBudgetItems.reduce((sum, item) => sum + item.progress, 0) / validBudgetItems.length) 
+  const budgetAverage = validBudgetItems.length > 0
+    ? Math.round(validBudgetItems.reduce((sum, item) => sum + item.progress, 0) / validBudgetItems.length)
     : 0;
+  // 급박도순(초과 → 진행률순) 정렬된 목록에서 상위 5개만 노출 (#145)
+  const topBudgetItems = budgetItems.slice(0, 5);
+  const hiddenBudgetCount = budgetItems.length - topBudgetItems.length;
 
   const renderTabs = (isMobile) => (
     <div css={{ 
@@ -334,7 +338,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                 </div>
               )}
 
-              <div css={{ display: 'grid', gap: 12 }}>{budgetItems.map(item => {
+              <div css={{ display: 'grid', gap: 12 }}>{topBudgetItems.map(item => {
                 const displayProgress = item.isMeasuring ? 0 : Math.min(item.progress, 100);
                 const statusText = item.isMeasuring ? '측정중' : item.isOver ? '초과' : item.progress >= 90 ? '주의' : '안정';
                 const statusColor = item.isMeasuring ? 'var(--sub)' : item.isOver ? '#E87573' : 'var(--sub)';
@@ -370,6 +374,11 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                   </div>
                 </div>;
               })}</div>
+              {hiddenBudgetCount > 0 && (
+                <div css={{ marginTop: 14, textAlign: 'center', color: 'var(--sub)', fontSize: 11, fontWeight: 800 }}>
+                  급한 예산 5개만 보여줬어요 · 그 외 {hiddenBudgetCount}개
+                </div>
+              )}
             </>
           ) : (
             <div css={{ padding: '32px 0', textAlign: 'center', color: 'var(--sub)', fontSize: 13, fontWeight: 700, lineHeight: 1.6 }}>
