@@ -9,7 +9,7 @@ import { getEmotion } from '../data/emotions.js';
 import { money, percent } from '../utils/format.js';
 import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
 import { useGoalsQuery } from '../hooks/queries/useGoals.js';
-import { useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
+import { useBudgetStore } from '../stores/budgetStore.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 
 const Grid = styled.div`
@@ -705,8 +705,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   // Fetch emotion summary data from API
   const { data: emotionData, isLoading: isEmotionLoading } = useEmotionSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
   const { data: goalsData, isLoading: isGoalsLoading } = useGoalsQuery();
-  const { data: budgetData } = useBudgetStatusQuery();
-  
+
   const isSummaryLoading = isCalendarLoading || isEmotionLoading || isGoalsLoading;
   const serverEmotions = emotionData?.emotions || [];
   const serverPrevEmotions = emotionData?.prevMonth || [];
@@ -746,15 +745,10 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const goals = goalsData?.goals || [];
   const totalAsset = state.user?.totalAsset ?? 0;
 
-  // 예산 현황(['analysis','budget']) → 소진율로 상태 파생 후 말랑이 말풍선 문구 (F7-10)
-  const budgetValid = (budgetData?.budgetItems ?? []).filter(item => item.budget > 0);
-  const budgetTotal = budgetValid.reduce((sum, item) => sum + item.budget, 0);
-  const budgetSpent = budgetValid.reduce((sum, item) => sum + (item.currentAmount || 0), 0);
-  const budgetProgress = budgetTotal > 0 ? Math.round((budgetSpent / budgetTotal) * 100) : null;
-  const budgetState = budgetProgress == null ? 'measuring'
-    : budgetProgress > 100 ? 'over'
-    : budgetProgress < 85 ? 'surplus'
-    : 'ontrack';
+  // 전역 예산 스토어 구독 → 소진율/상태로 말랑이 말풍선 문구 (F7-10 · #145)
+  // 계산·동기화는 BudgetSync가 담당하고, 여기선 파생 상태만 읽는다.
+  const budgetProgress = useBudgetStore((s) => s.progress);
+  const budgetState = useBudgetStore((s) => s.state);
   const budgetPhrases = {
     measuring: ['아직 예산을 재는 중이야 🌱', '며칠만 더 기록하면 시작할게!', '천천히, 같이 흐름을 만들자', '기록이 쌓일수록 똑똑해져 ✨', '오늘의 소비도 기록해줄래?'],
     ontrack: [`예산 ${budgetProgress}%, 잘 가고 있어 👀`, '이대로면 목표가 쑥쑥 자라', '지금처럼만 해도 충분해!', '오늘도 잘 지켜냈네, 멋져', '작은 절약이 쌓이는 중 🌱'],
