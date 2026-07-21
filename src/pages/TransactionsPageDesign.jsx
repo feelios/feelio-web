@@ -771,7 +771,13 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
                 >
                   {selectMode && <Check isChecked={checked}>{checked ? '✓' : ''}</Check>}
                   <span css={{ width: 40, height: 40, borderRadius: 12, display: 'grid', placeItems: 'center', background: emo.light }}><i css={{ width: 15, height: 15, borderRadius: '50%', background: emo.color }} /></span>
-                  <span css={{ minWidth: 0 }}><strong>{item.category?.name}</strong><small css={{ display: 'block', color: 'var(--sub)', marginTop: 3 }}>{item.emotion?.name}{item.memo ? ` · ${item.memo}` : ''}</small></span>
+                  <span css={{ minWidth: 0 }}>
+                    <strong css={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {item.category?.name}
+                      {item.isSettled === false && <span css={{ fontSize: 10, padding: '2px 6px', background: 'var(--line)', borderRadius: 6, color: 'var(--sub)' }}>🤝 정산 대기</span>}
+                    </strong>
+                    <small css={{ display: 'block', color: 'var(--sub)', marginTop: 3 }}>{item.emotion?.name}{item.memo ? ` · ${item.memo}` : ''}</small>
+                  </span>
                   <b css={{ fontFamily: 'var(--font-display)', color: item.type === 'INCOME' ? '#3E9578' : 'var(--text)' }}>{signedMoney(item)}</b>
                 </Row>
               );

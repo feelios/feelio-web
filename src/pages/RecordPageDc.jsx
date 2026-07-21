@@ -541,16 +541,16 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
                       <Chip 
                         color={accent} 
                         active={form.category === '저축' && form.savingsType === '적금'} 
-                        onClick={() => form.isDutchPay ? setField('isDutchPay', false) : selectSaving('적금')}
-                        style={{ opacity: form.isDutchPay ? 0.4 : 1, transition: 'opacity 0.3s' }}
+                        onClick={() => !form.isDutchPay && selectSaving('적금')}
+                        style={{ opacity: form.isDutchPay ? 0.4 : 1, transition: 'opacity 0.3s', cursor: form.isDutchPay ? 'not-allowed' : 'pointer' }}
                       >
                         적금
                       </Chip>
                       <Chip 
                         color={accent} 
                         active={form.category === '저축' && form.savingsType === '목표'} 
-                        onClick={() => form.isDutchPay ? setField('isDutchPay', false) : selectSaving('목표')}
-                        style={{ opacity: form.isDutchPay ? 0.4 : 1, transition: 'opacity 0.3s' }}
+                        onClick={() => !form.isDutchPay && selectSaving('목표')}
+                        style={{ opacity: form.isDutchPay ? 0.4 : 1, transition: 'opacity 0.3s', cursor: form.isDutchPay ? 'not-allowed' : 'pointer' }}
                       >
                         목표
                       </Chip>

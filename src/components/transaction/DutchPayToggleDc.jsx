@@ -91,7 +91,7 @@ export default function DutchPayToggleDc({ active, onClick, accent, disabled }) 
           </svg>
         )}
       </IconWrap>
-      <Label>{active ? '정산 대기' : '개인 지출'}</Label>
+      <Label>{active ? '정산 모드' : '개인 지출'}</Label>
     </ToggleButton>
   );
 }
