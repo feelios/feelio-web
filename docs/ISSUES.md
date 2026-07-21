@@ -77,6 +77,7 @@
 | [ ] | - | F12-6 | 온보딩 '기타' 탭 선택 시 레이아웃 여백 버그 수정 | fix/onboarding-date-gap | - | Component | - | 신규 | 폼 컨테이너 팽창 시 상단 컨텐츠와의 간격(gap/margin) 유지 |
 | [ ] | - | F12-7 | 거래내역 수정 정산금 합치기(Merge) UI 및 토글 삭제 | feat/transaction-edit-merge | - | Component·api | ['tx'] | 신규 | 더치페이 미정산 리스트 및 수입/지출 토글 기능 완전 삭제. 수정 모달 내에 정산받은 금액 입력(Merge) UI 신설 및 차감 API 연동 |
 | [ ] | - | F12-8 | 거래내역 월별 필터 및 연월 선택기 UI 개선 | feat/tx-list-month-nav | - | Page·Component | - | 신규 | 월별 필터 1~12월 노출, 연월 선택기 추가 |
+| [ ] | - | F12-9 | 거래내역 필터 내 월/일 개별 선택 기능 | feat/tx-list-month-day-filter | - | Page·Component | - | 신규 | 필터에서 월과 일을 각각 선택하는 UI 구현. (⚠️ 주의: 작업 전 반드시 담당 팀원에게 디자인 시안을 문의 후 작업할 것) |
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.
 > **F4-6**: ISSUES.md에만 있고 GitHub 미등록 (백엔드 §9 analysis 선행 필요) → 착수 전 이슈 등록 필요.
