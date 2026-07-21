@@ -15,9 +15,7 @@ import {
 } from '../hooks/queries/useCategories.js';
 import DatePickerDc from '../components/common/DatePickerDc.jsx';
 import { useGoalsQuery } from '../hooks/queries/useGoals.js';
-import DutchPayModalDc from '../components/transaction/DutchPayModalDc.jsx';
-import DutchPayToggleDc from '../components/transaction/DutchPayToggleDc.jsx';
-import { usePendingDutchPayQuery, useSettleDutchPayMutation } from '../hooks/queries/useDutchPay.js';
+import { Fragment } from 'react';
 
 const Page = styled.div`
   width: 100%;
@@ -261,12 +259,8 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
     memo: '',
     savingsType: prefill?.goalId != null ? '목표' : null,
     goalId: prefill?.goalId ?? null,
-    date: getInitialDate(),
-    dutchPayIds: [],
-    isDutchPay: false
+    date: getInitialDate()
   }));
-
-  const [isDutchPayModalOpen, setIsDutchPayModalOpen] = useState(false);
 
   useEffect(() => {
     if (prefill?.goalId != null) onConsumePrefill?.();
@@ -278,9 +272,6 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
 
   const { data: goalsData } = useGoalsQuery();
   const goals = goalsData?.goals || [];
-
-  const { data: pendingDutchPay = [] } = usePendingDutchPayQuery();
-  const settleMutation = useSettleDutchPayMutation();
 
   const savingMessage = (() => {
     if (form.savingsType === '적금') return SAVING_MESSAGES[0];
@@ -309,8 +300,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
   }, []);
   const selected = getEmotion(form.emotion || '스트레스');
   const accent = form.emotion ? (selected.blob?.[1] || selected.color) : null;
-  const isDutchPaySettle = form.type === 'income' && form.category === '정산금';
-  const canSave = isDutchPaySettle ? form.dutchPayIds?.length > 0 : (form.amount && form.emotion && form.category);
+  const canSave = (form.amount && form.emotion && form.category);
 
   const startAdding = (type) => {
     setAddingTag(type);
@@ -376,28 +366,11 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
   const selectSaving = (type) => setForm(prev => {
     const isActive = prev.category === '저축' && prev.savingsType === type;
     if (isActive) return { ...prev, category: null, savingsType: null, goalId: null };
-    return { ...prev, category: '저축', savingsType: type, goalId: type === '목표' ? goals[0]?.goalId : null, isDutchPay: false };
+    return { ...prev, category: '저축', savingsType: type, goalId: type === '목표' ? goals[0]?.goalId : null };
   });
 
   const save = () => {
     if (!canSave || mutation.isPending) return;
-
-    if (isDutchPaySettle) {
-      if (form.dutchPayIds.length === 0) {
-        actions.showToast('정산할 내역을 선택해주세요.');
-        return;
-      }
-      Promise.all(form.dutchPayIds.map(id => settleMutation.mutateAsync(id)))
-        .then(() => {
-          actions.showToast(`${form.dutchPayIds.length}건 정산 완료됨`);
-          onSaved?.(form.date);
-          setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '', savingsType: null, goalId: null, dutchPayIds: [] }));
-        })
-        .catch(err => {
-          actions.showToast(err.response?.data?.error?.message || '정산 처리에 실패했습니다.');
-        });
-      return;
-    }
 
     const matchedCat = customCategories.find(c => c.name === form.category);
     if (!matchedCat) {
@@ -425,15 +398,14 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
       situationIds: [],
       memo: form.memo || null,
       goalId: isGoalSaving ? form.goalId : undefined,
-      occurredAt: new Date(form.date).toISOString(),
-      isDutchPay: form.type === 'expense' ? form.isDutchPay : false
+      occurredAt: new Date(form.date).toISOString()
     };
 
     mutation.mutate(payload, {
       onSuccess: () => {
         actions.showToast('기록 저장됨');
         onSaved?.(form.date);
-        setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '', savingsType: null, goalId: null, isDutchPay: false }));
+        setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '', savingsType: null, goalId: null }));
       },
       onError: (error) => {
         actions.showToast(error.response?.data?.error?.message || '기록 저장에 실패했습니다.');
@@ -452,17 +424,9 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
           <FaintBlob color={accent} />
           <div css={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <TypeTabs>
-              <TypeTab active={form.type === 'expense'} onClick={() => setForm(prev => prev.type === 'expense' ? prev : { ...prev, type: 'expense', category: null, isDutchPay: false })}>지출</TypeTab>
-              <TypeTab active={form.type === 'income'} onClick={() => setForm(prev => prev.type === 'income' ? prev : { ...prev, type: 'income', category: null, isDutchPay: false })}>수입</TypeTab>
+              <TypeTab active={form.type === 'expense'} onClick={() => setForm(prev => prev.type === 'expense' ? prev : { ...prev, type: 'expense', category: null })}>지출</TypeTab>
+              <TypeTab active={form.type === 'income'} onClick={() => setForm(prev => prev.type === 'income' ? prev : { ...prev, type: 'income', category: null })}>수입</TypeTab>
             </TypeTabs>
-            {form.type === 'expense' && (
-              <DutchPayToggleDc 
-                active={form.isDutchPay} 
-                onClick={() => setField('isDutchPay', !form.isDutchPay)}
-                accent={accent}
-                disabled={form.category === '저축'}
-              />
-            )}
           </div>
 
           <div css={{ position: 'relative', marginTop: 'clamp(18px, 3vw, 28px)' }}>
@@ -511,7 +475,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
               <button type="button" onClick={() => setIsEditingCategory(!isEditingCategory)} css={{ background: 'transparent', border: 0, color: isEditingCategory ? 'var(--text)' : 'var(--sub)', cursor: 'pointer', fontSize: 16 }}>✎</button>
             </div>
             <ChipRow>
-              {displayedCategories.map((item, index) => (
+              {displayedCategories.filter(c => c.name !== '저축').map((item, index, filteredArray) => (
                 <Fragment key={item.categoryId}>
                   {isEditingCategory && dragIndex !== null && dropIndex === index && <DropLine />}
                   {isEditingCategory ? (
@@ -521,17 +485,28 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
                       onDragStart={(e) => handleDragStart(e, index)}
                       onDragOver={(e) => handleDragOverChip(e, index)}
                       onDragEnd={handleDropCategory}
-                      css={{ display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'grab', opacity: dragIndex === index ? 0.4 : 1, transition: 'opacity .15s', animation: dragIndex === index ? 'none' : `${wiggle} .5s ease-in-out infinite`, animationDelay: `${(index % 2) * 0.13}s`, '@media (prefers-reduced-motion: reduce)': { animation: 'none' }, '&:active': { cursor: 'grabbing' } }}
+                      css={{ 
+                        display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'grab', 
+                        opacity: dragIndex === index ? 0.4 : 1, transition: 'opacity .15s', 
+                        animation: dragIndex === index ? 'none' : `${wiggle} .5s ease-in-out infinite`, 
+                        animationDelay: `${(index % 2) * 0.13}s`, 
+                        '@media (prefers-reduced-motion: reduce)': { animation: 'none' }, 
+                        '&:active': { cursor: 'grabbing' } 
+                      }}
                     >
                       <span>{item.name}</span>
-                      {item.isCustom && <span onClick={() => handleRemoveCategory(item)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>}
+                      {item.isCustom && (
+                        <span onClick={() => handleRemoveCategory(item)} css={{ cursor: 'pointer', color: '#E87573', fontWeight: 900, marginLeft: 4 }}>×</span>
+                      )}
                     </Chip>
                   ) : (
-                    <Chip color={accent} active={form.category === item.name} onClick={() => setField('category', form.category === item.name ? null : item.name)}>{item.name}</Chip>
+                    <Chip color={accent} active={form.category === item.name} onClick={() => setField('category', form.category === item.name ? null : item.name)}>
+                      {item.name}
+                    </Chip>
                   )}
                 </Fragment>
               ))}
-              {isEditingCategory && dragIndex !== null && dropIndex === displayedCategories.length && <DropLine />}
+              {isEditingCategory && dragIndex !== null && dropIndex === displayedCategories.filter(c => c.name !== '저축').length && <DropLine />}
               {!isEditingCategory && addingTag !== 'category' && <Chip color={accent} onClick={() => startAdding('category')}>+</Chip>}
               {addingTag === 'category' && (
                 <form onSubmit={handleAddSubmit} css={{ display: 'inline-block', margin: 0 }}>
@@ -568,16 +543,14 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
                       <Chip 
                         color={accent} 
                         active={form.category === '저축' && form.savingsType === '적금'} 
-                        onClick={() => !form.isDutchPay && selectSaving('적금')}
-                        style={{ opacity: form.isDutchPay ? 0.4 : 1, transition: 'opacity 0.3s', cursor: form.isDutchPay ? 'not-allowed' : 'pointer' }}
+                        onClick={() => selectSaving('적금')}
                       >
                         적금
                       </Chip>
                       <Chip 
                         color={accent} 
                         active={form.category === '저축' && form.savingsType === '목표'} 
-                        onClick={() => !form.isDutchPay && selectSaving('목표')}
-                        style={{ opacity: form.isDutchPay ? 0.4 : 1, transition: 'opacity 0.3s', cursor: form.isDutchPay ? 'not-allowed' : 'pointer' }}
+                        onClick={() => selectSaving('목표')}
                       >
                         목표
                       </Chip>
@@ -604,37 +577,6 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
                       </div>
                     )}
                   </>
-                )}
-              </div>
-            )}
-
-            {form.type === 'income' && (
-              <div css={{ marginTop: 'auto', paddingTop: 24 }}>
-                <div css={{ height: 1, background: 'var(--line)', marginBottom: 14 }} />
-                <h3 css={{ margin: '0 0 13px', fontSize: 13 }}>정산금 <span css={{ color: 'var(--sub)', fontWeight: 600 }}>· 선택</span></h3>
-                
-                {isEditingCategory ? (
-                  <div css={{ display: 'flex' }}>
-                    <Chip color={accent} active css={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px' }}>
-                      <span>정산금</span>
-                    </Chip>
-                  </div>
-                ) : (
-                  <ChipRow>
-                    <Chip 
-                      color={accent} 
-                      active={form.category === '정산금'} 
-                      onClick={() => {
-                        const isCurrentlyActive = form.category === '정산금';
-                        if (!isCurrentlyActive) {
-                          setField('category', '정산금');
-                        }
-                        setIsDutchPayModalOpen(true);
-                      }}
-                    >
-                      {form.category === '정산금' && form.dutchPayIds?.length > 0 ? `정산금 (${form.dutchPayIds.length}건)` : '정산금'}
-                    </Chip>
-                  </ChipRow>
                 )}
               </div>
             )}
@@ -700,19 +642,6 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
           </SaveButton>
         </Side>
       </Grid>
-
-      {isDutchPayModalOpen && (
-        <DutchPayModalDc
-          open={isDutchPayModalOpen}
-          onClose={() => setIsDutchPayModalOpen(false)}
-          onConfirm={(ids) => {
-            setField('dutchPayIds', ids);
-            setIsDutchPayModalOpen(false);
-          }}
-          pendingList={pendingDutchPay}
-          initialSelectedIds={form.dutchPayIds}
-        />
-      )}
     </Page>
   );
 }

@@ -5,7 +5,7 @@ import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
 import { money, signedMoney } from '../utils/format.js';
 import { useDebounce } from '../hooks/useDebounce.js';
-import { useTransactionsQuery, useBulkDeleteTransactionsMutation } from '../hooks/queries/useTransactions.js';
+import { useTransactionsQuery, useBulkDeleteTransactionsMutation, useUpdateTransactionMutation } from '../hooks/queries/useTransactions.js';
 import { useMetadata } from '../hooks/queries/useMetadata.js';
 import { TransactionListSkeleton } from '../components/common/Skeleton.jsx';
 import DatePickerDc from '../components/common/DatePickerDc.jsx';
@@ -526,12 +526,22 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [confirming, setConfirming] = useState(false);
   const bulkDeleteMutation = useBulkDeleteTransactionsMutation();
+  const updateMutation = useUpdateTransactionMutation();
+  const [merging, setMerging] = useState(false);
 
   const visibleIds = useMemo(() => transactions.map(t => t.transactionId), [transactions]);
   // 화면에 보이는 것만 유효 선택으로 간주 → 필터로 숨겨진 항목의 의도치 않은 삭제 방지
   const selectedVisibleIds = useMemo(() => visibleIds.filter(id => selectedIds.has(id)), [visibleIds, selectedIds]);
   const selectedCount = selectedVisibleIds.length;
   const allSelected = visibleIds.length > 0 && selectedCount === visibleIds.length;
+
+  const selectedTransactions = useMemo(() => {
+    return transactions.filter(t => selectedIds.has(t.transactionId));
+  }, [transactions, selectedIds]);
+
+  const canMerge = selectedCount === 2 && 
+                   selectedTransactions.length === 2 && 
+                   selectedTransactions[0].type !== selectedTransactions[1].type;
 
   const toggleSelectMode = () => {
     setSelectMode(prev => {
@@ -561,6 +571,48 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
       setSelectedIds(new Set());
     } finally {
       setConfirming(false);
+    }
+  };
+
+  const handleBulkMerge = async () => {
+    if (!canMerge) return;
+    try {
+      setMerging(true);
+      const [t1, t2] = selectedTransactions;
+      
+      let larger, smaller;
+      if (t1.amount > t2.amount) {
+        larger = t1;
+        smaller = t2;
+      } else {
+        larger = t2;
+        smaller = t1;
+      }
+
+      const smallerName = smaller.memo || smaller.category?.name || '기타';
+      const newMemo = larger.memo ? `${larger.memo} (정산: ${smallerName})` : `정산: ${smallerName}`;
+      const finalAmount = Math.max(0, larger.amount - smaller.amount);
+
+      await updateMutation.mutateAsync({
+        transactionId: larger.transactionId,
+        data: {
+          type: larger.type,
+          amount: finalAmount,
+          categoryId: larger.category?.categoryId,
+          emotionId: larger.emotion?.emotionId,
+          memo: newMemo,
+          occurredAt: larger.occurredAt
+        }
+      });
+
+      await bulkDeleteMutation.mutateAsync([smaller.transactionId]);
+      
+      setSelectMode(false);
+      setSelectedIds(new Set());
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setMerging(false);
     }
   };
 
@@ -774,7 +826,6 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
                   <span css={{ minWidth: 0 }}>
                     <strong css={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {item.category?.name}
-                      {item.isSettled === false && <span css={{ fontSize: 10, padding: '2px 6px', background: 'var(--line)', borderRadius: 6, color: 'var(--sub)' }}>🤝 정산 대기</span>}
                     </strong>
                     <small css={{ display: 'block', color: 'var(--sub)', marginTop: 3 }}>{item.emotion?.name}{item.memo ? ` · ${item.memo}` : ''}</small>
                   </span>
@@ -802,8 +853,13 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
             </>
           ) : (
             <>
-              <BarDanger type="button" disabled={!selectedCount} onClick={() => setConfirming(true)}>삭제</BarDanger>
-              <BarGhost type="button" onClick={toggleSelectMode}>취소</BarGhost>
+              {canMerge && (
+                <BarGhost type="button" disabled={merging || bulkDeleteMutation.isPending} onClick={handleBulkMerge} css={{ color: 'var(--accent)', fontWeight: 'bold' }}>
+                  {merging ? '합치는 중...' : '정산 합치기'}
+                </BarGhost>
+              )}
+              <BarDanger type="button" disabled={!selectedCount || merging} onClick={() => setConfirming(true)}>삭제</BarDanger>
+              <BarGhost type="button" onClick={toggleSelectMode} disabled={merging}>취소</BarGhost>
             </>
           )}
         </SelectBar>

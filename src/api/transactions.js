@@ -34,14 +34,8 @@ export const transactionsAPI = {
     return response.data.data;
   },
 
-  getPendingDutchPay: async () => {
-    const response = await client.get('/transactions/dutch-pay/pending');
-    return response.data.data.transactions || [];
-  },
-
-  settleDutchPay: async (transactionId) => {
-    const response = await client.patch(`/transactions/${transactionId}/settle`);
+  mergeTransaction: async (transactionId, receivedAmount) => {
+    const response = await client.patch(`/transactions/${transactionId}/merge`, { receivedAmount });
     return response.data.data;
-  },
+  }
 };
-
