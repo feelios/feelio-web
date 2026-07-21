@@ -56,6 +56,8 @@
 | [ ] | - | F8-9 | 거래 수정 폼 '수입/지출' 타입 변경 추가 | `feat/transaction-edit-type` | - | Component | - | 신규 | 거래 수정 모달 내부에 '수입/지출'을 변경할 수 있는 Select(혹은 탭) 추가 및 수정 API 연동 |
 | [ ] | - | F8-10 | 온보딩 '나만의 목표' 직접 입력 UI | `feat/onboarding-custom-goal` | - | Component | - | 신규 | 온보딩(2/6)에서 '나만의 목표' 클릭 시 텍스트 Input으로 전환되어 사용자가 직접 목표명을 작성하도록 구현 |
 | [ ] | - | F8-11 | 홈 화면 UI 버그 종합 수정(말랑이/달력) | `fix/home-ui-bugs` | - | Component | - | 신규 | 홈 말랑이 위로 스와이프 시 렌더링 버그 수정, 캘린더 우측 끝 짤림(레이아웃) 수정, 캘린더 선택 날짜(7월 1일 고정)를 오늘 날짜로 동적 수정 |
+| [ ] | - | F8-12 | 온보딩 완료 요청의 totalAsset 누락 수정 | `fix/onboarding-completion-request` | §4·§7 | Page·Hook·api·docs | `['users','me']` | 신규 | 온보딩 완료 요청에 `{totalAsset}` 전달 → 신규·재가입 사용자 `onboardingDone:true` 반영 및 홈 진입 → API 계약 문서 동기화, lint·build 통과 |
+| [ ] | - | F8-13 | 온보딩 목표 생성 요청의 마감일 누락 수정 | `fix/onboarding-goal-due-date` | §7 | Page·Component·docs | `['goals']`·`['universe']` | 신규 | 온보딩 기간을 `YYYY-MM-DD` 형식의 `dueDate`로 변환해 목표 생성 요청에 전달 → 기타 선택 시 공통 `SegmentDatePicker` 재사용 → 과거 날짜 제출 방지 및 API 계약 문서 동기화 |
 | [ ] | - | F9-1 | 소비 코어 감정 8종 노출 | `feat/core-emotion-display` | - | Component | - | 신규 | 데이터 0건인 감정도 누락 없이 8개 렌더링 처리 |
 | [ ] | - | F9-2 | 감정 분석 퍼센트 로직 변경 | `feat/analysis-percentage-logic` | - | Utils·Component | - | 신규 | 분석 퍼센트를 금액 기준에서 횟수 기준으로 변경 |
 | [ ] | - | F9-3 | 지출 추이 카드 클릭 이동 | `feat/monthly-trend-navigation` | - | Component | - | 신규 | 월별 바/포인트 클릭 시 해당 달 상세 뷰로 이동 |
