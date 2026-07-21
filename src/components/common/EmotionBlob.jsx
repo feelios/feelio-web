@@ -241,7 +241,11 @@ export function EmotionBlob({ emotion = '평온', size = 140, interactive = true
 
     const onMouseMove = event => clampDrag(event.clientX, event.clientY);
     const onTouchMove = event => {
-      if (event.touches.length) clampDrag(event.touches[0].clientX, event.touches[0].clientY);
+      if (event.touches.length) {
+        // 드래그 중에는 브라우저 기본 스크롤을 막아 위로 스와이프 시 모션 끊김/레이아웃 흔들림 방지
+        if (event.cancelable) event.preventDefault();
+        clampDrag(event.touches[0].clientX, event.touches[0].clientY);
+      }
     };
 
     window.addEventListener('mousemove', onMouseMove);
