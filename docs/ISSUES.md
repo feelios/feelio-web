@@ -69,14 +69,15 @@
 | [ ] | - | F11-1 | 목표 글래스모피즘 및 만료 상태 스타일 | `feat/goal-design-update` | - | Component | - | 신규 | 목표 폼 투명도 5% 적용 및 과거 목표 흑백(Grayscale) 처리 |
 | [ ] | - | F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 보류 | 날짜 선택기(DatePickerDc) 글래스 시도(5%/모달+스크림)했으나 방향 미확정 → 현재 **불투명 원복**. 월/요일 한글화(2026년 N월 · 월 화 수 목 금 토 일)만 반영. ※모바일에서 시간 패널이 화면 밖으로 넘치는 레이아웃 버그 별도 발견 |
 | [ ] | - | F11-3 | 활성 목표(isMain) 홈·평행우주 연동 | `feat/goal-main-sync` | - | Component | `['goals']` | 신규 | isMain=true 인 활성 목표 데이터를 실시간 구독하여 홈/우주에 렌더링 반영 |
-| [ ] | - | F12-1 | 거래내역 다중 선택 및 월/년도 네비게이션 개선 | feat/tx-list-ux-improvements | - | Page·Component | - | 신규 | 다중 선택 겹침 디자인 제거, 월별 필터 1~12월 노출, 연월 선택기 추가 |
+| [x] | - | F12-1 | 거래내역 다중 선택 CSS 및 체크마크 시인성 개선 | feat/tx-list-ux-improvements | - | Page·Component | - | 완료 | 다중 선택 모서리 겹침 디자인(Radius) 문제 해결, 라이트 모드 체크마크 시인성 개선 |
 | [ ] | - | F12-2 | 카테고리 순서 변경 인디케이터 렌더링 | feat/category-dnd-indicator | - | Component | - | 신규 | 카테고리 드래그 시 마우스 방향에 세로 선 렌더링 |
 | [ ] | - | F12-3 | 평행우주 시나리오 상호작용 및 목표 연동 | feat/universe-scenario-interaction | - | api·Page·Component | ['universe'] | 신규 | 시나리오 요소 버튼화 및 하단 목표 클릭 시 행성 시뮬레이션 동적 반영 |
 | [ ] | - | F12-4 | 예산 데이터 글로벌 상태화 및 대시보드 연동 | feat/global-budget-sync | - | Store·Page·Component | - | 신규 | 홈 말랑이와 전역 예산 상태 연동 및 리스트 상위 5개 필터링 렌더링 |
 | [ ] | - | F12-5 | 온보딩 '나만의 목표' 커스텀 입력 기능 구현 | feat/onboarding-custom-goal-input | - | Component | - | 신규 | 나만의 목표 클릭 시 Input 필드 전환 및 바인딩 |
 | [ ] | - | F12-6 | 온보딩 '기타' 탭 선택 시 레이아웃 여백 버그 수정 | fix/onboarding-date-gap | - | Component | - | 신규 | 폼 컨테이너 팽창 시 상단 컨텐츠와의 간격(gap/margin) 유지 |
 | [ ] | - | F12-7 | 거래내역 수정 정산금 합치기(Merge) UI 및 토글 삭제 | feat/transaction-edit-merge | - | Component·api | ['tx'] | 신규 | 더치페이 미정산 리스트 및 수입/지출 토글 기능 완전 삭제. 수정 모달 내에 정산받은 금액 입력(Merge) UI 신설 및 차감 API 연동 |
-> **계층** = 프론트 레이어(`src/pages` · `src/hooks` · `src/api` · `src/store`). **캐시키** = TanStack Query Key(공유 자원 — 임의 생성 금지, 표의 배열을 정확히 사용).
+| [ ] | - | F12-8 | 거래내역 월별 필터 및 연월 선택기 UI 개선 | feat/tx-list-month-nav | - | Page·Component | - | 신규 | 월별 필터 1~12월 노출, 연월 선택기 추가 |
+> **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.
 > **F4-6**: ISSUES.md에만 있고 GitHub 미등록 (백엔드 §9 analysis 선행 필요) → 착수 전 이슈 등록 필요.
 > **F4-7**: GitHub 이슈 없이 코드가 먼저 구현된 케이스(커밋 b7b91e1) → '완료' 처리. 별도 이슈 등록 불필요.
