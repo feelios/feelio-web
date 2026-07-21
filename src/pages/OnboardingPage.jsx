@@ -106,7 +106,7 @@ const CustomWrap = styled.div`
   border-radius: 16px;
   border: 1px solid var(--ink);
   background: var(--card-strong);
-  padding: 6px 13px;
+  padding: 13px;
   margin-top: 8px;
   animation: ${fadeInGoal} .22s ease;
 `;
@@ -317,13 +317,13 @@ export default function OnboardingPage({ onComplete }) {
                         placeholder="목표를 직접 입력해 주세요"
                         maxLength={15}
                         autoFocus
-                        css={{ flex: 1, minWidth: 0, border: 0, background: 'transparent', outline: 'none', fontSize: 15, fontWeight: 800, color: 'var(--text)', padding: '7px 0' }}
+                        css={{ flex: 1, minWidth: 0, border: 0, background: 'transparent', outline: 'none', fontSize: 15, fontWeight: 800, color: 'var(--text)', padding: 0 }}
                       />
                       <span css={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: isCustomGoalValid ? 'var(--sub)' : '#E87573' }}>{customGoal.trim().length}/15</span>
                     </CustomWrap>
                   ) : (
                     <Choice key={item} active={false} onClick={() => setIsCustom(true)}>
-                      <strong>✏️ 나만의 목표 직접 입력</strong>
+                      <strong>나만의 목표</strong>
                     </Choice>
                   );
                 }
