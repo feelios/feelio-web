@@ -105,13 +105,9 @@ export default function UniversePageDc() {
 
     const savedAmount = reduced.monthlySaving - current.monthlySaving;
 
-    // 목표 도달이 빠른 시나리오일수록 큰 행성 (도달 불가면 작게) — goalId 변경 시 함께 변함
-    const scaleFromMonths = (m) => m ? Math.max(0.86, Math.min(1.16, 1 + (24 - m) * 0.011)) : 0.84;
-
     return {
       current: {
         tag: "현재 우주",
-        scale: scaleFromMonths(current.monthsToGoal),
         title: current.title,
         metricLabel: focus ? `이번 달 ${focus.name} 소비` : "이번 달 지출",
         metric: `-${formatMoney(focus ? focus.monthlyAmount : current.monthlyExpense)}`,
@@ -122,7 +118,6 @@ export default function UniversePageDc() {
       },
       reduced: {
         tag: "다른 우주",
-        scale: scaleFromMonths(reduced.monthsToGoal),
         title: reduced.title,
         metricLabel: "매달 아낄 수 있는 금액",
         metric: `+${formatMoney(savedAmount)}`,
@@ -139,13 +134,14 @@ export default function UniversePageDc() {
   const [from, setFrom] = useState("");
   const [leverA, setLeverA] = useState(0.5);
   const [leverB, setLeverB] = useState(0.6);
-  const [egg] = useState(false);
-  const [calc] = useState(0);
+  const [egg, setEgg] = useState(false);
+  const [calc, setCalc] = useState(0);
   const [blobPoke, setBlobPoke] = useState(false);
-  const [goalSheetOpen, setGoalSheetOpen] = useState(false);
   const [narrativeIndex, setNarrativeIndex] = useState(0);
-  
+
   const tRef = useRef(null);
+  const stRef = useRef(null);
+  const ivRef = useRef(null);
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 980);
@@ -203,16 +199,20 @@ export default function UniversePageDc() {
     }
   };
 
-  // REC 노브 → 목표 선택 바텀시트 열기 (#123)
+  // REC 노브 → CALC 이스터에그 애니메이션 (#162 원복)
   const ignite = () => {
     if (phase !== "idle") return;
-    setGoalSheetOpen(true);
-  };
-
-  // 바텀시트에서 목표 선택 → 해당 goalId 시뮬레이션으로 전환
-  const pickGoal = (goalId) => {
-    setGoalSheetOpen(false);
-    selectGoal(goalId);
+    if (stRef.current) clearTimeout(stRef.current);
+    if (ivRef.current) clearInterval(ivRef.current);
+    setEgg(true); setCalc(0);
+    ivRef.current = setInterval(() => {
+      setCalc(c => {
+        const nc = Math.min(100, c + 4);
+        if (nc >= 100) { clearInterval(ivRef.current); ivRef.current = null; }
+        return nc;
+      });
+    }, 55);
+    stRef.current = setTimeout(() => { setEgg(false); }, 5200);
   };
 
   const depart = (key) => {
@@ -241,6 +241,8 @@ export default function UniversePageDc() {
   useEffect(() => {
     return () => {
       if (tRef.current) clearTimeout(tRef.current);
+      if (stRef.current) clearTimeout(stRef.current);
+      if (ivRef.current) clearInterval(ivRef.current);
     };
   }, []);
 
@@ -313,9 +315,9 @@ export default function UniversePageDc() {
                         <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%) rotate(-8deg)", width: "82%", height: orbitHeight, border: "1px solid rgba(255,255,255,0.25)", borderRadius: "50%", pointerEvents: "none", zIndex: 3 }}></div>
                         
                         <div onClick={() => select("current")} style={{ position: "absolute", left: "22%", top: `calc(50% - ${orbitHeight/2}px + 8px)`, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
-                          <div style={{ position: "relative", width: pSize * U_DATA.current.scale, height: pSize * U_DATA.current.scale, transition: "width .5s ease, height .5s ease" }}>
-                            <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 150 * U_DATA.current.scale, height: 150 * U_DATA.current.scale, borderRadius: "50%", background: "radial-gradient(circle,rgba(158,150,238,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4.4s ease-in-out infinite" }}></div>
-                            <UniversePlanet tone="stress" size={Math.round(pSize * U_DATA.current.scale)} />
+                          <div style={{ position: "relative", width: pSize, height: pSize }}>
+                            <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle,rgba(158,150,238,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4.4s ease-in-out infinite" }}></div>
+                            <UniversePlanet tone="stress" size={pSize} />
                           </div>
                           <div style={{ position: "absolute", left: "50%", top: pTextOffset, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", opacity: parked ? 0 : 1, transition: "opacity .3s ease", pointerEvents: "none" }}>
                             <div style={{ font: "600 13px system-ui", color: "#ECEBF0" }}>지금처럼 소비한 나</div>
@@ -323,9 +325,9 @@ export default function UniversePageDc() {
                         </div>
 
                         <div onClick={() => select("reduced")} style={{ position: "absolute", left: "78%", top: `calc(50% + ${orbitHeight/2}px - 15px)`, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
-                          <div style={{ position: "relative", width: pSize * U_DATA.reduced.scale, height: pSize * U_DATA.reduced.scale, transition: "width .5s ease, height .5s ease" }}>
-                            <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 150 * U_DATA.reduced.scale, height: 150 * U_DATA.reduced.scale, borderRadius: "50%", background: "radial-gradient(circle,rgba(130,226,194,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4s ease-in-out .6s infinite" }}></div>
-                            <UniversePlanet tone="calm" size={Math.round(pSize * U_DATA.reduced.scale)} />
+                          <div style={{ position: "relative", width: pSize, height: pSize }}>
+                            <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle,rgba(130,226,194,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4s ease-in-out .6s infinite" }}></div>
+                            <UniversePlanet tone="calm" size={pSize} />
                           </div>
                           <div style={{ position: "absolute", left: "50%", top: pTextOffset, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", opacity: parked ? 0 : 1, transition: "opacity .3s ease", pointerEvents: "none" }}>
                             <div style={{ font: "600 13px system-ui", color: "#ECEBF0" }}>감정소비를 줄인 나</div>
@@ -368,16 +370,16 @@ export default function UniversePageDc() {
 
                 <div style={{ position: "absolute", inset: 0, zIndex: 3, transformOrigin: selected === "current" ? "330px 196px" : "830px 196px", transition: "transform .6s cubic-bezier(.4,0,.2,1)", transform: phase === "flying" ? `scale(1.8)` : phase === "result" ? "scale(0) opacity(0)" : "scale(1)" }}>
                   <div onClick={() => select("current")} style={{ position: "absolute", left: 330, top: 196, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
-                    <div style={{ position: "relative", width: 150 * U_DATA.current.scale, height: 150 * U_DATA.current.scale, transition: "width .5s ease, height .5s ease" }}>
-                      <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 232 * U_DATA.current.scale, height: 232 * U_DATA.current.scale, borderRadius: "50%", background: "radial-gradient(circle,rgba(158,150,238,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4.4s ease-in-out infinite" }}></div>
-                      <UniversePlanet tone="stress" size={Math.round(150 * U_DATA.current.scale)} />
+                    <div style={{ position: "relative", width: 150, height: 150 }}>
+                      <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 232, height: 232, borderRadius: "50%", background: "radial-gradient(circle,rgba(158,150,238,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4.4s ease-in-out infinite" }}></div>
+                      <UniversePlanet tone="stress" size={150} />
                     </div>
                   </div>
 
                   <div onClick={() => select("reduced")} style={{ position: "absolute", left: 830, top: 196, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
-                    <div style={{ position: "relative", width: 150 * U_DATA.reduced.scale, height: 150 * U_DATA.reduced.scale, transition: "width .5s ease, height .5s ease" }}>
-                      <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 232 * U_DATA.reduced.scale, height: 232 * U_DATA.reduced.scale, borderRadius: "50%", background: "radial-gradient(circle,rgba(130,226,194,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4s ease-in-out .6s infinite" }}></div>
-                      <UniversePlanet tone="calm" size={Math.round(150 * U_DATA.reduced.scale)} />
+                    <div style={{ position: "relative", width: 150, height: 150 }}>
+                      <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 232, height: 232, borderRadius: "50%", background: "radial-gradient(circle,rgba(130,226,194,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4s ease-in-out .6s infinite" }}></div>
+                      <UniversePlanet tone="calm" size={150} />
                     </div>
                   </div>
                 </div>
@@ -490,32 +492,6 @@ export default function UniversePageDc() {
                 })}
               </div>
             </div>
-          )}
-
-          {goalSheetOpen && goalsList.length > 0 && (
-            <>
-              <div onClick={() => setGoalSheetOpen(false)} style={{ position: "absolute", inset: 0, zIndex: 30, background: "rgba(0,0,0,.5)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" }} />
-              <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 31, background: "#17151f", borderTop: "1px solid rgba(255,255,255,.1)", borderRadius: "22px 22px 0 0", padding: "16px 20px 26px", boxShadow: "0 -20px 50px rgba(0,0,0,.6)" }}>
-                <div style={{ width: 38, height: 4, borderRadius: 999, background: "rgba(255,255,255,.2)", margin: "0 auto 14px" }} />
-                <div style={{ font: "600 10px ui-monospace,Menlo,monospace", letterSpacing: ".14em", color: "#8f8aa0", textAlign: "center", marginBottom: 14 }}>TARGET GOAL · 어떤 목표의 우주를 볼까요</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "42vh", overflowY: "auto" }}>
-                  {goalsList.map(g => {
-                    const on = g.goalId === activeGoalId;
-                    return (
-                      <button
-                        key={g.goalId}
-                        type="button"
-                        onClick={() => pickGoal(g.goalId)}
-                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", border: `1px solid ${on ? "rgba(200,210,255,.5)" : "rgba(255,255,255,.1)"}`, background: on ? "rgba(158,150,238,.16)" : "rgba(255,255,255,.04)", color: "#fff", borderRadius: 14, padding: "14px 16px", cursor: "pointer", font: `${on ? 800 : 600} 14px system-ui`, transition: "all .15s ease" }}
-                      >
-                        <span>{g.name}</span>
-                        {on && <span style={{ font: "600 9px ui-monospace,Menlo,monospace", color: "#c7c3ff" }}>● 현재</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
           )}
         </PageWrapper>
         </div>
