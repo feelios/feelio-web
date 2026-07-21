@@ -5,7 +5,7 @@ import { Modal } from '../common/Modal.jsx';
 import { EmotionBlob } from '../common/EmotionBlob.jsx';
 import { money, signedMoney } from '../../utils/format.js';
 import { useMetadata } from '../../hooks/queries/useMetadata.js';
-import { useTransactionDetailQuery, useUpdateTransactionMutation, useDeleteTransactionMutation } from '../../hooks/queries/useTransactions.js';
+import { useTransactionDetailQuery, useUpdateTransactionMutation, useDeleteTransactionMutation, useMergeTransactionMutation } from '../../hooks/queries/useTransactions.js';
 import { useCategoriesQuery } from '../../hooks/queries/useCategories.js';
 import DatePickerDc from '../common/DatePickerDc.jsx';
 
@@ -268,8 +268,10 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
   const categories = categoryData?.categories || [];
   const updateTx = useUpdateTransactionMutation();
   const deleteTx = useDeleteTransactionMutation();
+  const mergeTx = useMergeTransactionMutation();
 
   const [mode, setMode] = useState('detail');
+  const [receivedAmount, setReceivedAmount] = useState('');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [form, setForm] = useState({
     amount: String(transaction?.amount || 0),
@@ -355,6 +357,13 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
     }
   };
 
+  const handleMerge = async () => {
+    const amount = Number(receivedAmount.replace(/\D/g, ''));
+    if (!amount) return;
+    await mergeTx.mutateAsync({ transactionId: transaction.transactionId, receivedAmount: amount });
+    onClose();
+  };
+
   return (
     <Modal onClose={onClose} height={mode === 'edit' && lockedHeight ? `${lockedHeight}px` : undefined}>
       {mode === 'detail' ? (
@@ -370,7 +379,22 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
             <Amount income={isIncome}>{signedMoney(transaction)}</Amount>
           </Hero>
           <DetailBox>{rows.map(([label, value]) => <Row key={label}><span>{label}</span><b>{value}</b></Row>)}</DetailBox>
-          <Actions css={{ marginTop: 'auto' }}>
+          {transaction.type === 'EXPENSE' && (
+            <div css={{ marginTop: 'auto', padding: 16, background: 'color-mix(in srgb, var(--bg-1) 95%, transparent)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderRadius: 16, border: '1px solid var(--line)', marginBottom: 16 }}>
+              <div css={{ fontSize: 13, fontWeight: 900, marginBottom: 8, color: 'var(--text)' }}>정산받은 금액 입력 (더치페이)</div>
+              <div css={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="text"
+                  placeholder="예) 15000"
+                  value={money(Number(receivedAmount.replace(/\D/g, '')) || 0) === '0' ? '' : money(Number(receivedAmount.replace(/\D/g, '')) || 0)}
+                  onChange={e => setReceivedAmount(e.target.value.replace(/\D/g, ''))}
+                  css={{ flex: 1, border: '1px solid var(--line)', borderRadius: 12, padding: '10px 14px', background: 'var(--card)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 }}
+                />
+                <Button type="button" primary onClick={handleMerge} disabled={!receivedAmount || mergeTx.isPending} css={{ flex: '0 0 auto', padding: '10px 16px' }}>차감</Button>
+              </div>
+            </div>
+          )}
+          <Actions css={{ marginTop: transaction.type === 'EXPENSE' ? 0 : 'auto' }}>
             <Button type="button" primary onClick={() => setMode('edit')}>수정</Button>
             <Button type="button" onClick={handleDelete}>삭제</Button>
           </Actions>

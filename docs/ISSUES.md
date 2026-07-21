@@ -53,7 +53,6 @@
 | [ ] | - | F8-6 | 거래 감정 Select 오류 수정 및 UI 확대 | `fix/transaction-emotion-select` | - | Component | - | 신규 | 감정 초기값 바인딩 오류 해결 및 카테고리/감정 Select 컴포넌트 터치 영역(패딩) 확대 (F8-2 연계) |
 | [ ] | - | F8-7 | 캘린더 미래 날짜 선택 제한(Disabled) | `fix/calendar-future-disable` | - | Component | - | 신규 | 지출/수입 기록 캘린더 및 거래 수정 모달 내 캘린더에서 오늘 기준 '미래 날짜'는 클릭 불가능하도록(disabled) 방어 처리 |
 | [x] | #121 | F8-8 | 거래 수정 캘린더 레이아웃 및 분 단위 추가 | `fix/transaction-edit-calendar` | - | Component | - | 완료 | 거래 수정 모달 내 캘린더 짤림 현상(CSS) 해결 및 기존 시간 선택 시 분(minute) 단위 설정 추가 |
-| [ ] | #122 | F8-9 | 거래 수정 폼 '수입/지출' 타입 변경 추가 | `feat/transaction-edit-type` | - | Component | - | 신규 | 거래 수정 모달 내부에 '수입/지출'을 변경할 수 있는 Select(혹은 탭) 추가 및 수정 API 연동 |
 | [ ] | #125 | F8-10 | 온보딩 '나만의 목표' 직접 입력 UI | `feat/onboarding-custom-goal` | - | Component | - | 신규 | 온보딩(2/6)에서 '나만의 목표' 클릭 시 텍스트 Input으로 전환되어 사용자가 직접 목표명을 작성하도록 구현 |
 | [ ] | #126 | F8-11 | 홈 화면 UI 버그 종합 수정(말랑이/달력) | `fix/home-ui-bugs` | - | Component | - | 신규 | 홈 말랑이 위로 스와이프 시 렌더링 버그 수정, 캘린더 우측 끝 짤림(레이아웃) 수정, 캘린더 선택 날짜(7월 1일 고정)를 오늘 날짜로 동적 수정 |
 | [ ] | - | F9-1 | 소비 코어 감정 8종 노출 | `feat/core-emotion-display` | - | Component | - | 신규 | 데이터 0건인 감정도 누락 없이 8개 렌더링 처리 |
@@ -66,16 +65,13 @@
 | [ ] | - | F11-1 | 목표 글래스모피즘 및 만료 상태 스타일 | `feat/goal-design-update` | - | Component | - | 신규 | 목표 폼 투명도 5% 적용 및 과거 목표 흑백(Grayscale) 처리 |
 | [ ] | - | F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 보류 | 날짜 선택기(DatePickerDc) 글래스 시도(5%/모달+스크림)했으나 방향 미확정 → 현재 **불투명 원복**. 월/요일 한글화(2026년 N월 · 월 화 수 목 금 토 일)만 반영. ※모바일에서 시간 패널이 화면 밖으로 넘치는 레이아웃 버그 별도 발견 |
 | [ ] | - | F11-3 | 활성 목표(isMain) 홈·평행우주 연동 | `feat/goal-main-sync` | - | Component | `['goals']` | 신규 | isMain=true 인 활성 목표 데이터를 실시간 구독하여 홈/우주에 렌더링 반영 |
-| [ ] | - | F11-4 | 더치페이 미정산 내역 관리 모달 연동 | `feat/dutch-pay-modal` | - | Component·api | `['tx', 'dutch-pay']` | 신규 | 더치페이 미정산 리스트 조회 API 연동 모달 팝업 구현 및 체크 시 정산 완료(수입 자동 생성) API 통신, 캐시 무효화 |
 | [ ] | - | F12-1 | 거래내역 다중 선택 및 월/년도 네비게이션 개선 | feat/tx-list-ux-improvements | - | Page·Component | - | 신규 | 다중 선택 겹침 디자인 제거, 월별 필터 1~12월 노출, 연월 선택기 추가 |
 | [ ] | - | F12-2 | 카테고리 순서 변경 인디케이터 렌더링 | feat/category-dnd-indicator | - | Component | - | 신규 | 카테고리 드래그 시 마우스 방향에 세로 선 렌더링 |
 | [ ] | - | F12-3 | 평행우주 시나리오 상호작용 및 목표 연동 | feat/universe-scenario-interaction | - | api·Page·Component | ['universe'] | 신규 | 시나리오 요소 버튼화 및 하단 목표 클릭 시 행성 시뮬레이션 동적 반영 |
 | [ ] | - | F12-4 | 예산 데이터 글로벌 상태화 및 대시보드 연동 | feat/global-budget-sync | - | Store·Page·Component | - | 신규 | 홈 말랑이와 전역 예산 상태 연동 및 리스트 상위 5개 필터링 렌더링 |
 | [ ] | - | F12-5 | 온보딩 '나만의 목표' 커스텀 입력 기능 구현 | feat/onboarding-custom-goal-input | - | Component | - | 신규 | 나만의 목표 클릭 시 Input 필드 전환 및 바인딩 |
 | [ ] | - | F12-6 | 온보딩 '기타' 탭 선택 시 레이아웃 여백 버그 수정 | fix/onboarding-date-gap | - | Component | - | 신규 | 폼 컨테이너 팽창 시 상단 컨텐츠와의 간격(gap/margin) 유지 |
-
-
-
+| [ ] | - | F12-7 | 거래내역 수정 정산금 합치기(Merge) UI 및 토글 삭제 | feat/transaction-edit-merge | - | Component·api | ['tx'] | 신규 | 더치페이 미정산 리스트 및 수입/지출 토글 기능 완전 삭제. 수정 모달 내에 정산받은 금액 입력(Merge) UI 신설 및 차감 API 연동 |
 > **계층** = 프론트 레이어(`src/pages` · `src/hooks` · `src/api` · `src/store`). **캐시키** = TanStack Query Key(공유 자원 — 임의 생성 금지, 표의 배열을 정확히 사용).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.
 > **F4-6**: ISSUES.md에만 있고 GitHub 미등록 (백엔드 §9 analysis 선행 필요) → 착수 전 이슈 등록 필요.

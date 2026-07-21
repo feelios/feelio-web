@@ -115,3 +115,14 @@ export const useClearTransactionsMutation = () => {
     },
   });
 };
+
+// 8. 정산 금액 병합(Merge) 뮤테이션 훅 (A6-5 / F12-7)
+export const useMergeTransactionMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ transactionId, receivedAmount }) => transactionsAPI.mergeTransaction(transactionId, receivedAmount),
+    onSuccess: () => {
+      invalidateRelatedQueries(queryClient);
+    },
+  });
+};
