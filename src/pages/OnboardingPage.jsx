@@ -148,10 +148,8 @@ export default function OnboardingPage({ onComplete }) {
         await createGoalMutation.mutateAsync({
           name: goal,
           targetAmount: amount,
-          currentAmount: current,
-          isMain: true,
-          // The backend API might accept a string like '2026-10-31' for dueDate, 
-          // but we will just pass what's required based on the API contract.
+          initialAmount: current,
+          isMain: true
         });
 
         await completeOnboardingMutation.mutateAsync();

@@ -401,7 +401,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
   const toGoalPayload = (form, isMain) => ({
     name: form.name.trim(),
     targetAmount: Number(form.target),
-    currentAmount: Number(form.current) || 0,
+    initialAmount: Number(form.current) || 0,
     dueDate: form.period || undefined,
     isMain,
   });
@@ -441,7 +441,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
         data: {
           name: item.name,
           targetAmount: item.targetAmount,
-          currentAmount: item.currentAmount,
+          initialAmount: item.initialAmount || 0,
           startDate: item.startDate,
           dueDate: item.dueDate,
           isMain: true,
