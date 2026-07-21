@@ -34,6 +34,11 @@ const Trigger = styled.button`
   &:hover {
     border-color: ${({ isOpen }) => isOpen ? 'var(--accent)' : 'var(--sub)'};
   }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 `;
 
 const Placeholder = styled.span`
@@ -69,22 +74,26 @@ const Menu = styled.div`
   top: calc(100% + 4px);
   left: 0;
   width: 100%;
-  background: color-mix(in srgb, var(--bg-1) 95%, transparent);
+  background: var(--modal-bg);
   border-radius: 12px;
-  border: 1px solid var(--line);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow);
   padding: 4px;
   z-index: 100;
   max-height: 200px;
   overflow-y: auto;
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(28px) saturate(1.25);
+  -webkit-backdrop-filter: blur(28px) saturate(1.25);
 `;
 
 const Option = styled.button`
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   text-align: left;
   padding: 10px 12px;
   border-radius: 8px;
@@ -110,6 +119,12 @@ const Option = styled.button`
       color: var(--text);
     }
   `}
+
+  span.check {
+    opacity: ${({ isSelected }) => isSelected ? 1 : 0};
+    color: var(--accent, var(--text));
+    font-weight: 900;
+  }
 `;
 
 export default function SelectDc({ 
@@ -118,12 +133,15 @@ export default function SelectDc({
   value, 
   onChange, 
   placeholder = '선택해주세요',
-  isClearable = false 
+  isClearable = false,
+  disabled = false,
+  multiple = false
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef(null);
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedValues = multiple ? (value || []) : [];
+  const selectedOption = multiple ? null : options.find(opt => opt.value === value);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -136,25 +154,40 @@ export default function SelectDc({
   }, []);
 
   const handleSelect = (optionValue) => {
+    if (multiple) {
+      // 다중선택: 토글 후 메뉴 유지
+      const next = selectedValues.includes(optionValue)
+        ? selectedValues.filter(v => v !== optionValue)
+        : [...selectedValues, optionValue];
+      onChange(next);
+      return;
+    }
     onChange(optionValue);
     setIsOpen(false);
   };
 
   const handleClear = (e) => {
     e.stopPropagation();
-    onChange(null);
+    onChange(multiple ? [] : null);
     setIsOpen(false);
   };
 
   return (
     <SelectWrapper ref={wrapperRef}>
       {label && <Label>{label}</Label>}
-      <Trigger 
-        type="button" 
-        isOpen={isOpen} 
+      <Trigger
+        type="button"
+        isOpen={isOpen}
+        disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
       >
-        {selectedOption ? (
+        {multiple ? (
+          selectedValues.length ? (
+            <ValueText>{selectedValues.length}개 선택</ValueText>
+          ) : (
+            <Placeholder>{placeholder}</Placeholder>
+          )
+        ) : selectedOption ? (
           <ValueText>{selectedOption.label}</ValueText>
         ) : (
           <Placeholder>{placeholder}</Placeholder>
@@ -169,18 +202,32 @@ export default function SelectDc({
         </IconWrapper>
       </Trigger>
 
-      {isOpen && (
+      {isOpen && !disabled && (
         <Menu>
-          {options.map((option) => (
+          {multiple && (
             <Option
-              key={option.value}
               type="button"
-              isSelected={option.value === value}
-              onClick={() => handleSelect(option.value)}
+              isSelected={selectedValues.length === 0}
+              onClick={() => onChange([])}
             >
-              {option.label}
+              {placeholder}
+              <span className="check">✓</span>
             </Option>
-          ))}
+          )}
+          {options.map((option) => {
+            const isSelected = multiple ? selectedValues.includes(option.value) : option.value === value;
+            return (
+              <Option
+                key={option.value}
+                type="button"
+                isSelected={isSelected}
+                onClick={() => handleSelect(option.value)}
+              >
+                {option.label}
+                {multiple && <span className="check">✓</span>}
+              </Option>
+            );
+          })}
         </Menu>
       )}
     </SelectWrapper>
