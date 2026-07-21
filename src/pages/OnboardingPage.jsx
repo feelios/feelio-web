@@ -249,6 +249,7 @@ export default function OnboardingPage({ onComplete }) {
           initialAmount: current,
           dueDate,
           isMain: true
+        });
 
         await completeOnboardingMutation.mutateAsync(totalAsset);
         
