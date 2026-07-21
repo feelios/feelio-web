@@ -202,30 +202,40 @@ const PebbleGrid = styled.div`
 `;
 
 const Pebble = styled.button`
+  position: relative;
   aspect-ratio: 1;
   min-width: 0;
   border-radius: 43%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: ${({ empty, selected, today, dark }) => {
-    if (empty) return '1px solid transparent';
-    return (selected || today) ? `1.5px solid rgba(255,255,255,${dark ? '.68' : '.96'})` : '1px solid var(--line)';
-  }};
-  background: ${({ empty, color, strong, dark, today }) => {
-    if (empty) return 'transparent';
-    if (!color) {
-      if (today) return dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)';
-      return 'linear-gradient(150deg, rgba(255,255,255,.26), transparent)';
+
+  /* 오늘(미선택): 숫자 아래 은은한 점 */
+  ${({ today, selected, empty }) => (today && !selected && !empty) ? `
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: 14%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: .6;
     }
+  ` : ''}
+  border: ${({ empty }) => empty ? '1px solid transparent' : '1px solid var(--line)'};
+  background: ${({ empty, color, strong, dark }) => {
+    if (empty) return 'transparent';
+    if (!color) return 'linear-gradient(150deg, rgba(255,255,255,.26), transparent)';
     const alpha1 = strong ? (dark ? '9C' : 'B4') : (dark ? '60' : '7C');
     const alpha2 = dark ? '12' : '26';
     const highlight = dark ? '.12' : '.34';
     return `radial-gradient(circle at 40% 24%, rgba(255,255,255,${highlight}), transparent 44%), linear-gradient(150deg, ${color}${alpha1}, ${color}${alpha2})`;
   }};
-  color: ${({ empty, color, today, dark }) => {
+  color: ${({ empty, color, dark }) => {
     if (empty) return 'transparent';
-    if (today && !color) return dark ? '#ffffff' : '#000000'; // 오늘 날짜 엄청 찐하게
     return color ? (dark ? '#F3F1F8' : '#fff') : 'var(--sub)';
   }};
   font-size: clamp(11px, .9vw, 13px);
@@ -238,10 +248,11 @@ const Pebble = styled.button`
   pointer-events: ${({ empty }) => empty ? 'none' : 'auto'};
   backdrop-filter: ${({ empty }) => empty ? 'none' : 'blur(16px) saturate(1.35)'};
   -webkit-backdrop-filter: ${({ empty }) => empty ? 'none' : 'blur(16px) saturate(1.35)'};
-  box-shadow: ${({ empty, selected, today, dark }) => {
+  box-shadow: ${({ empty, selected, dark }) => {
     if (empty) return 'none';
-    const selectedRing = selected ? `, 0 0 0 3.5px #A1A6B4, 0 0 14px rgba(161,166,180,0.8)` : '';
-    const todayRing = (!selected && today) ? `, 0 0 0 2.5px rgba(161,166,180,0.45)` : '';
+    // 선택: 연 그레이 링 / 오늘: 숫자 아래 점(dot, ::after)
+    const selectedRing = selected ? `, 0 0 0 2px ${dark ? 'rgba(235,235,242,.5)' : '#B4B4BF'}` : '';
+    const todayRing = '';
     return dark
       ? `inset 0 1px 1px rgba(255,255,255,.16), inset 0 0 14px rgba(255,255,255,.03), 0 8px 20px -16px rgba(0,0,0,.55)${selectedRing}${todayRing}`
       : `inset 0 1px 1.5px rgba(255,255,255,.5), inset 0 -8px 20px rgba(70,55,44,.045), 0 12px 26px -22px rgba(70,55,44,.36)${selectedRing}${todayRing}`;
@@ -631,6 +642,8 @@ function getCalendarCells(daysData, visibleMonth) {
   
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
+  const now = new Date();
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
   const lead = new Date(year, month, 1).getDay();
   const lastDay = new Date(year, month + 1, 0).getDate();
   const empty = Array.from({ length: lead }, (_, index) => ({ id: `empty-${index}`, empty: true }));
@@ -638,7 +651,7 @@ function getCalendarCells(daysData, visibleMonth) {
     const day = index + 1;
     const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const emotion = txMap.get(key);
-    return { id: `day-${day}`, day, emotion, strong: Boolean(emotion), today: year === 2026 && month === 6 && day === 1 };
+    return { id: `day-${day}`, day, emotion, strong: Boolean(emotion), today: isCurrentMonth && day === now.getDate() };
   });
   const cells = [...empty, ...days];
   // 마지막 주까지만 채워 달마다 5~6주로 높이 가변 (항상 6주 고정 X)
@@ -655,7 +668,7 @@ function ridgePath(cx, width, height, base = 172) {
 }
 
 export default function HomePageDesign({ state, onRoute, selectedDate, onSelectDate, onSaveToGoal }) {
-  const [fallbackDate] = useState(() => new Date(2026, 6, 1));
+  const [fallbackDate] = useState(() => new Date());
   const selected = selectedDate || fallbackDate;
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
   const lastClickTimeRef = useRef({});
@@ -749,6 +762,17 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     over: [`앗, 예산을 ${budgetProgress}%나 썼어 😥`, '이대로면 저축이 잠깐 멈춰', '저금하기로 목표 채워줄래?', '조금만 아껴보자, 할 수 있어', '다음 주엔 살짝 브레이크 🛑'],
   }[budgetState];
 
+  // 기록이 아직 없는 첫 사용(빈 상태): 분석 문구 대신 서비스 사용을 돕는 유도 문구
+  const emptyPhrases = [
+    '반가워! 나는 말랑이야 🫧',
+    '오늘 쓴 돈을 기록해볼래?',
+    '감정이랑 같이 적으면 내가 읽어줄게',
+    '기록이 쌓이면 소비 흐름이 보여 ✨',
+    '아래 달력에서 날짜를 골라 시작해봐',
+    '가볍게 한 건부터, 천천히 같이 하자',
+  ];
+  const bubblePhrases = showEmptyBlob ? emptyPhrases : budgetPhrases;
+
   const days = getCalendarCells(serverDays, visibleMonth);
   const ridgeData = hasEnoughRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
   const ridgePeak = ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0]);
@@ -799,20 +823,20 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
           <div>
             <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'center', '@media (max-width: 980px)': { flexDirection: 'column-reverse' } }}>
               <BlobHalo color={topMeta.color}>
-                <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 272 : 'clamp(320px, 28vw, 400px)', height: isMobile ? 280 : (!showEmptyBlob ? 'clamp(360px, 31vw, 372px)' : 'clamp(330px, 28vw, 344px)') }}>
+                <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 272 : 'clamp(320px, 28vw, 400px)', height: isMobile ? 280 : 'clamp(360px, 31vw, 372px)' }}>
                   {!showEmptyBlob
                     ? <EmotionBlob emotion={displayEmotion} size={isMobile ? 264 : 410} onDragChange={handleBlobDrag} />
-                    : <EmptyEmotionBlob size={isMobile ? 236 : 380} dark={dark} />}
+                    : <EmptyEmotionBlob size={isMobile ? 264 : 410} dark={dark} />}
                 </div>
               </BlobHalo>
-              <BubbleStack css={{ transform: `translate(${blobDrag.dx * (isMobile ? 0.4 : 0.5)}px, ${blobDrag.dy * (isMobile ? 0.4 : 0.5)}px)`, transition: blobDrag.isDragging ? 'none' : 'transform .4s cubic-bezier(.34, 1.4, .64, 1)' }}>
+              <BubbleStack css={{ transform: `translate(${blobDrag.dx * (isMobile ? 0.4 : 0.5)}px, ${blobDrag.dy * (isMobile ? 0.4 : 0.5)}px)`, transition: blobDrag.isDragging ? 'none' : 'transform .4s cubic-bezier(.34, 1.4, .64, 1)', '@media (max-width: 980px)': { marginBottom: showEmptyBlob ? 20 : -20 } }}>
                 {isMobile ? (
                   <Bubble key={budgetWave} css={{ animation: `${bubblePop} 0.5s cubic-bezier(.5, 1.5, .5, 1) backwards` }}>
-                    {budgetPhrases[budgetWave % budgetPhrases.length]}
+                    {bubblePhrases[budgetWave % bubblePhrases.length]}
                   </Bubble>
                 ) : (
                   [0, 1, 2].map((i) => {
-                    const phrase = budgetPhrases[(budgetWave + i) % budgetPhrases.length];
+                    const phrase = bubblePhrases[(budgetWave + i) % bubblePhrases.length];
                     return (
                       <Bubble key={`${budgetWave}-${i}`} css={{ animation: `${bubblePop} 0.5s cubic-bezier(.5, 1.5, .5, 1) ${i * 0.22}s backwards` }}>
                         {phrase}
