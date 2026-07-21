@@ -24,13 +24,18 @@ const Panel = styled.div`
   backdrop-filter: blur(28px) saturate(1.25);
   animation: ${modalIn} .24s ease;
 
+  ${({ hideScrollbar }) => hideScrollbar ? `
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  ` : ''}
+
   @media (max-width: 820px) {
     border-radius: 22px;
     max-height: ${({ maxHeight }) => maxHeight || '88vh'};
   }
 `;
 
-export function Modal({ children, onClose, width, height, maxHeight, overflow }) {
+export function Modal({ children, onClose, width, height, maxHeight, overflow, hideScrollbar }) {
   return (
     <Scrim onMouseDown={onClose}>
       <Panel
@@ -38,6 +43,7 @@ export function Modal({ children, onClose, width, height, maxHeight, overflow })
         height={height}
         maxHeight={maxHeight}
         overflow={overflow}
+        hideScrollbar={hideScrollbar}
         onMouseDown={event => event.stopPropagation()}
       >
         {children}
