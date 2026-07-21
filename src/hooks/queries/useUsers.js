@@ -14,7 +14,7 @@ export const useUpdateMeMutation = () => {
 export const useCompleteOnboardingMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => usersAPI.completeOnboarding(),
+    mutationFn: (totalAsset) => usersAPI.completeOnboarding(totalAsset),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     }

@@ -111,7 +111,7 @@ Request: `{ "nickname": "새닉네임", "totalAsset": 5000000 }` (부분 전송 
 - 온보딩 완료 흐름에서 `nickname`과 `totalAsset`을 함께 전송한다(F7-6).
 
 ### PATCH /api/users/me/onboarding · 인증 필요
-Request 없음 → Response `data`: `{ "onboardingDone": true }`
+Request: `{ "totalAsset": 5000000 }` (`totalAsset`: 정수 ≥ 0) → Response `data`: `{ "onboardingDone": true }`
 - 호출 화면: OnboardingPage / Workflow: 첫 목표 생성(`POST /api/goals`) 직후 호출.
 
 ### PATCH /api/users/me/settings · 인증 필요
