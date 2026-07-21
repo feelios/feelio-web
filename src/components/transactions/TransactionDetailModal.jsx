@@ -124,6 +124,33 @@ const FieldGrid = styled.div`
   }
 `;
 
+const TypeToggle = styled.div`
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+`;
+
+const TypeBtn = styled.button`
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .18s, color .18s;
+  background: ${({ active }) => active ? 'var(--ink)' : 'transparent'};
+  color: ${({ active }) => active ? '#fff' : 'var(--sub)'};
+
+  @media (max-width: 820px) {
+    padding: 5px 11px;
+    font-size: 12px;
+  }
+`;
+
 const Field = styled.label`
   display: grid;
   gap: 5px;
@@ -264,8 +291,6 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
   const emotions = metaData?.emotions || [];
 
   const { data: transaction } = useTransactionDetailQuery(initialTxn.transactionId, initialTxn);
-  const { data: categoryData } = useCategoriesQuery(transaction?.type);
-  const categories = categoryData?.categories || [];
   const updateTx = useUpdateTransactionMutation();
   const deleteTx = useDeleteTransactionMutation();
   const mergeTx = useMergeTransactionMutation();
@@ -273,19 +298,25 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
   const [mode, setMode] = useState('detail');
   const [receivedAmount, setReceivedAmount] = useState('');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const dateFieldRef = useRef(null);
   const [form, setForm] = useState({
+    type: transaction?.type || 'EXPENSE',
     amount: String(transaction?.amount || 0),
     categoryId: transaction?.category?.categoryId || '',
     emotionId: transaction?.emotion?.emotionId || '',
     memo: transaction?.memo || '',
     date: transaction?.occurredAt ? transaction.occurredAt.slice(0, 16) : ''
   });
+  // 선택된 타입 기준으로 카테고리 목록 조회 (타입 전환 시 자동 동기화)
+  const { data: categoryData } = useCategoriesQuery(form.type);
+  const categories = categoryData?.categories || [];
   const [emotionPicked, setEmotionPicked] = useState(false);
 
   useEffect(() => {
     if (transaction && mode === 'detail') {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
+        type: transaction.type || 'EXPENSE',
         amount: String(transaction.amount),
         categoryId: transaction.category?.categoryId || '',
         emotionId: transaction.emotion?.emotionId || '',
@@ -335,11 +366,17 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
   ];
 
   const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
+  // 타입 전환: 다른 입력은 유지하고 카테고리만 초기화(선택 타입에 맞는 목록으로 다시 선택)
+  const changeType = (nextType) => {
+    if (nextType === form.type) return;
+    setForm(prev => ({ ...prev, type: nextType, categoryId: '' }));
+    setCatOpen(false);
+  };
   const save = async () => {
     await updateTx.mutateAsync({
       transactionId: transaction.transactionId,
       data: {
-        type: transaction.type, // 기존 type 유지
+        type: form.type,
         amount: Number(form.amount.replace(/\D/g, '')) || transaction.amount,
         categoryId: Number(form.categoryId),
         emotionId: Number(form.emotionId),
@@ -406,6 +443,10 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
               <button type="button" onClick={() => setMode('detail')} css={{ border: 0, background: 'transparent', color: 'var(--sub)', fontSize: 22, cursor: 'pointer' }}>‹</button>
               <h2>거래 수정</h2>
             </div>
+            <TypeToggle role="group" aria-label="수입/지출 선택">
+              <TypeBtn type="button" active={form.type === 'EXPENSE'} onClick={() => changeType('EXPENSE')}>지출</TypeBtn>
+              <TypeBtn type="button" active={form.type === 'INCOME'} onClick={() => changeType('INCOME')}>수입</TypeBtn>
+            </TypeToggle>
           </Head>
           <FieldGrid>
             <Field>금액<input value={money(Number(form.amount.replace(/\D/g, '')) || 0)} onChange={event => setField('amount', event.target.value.replace(/\D/g, ''))} /></Field>
@@ -416,7 +457,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
               </CatTrigger>
               {catOpen && (
                 <CatMenu>
-                  {categories.filter(c => c.type === transaction.type || !c.type).map(c => (
+                  {categories.filter(c => c.type === form.type || !c.type).map(c => (
                     <CatItem
                       key={c.categoryId}
                       type="button"
@@ -446,7 +487,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
                       else { setField('emotionId', item.emotionId); setEmotionPicked(true); }
                     }}
                   >
-                    <EmotionBlob emotion={item.name} size={isMobile ? 34 : 34} interactive={false} />
+                    <EmotionBlob emotion={item.name} size={isMobile ? 42 : 46} interactive={false} />
                     <span>{item.name}</span>
                   </EmotionChoice>
                 );
@@ -455,7 +496,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
           </div>
           <Field css={{ marginBottom: isMobile ? 6 : 16 }}>메모<input value={form.memo} onChange={event => setField('memo', event.target.value)} /></Field>
           <Field css={{ position: 'relative', marginBottom: isMobile ? 6 : 22 }}>날짜
-            <button type="button" onClick={() => setIsDatePickerOpen(true)} css={{ border: '1px solid var(--line)', borderRadius: 12, padding: '12px 14px', background: 'var(--card)', color: 'var(--text)', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 }}>
+            <button ref={dateFieldRef} type="button" onClick={() => setIsDatePickerOpen(true)} css={{ border: '1px solid var(--line)', borderRadius: 12, padding: '12px 14px', background: 'var(--card)', color: 'var(--text)', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 }}>
               {form.date.replace('T', ' ')}
             </button>
             {isDatePickerOpen && (
@@ -463,6 +504,8 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
                 value={form.date}
                 onChange={(newDate) => setField('date', newDate)}
                 onClose={() => setIsDatePickerOpen(false)}
+                overlay
+                anchorRef={dateFieldRef}
               />
             )}
           </Field>
