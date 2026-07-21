@@ -199,7 +199,7 @@ const SaveButton = styled.button`
   border-radius: 18px;
   padding: 18px;
   background: ${({ disabled, accent }) => disabled ? 'var(--line)' : (accent || 'var(--ink)')};
-  color: ${({ disabled }) => disabled ? 'var(--sub)' : '#fff'};
+  color: ${({ disabled }) => disabled ? 'var(--sub)' : 'var(--bg-1)'};
   font-size: 15px;
   font-weight: 900;
   cursor: ${({ disabled }) => disabled ? 'default' : 'pointer'};
@@ -597,7 +597,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
                   css={{ 
                     padding: '6px 14px', borderRadius: 10, border: 0, 
                     background: form.date === getInitialDate() || new Date(form.date).toDateString() === new Date().toDateString() ? (accent || 'var(--ink)') : 'transparent',
-                    color: form.date === getInitialDate() || new Date(form.date).toDateString() === new Date().toDateString() ? '#fff' : 'var(--sub)', 
+                    color: form.date === getInitialDate() || new Date(form.date).toDateString() === new Date().toDateString() ? 'var(--bg-1)' : 'var(--sub)', 
                     fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s'
                   }}
                 >
@@ -609,7 +609,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
                   css={{ 
                     padding: '6px 14px', borderRadius: 10, border: 0, 
                     background: new Date(form.date).toDateString() !== new Date().toDateString() ? (accent || 'var(--ink)') : 'transparent',
-                    color: new Date(form.date).toDateString() !== new Date().toDateString() ? '#fff' : 'var(--sub)', 
+                    color: new Date(form.date).toDateString() !== new Date().toDateString() ? 'var(--bg-1)' : 'var(--sub)', 
                     fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s'
                   }}
                 >
