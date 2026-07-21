@@ -337,8 +337,15 @@ const Row = styled.button`
   cursor: pointer;
   transition: background .12s ease;
 
-  &:last-child {
+  &:first-of-type {
+    border-top-left-radius: 26px;
+    border-top-right-radius: 26px;
+  }
+
+  &:last-of-type {
     border-bottom: 0;
+    border-bottom-left-radius: 26px;
+    border-bottom-right-radius: 26px;
   }
 `;
 
@@ -350,7 +357,7 @@ const Check = styled.span`
   background: ${({ isChecked }) => isChecked ? 'var(--accent)' : 'transparent'};
   display: grid;
   place-items: center;
-  color: #fff;
+  color: var(--text);
   font-size: 12px;
   flex: 0 0 auto;
 `;
