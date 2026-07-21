@@ -28,6 +28,7 @@ const invalidateRelatedQueries = (queryClient) => {
     ['summary', 'emotions'],
     ['analysis'],
     ['universe'],
+    ['goals'],
   ].forEach(queryKey => {
     queryClient.invalidateQueries({ queryKey });
   });

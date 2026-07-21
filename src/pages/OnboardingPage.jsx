@@ -246,10 +246,9 @@ export default function OnboardingPage({ onComplete }) {
         await createGoalMutation.mutateAsync({
           name: effectiveGoal,
           targetAmount: amount,
-          currentAmount: current,
+          initialAmount: current,
           dueDate,
-          isMain: true,
-        });
+          isMain: true
 
         await completeOnboardingMutation.mutateAsync(totalAsset);
         
