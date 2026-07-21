@@ -212,7 +212,7 @@ Response(201) `data`: 생성된 거래 객체. 에러: VALIDATION_ERROR
 ```
 
 - `GET /api/goals` → `data`: `{ "goals": [ ] }` (isMain은 항상 최대 1건)
-- `POST /api/goals` — name, targetAmount(>0) 필수. `isMain: true`면 기존 대표 목표를 서버가 같은 트랜잭션에서 해제
+- `POST /api/goals` — name, targetAmount(>0), dueDate(`YYYY-MM-DD`) 필수. `isMain: true`면 기존 대표 목표를 서버가 같은 트랜잭션에서 해제
 - `PUT /api/goals/{goalId}` — POST와 동일 필드
 - `DELETE /api/goals/{goalId}` → `data`: `{ "deleted": true }`
 - 온보딩 완료: `POST /api/goals`(isMain=true) 성공 → `PATCH /api/users/me/onboarding` 순서 호출
