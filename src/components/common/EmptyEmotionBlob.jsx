@@ -8,7 +8,7 @@ const emptyBlobShape =
 export function EmptyEmotionBlob({ size = 260, dark = false }) {
   const id = `empty-${useId().replace(/:/g, '')}`;
   const width = size;
-  const height = size * 1.2;
+  const height = size * 1.1;
   const bodyHeight = size * 1.025;
   const colors = dark
     ? { fill: '#ffffff', o0: 0.17, o1: 0.07, o2: 0.02, stroke: 'rgba(255,255,255,.30)', sheen: 0.42, eye: '#8A85A3', mark: '#9B8CFF' }
