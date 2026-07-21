@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
+import SegmentDatePicker from '../components/common/SegmentDatePicker.jsx';
 import { money } from '../utils/format.js';
 import { useUpdateMeMutation, useCompleteOnboardingMutation } from '../hooks/queries/useUsers.js';
 import { useCreateGoalMutation } from '../hooks/queries/useGoals.js';
@@ -115,6 +116,28 @@ const Footer = styled.div`
   }
 `;
 
+const durationMonths = {
+  '3개월': 3,
+  '6개월': 6,
+  '1년': 12,
+  '2년': 24,
+};
+
+const formatLocalDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const addMonthsFromToday = (months) => {
+  const today = new Date();
+  const dueDate = new Date(today.getFullYear(), today.getMonth() + months, 1);
+  const lastDay = new Date(dueDate.getFullYear(), dueDate.getMonth() + 1, 0).getDate();
+  dueDate.setDate(Math.min(today.getDate(), lastDay));
+  return formatLocalDate(dueDate);
+};
+
 export default function OnboardingPage({ onComplete }) {
   const [step, setStep] = useState(0);
   const [nickname, setNickname] = useState('');
@@ -134,24 +157,30 @@ export default function OnboardingPage({ onComplete }) {
 
   const isNicknameValid = nickname.trim().length >= 1 && nickname.trim().length <= 8;
 
+  const getDueDate = () => {
+    if (duration === '기타') return customDuration.slice(0, 10);
+    return addMonthsFromToday(durationMonths[duration]);
+  };
+
   const handleNext = async () => {
     if (step === 0 && !isNicknameValid) return;
     
     if (step >= 6) {
+      const dueDate = getDueDate();
+      if (!dueDate || dueDate < formatLocalDate(new Date())) {
+        alert('마감 날짜는 오늘 이후로 설정해 주세요.');
+        return;
+      }
+
       try {
         await updateMeMutation.mutateAsync({ nickname: nickname.trim(), totalAsset });
-        
-        // Calculate a dummy startDate and dueDate based on duration for API requirements.
-        // The exact date logic isn't fully defined, so we just pass standard strings or assume backend allows omitting.
-        // Actually, API CONTRACT says: name, targetAmount(>0) 필수.
-        // isMain: true면 기존 대표 목표를 서버가 같은 트랜잭션에서 해제
+
         await createGoalMutation.mutateAsync({
           name: goal,
           targetAmount: amount,
           currentAmount: current,
+          dueDate,
           isMain: true,
-          // The backend API might accept a string like '2026-10-31' for dueDate, 
-          // but we will just pass what's required based on the API contract.
         });
 
         await completeOnboardingMutation.mutateAsync(totalAsset);
@@ -245,24 +274,10 @@ export default function OnboardingPage({ onComplete }) {
                 </Choice>
               ))}
               {duration === '기타' && (
-                <input
-                  type="text"
-                  placeholder="예) 내년 여름까지, 3년 뒤"
+                <SegmentDatePicker
                   value={customDuration}
-                  onChange={e => setCustomDuration(e.target.value)}
-                  css={{
-                    width: '100%',
-                    border: '1.5px solid var(--ink)',
-                    borderRadius: 12,
-                    background: 'transparent',
-                    padding: 16,
-                    marginTop: 12,
-                    fontSize: 15,
-                    color: 'var(--text)',
-                    outline: 'none',
-                    fontWeight: 600
-                  }}
-                  autoFocus
+                  onChange={setCustomDuration}
+                  disabled={isPending}
                 />
               )}
             </div>
@@ -330,7 +345,7 @@ export default function OnboardingPage({ onComplete }) {
               {[
                 ['닉네임', nickname],
                 ['목표', goal],
-                ['기간', duration === '기타' ? (customDuration || '설정안함') : duration],
+                ['기간', duration === '기타' ? (customDuration.slice(0, 10) || '설정안함') : duration],
                 ['목표 금액', money(amount)],
                 ['목표에 모은 돈', money(current)],
                 ['남은 금액', money(amount - current)],
