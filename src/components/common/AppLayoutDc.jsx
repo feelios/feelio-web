@@ -62,6 +62,11 @@ const Content = styled.div`
   overflow-y: auto;
   overflow-x: hidden;
 
+  ${({ hideScrollbar }) => hideScrollbar ? `
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  ` : ''}
+
   @media (max-width: 820px) {
     scrollbar-width: none;
     &::-webkit-scrollbar { display: none; }
@@ -199,7 +204,7 @@ export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, 
             </MobileProfile>
           </TopRight>
         </Top>
-        <Content>{children}</Content>
+        <Content hideScrollbar={route === 'transactions' || route === 'analysis'}>{children}</Content>
       </Main>
       </Frame>
       <BottomNav route={route} onRoute={onRoute} />
