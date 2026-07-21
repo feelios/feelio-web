@@ -154,7 +154,7 @@ export default function OnboardingPage({ onComplete }) {
           // but we will just pass what's required based on the API contract.
         });
 
-        await completeOnboardingMutation.mutateAsync();
+        await completeOnboardingMutation.mutateAsync(totalAsset);
         
         onComplete();
       } catch (err) {

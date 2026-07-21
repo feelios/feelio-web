@@ -11,8 +11,8 @@ export const usersAPI = {
     return response.data.data;
   },
 
-  completeOnboarding: async () => {
-    const response = await client.patch('/users/me/onboarding');
+  completeOnboarding: async (totalAsset) => {
+    const response = await client.patch('/users/me/onboarding', { totalAsset });
     return response.data.data;
   },
 
