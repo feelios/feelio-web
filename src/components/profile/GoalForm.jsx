@@ -30,6 +30,54 @@ const Field = styled.input`
   }
 `;
 
+const ToggleRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 0 16px;
+`;
+
+const ToggleText = styled.div`
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+`;
+
+const ToggleDesc = styled.div`
+  font-size: 12px;
+  color: var(--sub);
+  margin-top: 2px;
+`;
+
+const Switch = styled.button`
+  flex: 0 0 auto;
+  width: 46px;
+  height: 27px;
+  border: 0;
+  border-radius: 99px;
+  background: ${({ active }) => (active ? 'var(--ink)' : 'var(--line)')};
+  position: relative;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  span {
+    position: absolute;
+    top: 3px;
+    left: ${({ active }) => (active ? '22px' : '3px')};
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: left 0.2s;
+  }
+`;
+
 const PrimaryButton = styled.button`
   width: 100%;
   margin-top: auto;
@@ -44,21 +92,29 @@ const PrimaryButton = styled.button`
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 `;
 
-export default function GoalForm({ goalForm, setGoalForm, onSubmit, disabled }) {
+// 입력값을 3자리 콤마 문자열로 포맷 (숫자/문자열 모두 허용)
+const formatComma = (value) => {
+  if (value === '' || value == null) return '';
+  const digits = String(value).replace(/[^0-9]/g, '');
+  return digits === '' ? '' : Number(digits).toLocaleString('ko-KR');
+};
+
+export default function GoalForm({ goalForm, setGoalForm, onSubmit, disabled, mainLocked = false }) {
   const updateField = (key) => (event) => {
-    if (key === 'target' || key === 'current') {
-      const rawValue = event.target.value;
-      if (rawValue === '') {
-        setGoalForm((prev) => ({ ...prev, [key]: '' }));
-      } else {
-        const parsed = Number(rawValue);
-        if (!isNaN(parsed) && parsed >= 0) {
-          setGoalForm((prev) => ({ ...prev, [key]: parsed }));
-        }
-      }
-    } else {
-      setGoalForm((prev) => ({ ...prev, [key]: event.target.value }));
-    }
+    setGoalForm((prev) => ({ ...prev, [key]: event.target.value }));
+  };
+
+  // 금액 필드: 콤마 등 숫자 외 문자를 제거하고 순수 숫자 문자열로 저장
+  const updateAmount = (key) => (event) => {
+    const digits = event.target.value.replace(/[^0-9]/g, '');
+    setGoalForm((prev) => ({ ...prev, [key]: digits }));
+  };
+
+  const isMain = mainLocked ? true : Boolean(goalForm.isMain);
+
+  const toggleMain = () => {
+    if (mainLocked) return;
+    setGoalForm((prev) => ({ ...prev, isMain: !prev.isMain }));
   };
 
   return (
@@ -71,17 +127,19 @@ export default function GoalForm({ goalForm, setGoalForm, onSubmit, disabled }) 
       />
       <FieldLabel>목표 금액 (원)</FieldLabel>
       <Field
-        type="number"
-        placeholder="예: 3000000"
-        value={goalForm.target === '' || goalForm.target == null ? '' : goalForm.target}
-        onChange={updateField('target')}
+        type="text"
+        inputMode="numeric"
+        placeholder="예: 3,000,000"
+        value={formatComma(goalForm.target)}
+        onChange={updateAmount('target')}
       />
       <FieldLabel>현재 모은 돈 (원)</FieldLabel>
       <Field
-        type="number"
-        placeholder="예: 500000"
-        value={goalForm.current === '' || goalForm.current == null ? '' : goalForm.current}
-        onChange={updateField('current')}
+        type="text"
+        inputMode="numeric"
+        placeholder="예: 500,000"
+        value={formatComma(goalForm.current)}
+        onChange={updateAmount('current')}
       />
       <FieldLabel>마감 날짜</FieldLabel>
       <SegmentDatePicker
@@ -91,6 +149,17 @@ export default function GoalForm({ goalForm, setGoalForm, onSubmit, disabled }) 
         }}
         disabled={disabled}
       />
+      <ToggleRow>
+        <div>
+          <ToggleText>대표 목표로 설정하기</ToggleText>
+          <ToggleDesc>
+            {mainLocked ? '지금은 유일한 목표라 자동으로 대표 목표예요' : '홈·평행우주에 대표 목표로 표시돼요'}
+          </ToggleDesc>
+        </div>
+        <Switch type="button" active={isMain} disabled={disabled || mainLocked} onClick={toggleMain}>
+          <span />
+        </Switch>
+      </ToggleRow>
       <PrimaryButton type="button" disabled={disabled} onClick={onSubmit}>
         저장
       </PrimaryButton>

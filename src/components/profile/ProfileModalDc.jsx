@@ -346,7 +346,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
   const [view, setView] = useState('profile');
   const [nickname, setNickname] = useState(cleanName(state.user.nickname));
   const [editingGoalId, setEditingGoalId] = useState(null);
-  const [goalForm, setGoalForm] = useState({ name: '', target: '', current: '', period: '' });
+  const [goalForm, setGoalForm] = useState({ name: '', target: '', current: '', period: '', isMain: false });
   const [noti, setNoti] = useState({ record: true, weekly: true, goal: false });
   // 1. 회원 탈퇴 및 설정 변경 관련 (위쪽 기능 유지)
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -417,39 +417,32 @@ export default function ProfileModalDc({ state, actions, onClose }) {
 
     try {
       if (editingGoalId === null) {
-        await createGoalMutation.mutateAsync(toGoalPayload(goalForm, goals.length === 0));
+        // 첫 목표는 무조건 대표, 이후에는 토글 값에 따른다
+        const isMain = goals.length === 0 || Boolean(goalForm.isMain);
+        await createGoalMutation.mutateAsync(toGoalPayload(goalForm, isMain));
       } else {
         const editingGoal = goals.find(item => item.goalId === editingGoalId);
-        await updateGoalMutation.mutateAsync({
-          goalId: editingGoalId,
-          data: toGoalPayload(goalForm, editingGoal?.isMain ?? false),
-        });
+        const wasMain = editingGoal?.isMain ?? false;
+        // 유일한 목표거나 이미 대표면 대표 상태를 유지한다
+        const willBeMain = goals.length <= 1 || wasMain || Boolean(goalForm.isMain);
+
+        if (willBeMain && !wasMain) {
+          // 새로 대표로 승격 → 나머지 대표 해제까지 낙관적으로 반영
+          await toggleMainGoalMutation.mutateAsync({
+            goalId: editingGoalId,
+            data: toGoalPayload(goalForm, true),
+          });
+        } else {
+          await updateGoalMutation.mutateAsync({
+            goalId: editingGoalId,
+            data: toGoalPayload(goalForm, willBeMain),
+          });
+        }
       }
       actions.showToast(editingGoalId === null ? '목표가 추가되었어요' : '목표가 수정되었어요');
       setView('goals');
     } catch {
       actions.showToast('목표 저장에 실패했어요. 다시 시도해 주세요.');
-    }
-  }
-
-  async function toggleMainGoal(item) {
-    if (item.isMain) return;
-
-    try {
-      await toggleMainGoalMutation.mutateAsync({
-        goalId: item.goalId,
-        data: {
-          name: item.name,
-          targetAmount: item.targetAmount,
-          initialAmount: item.initialAmount || 0,
-          startDate: item.startDate,
-          dueDate: item.dueDate,
-          isMain: true,
-        },
-      });
-      actions.showToast('대표 목표로 변경되었어요');
-    } catch {
-      actions.showToast('대표 목표 설정에 실패했어요. 다시 시도해 주세요.');
     }
   }
 
@@ -595,7 +588,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
           <Back title="목표 관리">
             <button type="button" onClick={() => setView('profile')}>‹</button>
             <PillButton type="button" onClick={() => {
-              setGoalForm({ name: '', target: '', current: '', period: '' });
+              setGoalForm({ name: '', target: '', current: '', period: '', isMain: false });
               setEditingGoalId(null);
               setView('goalEdit');
             }}>+ 추가</PillButton>
@@ -607,17 +600,11 @@ export default function ProfileModalDc({ state, actions, onClose }) {
               const pct = percent(item.currentAmount, item.targetAmount);
               const achieved = pct >= 100;
               const expired = isPastGoal(item.dueDate) && !achieved;
-              const processed = achieved || expired;
               return (
                 <GoalCard
                   key={item.goalId}
                   achieved={achieved}
                   expired={expired}
-                  onClick={() => { if (!processed) toggleMainGoal(item); }}
-                  css={{
-                    cursor: (item.isMain || processed || isGoalMutationPending) ? 'default' : 'pointer',
-                    '&:hover': processed ? undefined : { background: 'rgba(255,255,255,0.09)' },
-                  }}
                 >
                   <div>
                     <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -635,9 +622,9 @@ export default function ProfileModalDc({ state, actions, onClose }) {
                     </div>
                     {item.dueDate && <div css={{ fontSize: 12, color: 'var(--sub)', marginTop: 6, fontWeight: 700 }}>마감 날짜: {item.dueDate}</div>}
                   </div>
-                  <div css={{ display: 'flex', gap: 8, marginTop: 12 }} onClick={e => e.stopPropagation()}>
+                  <div css={{ display: 'flex', gap: 8, marginTop: 12 }}>
                     <SmallAction type="button" onClick={() => {
-                      setGoalForm({ name: item.name, target: item.targetAmount, current: item.currentAmount, period: item.dueDate || '' });
+                      setGoalForm({ name: item.name, target: item.targetAmount, current: item.currentAmount, period: item.dueDate || '', isMain: item.isMain ?? false });
                       setEditingGoalId(item.goalId);
                       setView('goalEdit');
                     }}>수정</SmallAction>
@@ -660,6 +647,11 @@ export default function ProfileModalDc({ state, actions, onClose }) {
             setGoalForm={setGoalForm}
             onSubmit={saveGoal}
             disabled={isGoalMutationPending}
+            mainLocked={
+              editingGoalId === null
+                ? goals.length === 0
+                : goals.length <= 1 || (goals.find(item => item.goalId === editingGoalId)?.isMain ?? false)
+            }
           />
         </Screen>
       )}
