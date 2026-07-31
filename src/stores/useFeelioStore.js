@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authAPI } from '../api/auth.js';
 import { goalsAPI } from '../api/goals.js'; // fix 브랜치 반영
+import { BASE_URL } from '../api/client.js';
 
 const initialState = {
   isLoggedIn: false,
@@ -15,7 +16,7 @@ const initialState = {
 };
 
 function normalizeMode(mode) {
-  return mode === 'dark' ? 'dark' : 'light';
+  return (mode && mode.toLowerCase() === 'dark') ? 'dark' : 'light';
 }
 
 const useStore = create(
@@ -25,7 +26,7 @@ const useStore = create(
       actions: {
         login: (provider) => {
           const providerId = provider.toLowerCase();
-          window.location.href = `http://localhost:8080/oauth2/authorization/${providerId}`;
+          window.location.href = `${BASE_URL}/oauth2/authorization/${providerId}`;
         },
         fetchMe: async () => {
           try {

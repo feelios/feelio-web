@@ -5,6 +5,7 @@ import { driftA, driftB } from '../../styles/animations.js';
 import { SidebarDesign } from './SidebarDesign.jsx';
 import { BottomNav } from './BottomNav.jsx';
 import { getAurora } from '../../data/aurorasDc.js';
+import { useUpdateSettingsMutation } from '../../hooks/queries/useUsers.js';
 
 const Shell = styled.div`
   --bg-1: ${({ mode }) => mode === 'dark' ? '#12141e' : '#f6f2eb'};
@@ -175,6 +176,7 @@ export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, 
   }, []);
 
   const [erroredAvatarUrl, setErroredAvatarUrl] = useState(null);
+  const updateSettingsMutation = useUpdateSettingsMutation();
 
   return (
     <Shell mode={state.mode}>
@@ -191,7 +193,22 @@ export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, 
             <h1>{title}</h1>
           </div>
           <TopRight>
-            <DarkModeToggle type="button" onClick={actions.toggleMode} aria-label="화면 모드 전환">
+            <DarkModeToggle type="button" onClick={async () => {
+              const nextMode = state.mode === 'dark' ? 'light' : 'dark';
+              actions.syncSettings({ mode: nextMode, aurora: state.aurora });
+              try {
+                const updated = await updateSettingsMutation.mutateAsync({
+                  themeMode: nextMode.toUpperCase(),
+                  auroraTheme: state.aurora
+                });
+                actions.syncSettings({
+                  mode: updated?.themeMode || nextMode,
+                  aurora: updated?.auroraTheme || state.aurora
+                });
+              } catch (e) {
+                console.error('Failed to update theme settings', e);
+              }
+            }} aria-label="화면 모드 전환">
               {state.mode === 'dark' ? '☀' : '☾'}
             </DarkModeToggle>
             <MobileProfile
