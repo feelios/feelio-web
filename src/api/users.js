@@ -21,6 +21,11 @@ export const usersAPI = {
     return response.data.data;
   },
 
+  updateFcmToken: async (fcmToken) => {
+    const response = await client.post('/users/me/fcm-token', { fcmToken });
+    return response.data.data;
+  },
+
   withdraw: async (data = {}) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
     const response = await fetch(`${baseUrl}/users/me`, {

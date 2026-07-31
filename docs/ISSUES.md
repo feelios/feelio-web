@@ -52,14 +52,12 @@
 | [ ] | - | F8-5 | 목표 '모은 돈' 입력 버그 수정 | `fix/goal-amount-binding` | - | Component | - | 신규 | 목표 금액 입력 시 숫자 파싱 오류 및 NaN 방어 로직 추가 |
 | [ ] | - | F8-6 | 거래 감정 Select 오류 수정 및 UI 확대 | `fix/transaction-emotion-select` | - | Component | - | 신규 | 감정 초기값 바인딩 오류 해결 및 카테고리/감정 Select 컴포넌트 터치 영역(패딩) 확대 (F8-2 연계) |
 | [ ] | - | F8-7 | 캘린더 미래 날짜 선택 제한(Disabled) | `fix/calendar-future-disable` | - | Component | - | 신규 | 지출/수입 기록 캘린더 및 거래 수정 모달 내 캘린더에서 오늘 기준 '미래 날짜'는 클릭 불가능하도록(disabled) 방어 처리 |
-
 | [x] | #121 | F8-8 | 거래 수정 캘린더 레이아웃 및 분 단위 추가 | `fix/transaction-edit-calendar` | - | Component | - | 완료 | 거래 수정 모달 내 캘린더 짤림 현상(CSS) 해결 및 기존 시간 선택 시 분(minute) 단위 설정 추가 |
 | [ ] | #125 | F8-10 | 온보딩 '나만의 목표' 직접 입력 UI | `feat/onboarding-custom-goal` | - | Component | - | 신규 | 온보딩(2/6)에서 '나만의 목표' 클릭 시 텍스트 Input으로 전환되어 사용자가 직접 목표명을 작성하도록 구현 |
 | [ ] | #126 | F8-11 | 홈 화면 UI 버그 종합 수정(말랑이/달력) | `fix/home-ui-bugs` | - | Component | - | 신규 | 홈 말랑이 위로 스와이프 시 렌더링 버그 수정, 캘린더 우측 끝 짤림(레이아웃) 수정, 캘린더 선택 날짜(7월 1일 고정)를 오늘 날짜로 동적 수정 |
 | [ ] | - | F8-12 | 온보딩 완료 요청의 totalAsset 누락 수정 | `fix/onboarding-completion-request` | §4·§7 | Page·Hook·api·docs | `['users','me']` | 신규 | 온보딩 완료 요청에 `{totalAsset}` 전달 → 신규·재가입 사용자 `onboardingDone:true` 반영 및 홈 진입 → API 계약 문서 동기화, lint·build 통과 |
 | [ ] | - | F8-13 | 온보딩 목표 생성 요청의 마감일 누락 수정 | `fix/onboarding-goal-due-date` | §7 | Page·Component·docs | `['goals']`·`['universe']` | 신규 | 온보딩 기간을 `YYYY-MM-DD` 형식의 `dueDate`로 변환해 목표 생성 요청에 전달 → 기타 선택 시 공통 `SegmentDatePicker` 재사용 → 과거 날짜 제출 방지 및 API 계약 문서 동기화 |
 | [x] | - | F8-14 | 전역 하드코딩 색상 테마 스크립트 전환 | `fix/hardcoded-colors` | - | Page·Component | - | 완료 | 전역에 남은/하드코딩된 HEX 컬러를 var(--bg-1), var(--text) 등 CSS 테마 변수로 치환 |
-
 | [ ] | - | F9-1 | 소비 코어 감정 8종 노출 | `feat/core-emotion-display` | - | Component | - | 신규 | 데이터 0건인 감정도 누락 없이 8개 렌더링 처리 |
 | [ ] | - | F9-2 | 감정 분석 퍼센트 로직 변경 | `feat/analysis-percentage-logic` | - | Utils·Component | - | 신규 | 분석 퍼센트를 금액 기준에서 횟수 기준으로 변경 |
 | [ ] | - | F9-3 | 지출 추이 카드 클릭 이동 | `feat/monthly-trend-navigation` | - | Component | - | 신규 | 월별 바/포인트 클릭 시 해당 달 상세 뷰로 이동 |
@@ -81,6 +79,15 @@
 | [ ] | - | F12-9 | 거래내역 필터 내 월/일 개별 선택 기능 | feat/tx-list-month-day-filter | - | Page·Component | - | 신규 | 필터에서 월과 일을 각각 선택하는 UI 구현. (⚠️ 주의: 작업 전 반드시 담당 팀원에게 디자인 시안을 문의 후 작업할 것) |
 | [ ] | - | F12-10 | 대표 목표 설정 UX 변경 및 금액 입력창 고도화 | feat/goal-main-toggle | - | Component | ['goals'] | 신규 | 목표 카드 더블클릭 UX 제거 및 폼 내 토글 추가. 목표 금액 입력 시 3자리 콤마(,) 포맷팅 적용 및 기본 숫자 스피너(위아래 버튼) 제거 |
 | [ ] | - | F12-11 | 평행우주 REC 애니메이션 원복 | fix/universe-rec-animation | - | Component | - | 신규 | 평행우주 화면의 REC 요소 애니메이션을 원래 상태로 되돌리기 |
+| [ ] | - | F13-1 | 결제 퀵태그 FCM 웹 푸시 구현 | feat/fcm-web-push | - | Component·SW | - | 신규 | firebase-messaging-sw.js에서 data-only 알림 처리 및 /quick-tag 딥링크 연결 |
+| [ ] | - | F13-2 | 거래내역 수정 차감(Merge) UI/State 완전 삭제 | feat/transaction-edit-remove-merge | - | Component | - | 신규 | 거래내역 수정 모달 내 정산받은 금액(차감) 입력 UI 및 관련 상태값 전면 삭제 |
+| [ ] | - | F13-3 | 모바일 AI 분석 카드 세로 정렬 및 플립 반응형 | feat/ai-analysis-mobile-layout | - | Component | - | 신규 | 모바일 뷰에서 내부 3개 카드를 가로폭에 꽉 차게 세로 정렬하고, 플립(Flip) 뒷면의 AI 멘트 길이에 맞춰 글자 크기 조율 및 박스 넘침 방지 처리 |
+| [ ] | - | F13-4 | 모바일 테마 토글 DB 동기화 버그 수정 | fix/mobile-theme-sync | - | Component | - | 신규 | 모바일 환경에서 테마(다크/라이트) 변경 시 DB 저장 API 호출이 누락되어 새로고침 시 초기화되는 버그 수정 |
+| [ ] | - | F13-5 | AI 분석 대시보드 UI 골격 및 위험도 렌더링 | feat/ai-dashboard-skeleton | - | Component | - | 신규 | API 연동 및 응답의 소비위험도(Red/Yellow/Green) 기반 컨테이너 색상/아이콘 동적 렌더링 구현 (AI 데이터는 Mock 처리) |
+| [ ] | - | F13-6 | 팩트 리포트 & 맞춤 챌린지 실데이터 바인딩 | feat/ai-dashboard-fact-challenge | - | Component | - | 신규 | 팩트 폭격기 텍스트 렌더링 및 맞춤 챌린지 칩(Chip) UI에 실제 AI 응답 데이터 바인딩 |
+| [ ] | - | F13-7 | 감정소비 분석 실데이터 바인딩 및 예외 처리 | feat/ai-dashboard-emotion | - | Component | - | 신규 | 3단계 감정 분석 텍스트 바인딩 적용 및 AI 응답 지연/에러 시 화면 깨짐 방지용 Fallback(빈 박스/로딩) 처리 |
+
+
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.
 > **F4-6**: ISSUES.md에만 있고 GitHub 미등록 (백엔드 §9 analysis 선행 필요) → 착수 전 이슈 등록 필요.

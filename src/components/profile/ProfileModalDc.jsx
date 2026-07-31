@@ -6,6 +6,8 @@ import { EmotionBlob } from '../common/EmotionBlob.jsx';
 import { EmptyEmotionBlob } from '../common/EmptyEmotionBlob.jsx';
 import { auroras } from '../../data/aurorasDc.js';
 import { money, percent } from '../../utils/format.js';
+import { requestForToken } from '../../utils/firebase.js';
+import { usersAPI } from '../../api/users.js';
 // 1. 사용자 설정 및 회원 탈퇴 관련 쿼리/뮤테이션 (위쪽 브랜치 변경 사항)
 import { useUpdateSettingsMutation, useWithdrawMutation } from '../../hooks/queries/useUsers.js';
 
@@ -521,6 +523,25 @@ export default function ProfileModalDc({ state, actions, onClose }) {
     }
   }
 
+  async function handleNotiToggle(key) {
+    const isTurningOn = !noti[key];
+    setNoti(prev => ({ ...prev, [key]: isTurningOn }));
+    
+    if (isTurningOn) {
+      try {
+        const token = await requestForToken();
+        if (token) {
+          await usersAPI.updateFcmToken(token);
+        } else {
+          setNoti(prev => ({ ...prev, [key]: false }));
+          actions.showToast('알림 권한을 허용해 주세요.');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }
+
   return (
     <Modal
       onClose={onClose}
@@ -666,7 +687,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
           ].map(([key, name, desc]) => (
             <ToggleRow key={key}>
               <div><div css={{ fontSize: 14.5, fontWeight: 700 }}>{name}</div><div css={{ fontSize: 12, color: 'var(--sub)', marginTop: 2 }}>{desc}</div></div>
-              <Switch type="button" active={noti[key]} onClick={() => setNoti(prev => ({ ...prev, [key]: !prev[key] }))}><span /></Switch>
+              <Switch type="button" active={noti[key]} onClick={() => handleNotiToggle(key)}><span /></Switch>
             </ToggleRow>
           ))}
           <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px 0' }}>
