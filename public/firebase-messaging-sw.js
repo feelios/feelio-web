@@ -22,7 +22,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.data?.title || 'Feelio 알림';
   const notificationOptions = {
     body: payload.data?.body || '새로운 알림이 도착했습니다.',
-    icon: '/favicon.svg',
+    icon: '/push-icon.jpg',
     data: {
       url: payload.data?.url || '/record'
     }

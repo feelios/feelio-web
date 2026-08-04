@@ -39,9 +39,11 @@ export const requestForToken = async () => {
     const permission = await Notification.requestPermission();
     console.warn('[배포 디버그] 권한 요청 결과:', permission);
     
-    if (permission === 'granted') {
+      if (permission === 'granted') {
       console.warn('[배포 디버그] 권한 granted 됨. getToken 시도...');
-      const currentToken = await getToken(messaging);
+      const currentToken = await getToken(messaging, {
+        vapidKey: 'BL4bUHfyu8jpm5UPuOeOLHfnb-r0yFhtwy0O3Zaxo_zsGfa5g3MX2pk6sQwR5ePMNsz0nHNd3Z6qVq-QU-TS-w8'
+      });
       
       if (currentToken) {
         console.warn('✅ [배포 디버그] FCM 토큰 발급 완벽 성공:', currentToken);
