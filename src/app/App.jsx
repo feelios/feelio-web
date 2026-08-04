@@ -85,6 +85,23 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 유저가 로그인 상태일 때 FCM 토큰을 발급받아 DB에 저장
+  useEffect(() => {
+    if (state.isLoggedIn) {
+      import('../utils/firebase.js').then(({ requestForToken }) => {
+        requestForToken().then(token => {
+          if (token) {
+            import('../api/users.js').then(({ usersAPI }) => {
+              usersAPI.updateFcmToken(token)
+                .then(() => console.log('✅ [App] FCM Token successfully saved to DB'))
+                .catch(e => console.error('❌ [App] Failed to save FCM Token to DB', e));
+            });
+          }
+        });
+      });
+    }
+  }, [state.isLoggedIn]);
+
   if (isInitializing) {
     return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
   }
