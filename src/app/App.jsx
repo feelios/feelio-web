@@ -51,6 +51,14 @@ const Orb = styled.div`
   filter: blur(80px);
   opacity: ${({ mode }) => mode === 'dark' ? .46 : .62};
   mix-blend-mode: ${({ mode }) => mode === 'dark' ? 'screen' : 'multiply'};
+
+  /* 좁은 화면에서는 520·600·420px 원 세 개가 거의 전부 겹쳐 한 덩어리로 뭉갠다.
+     크기를 줄여 겹치는 면적을 떼어놓고, multiply 로 겹친 부분이 탁해지지 않게 농도도 낮춘다. */
+  @media (max-width: 900px) {
+    transform: scale(.58);
+    filter: blur(52px);
+    opacity: ${({ mode }) => mode === 'dark' ? .32 : .38};
+  }
 `;
 
 const titles = {
