@@ -23,6 +23,7 @@ export const requestForToken = async () => {
     if (permission === 'granted') {
       const currentToken = await getToken(messaging);
       if (currentToken) {
+        console.log('✅ [FCM 테스트용 토큰 발급 완료]:', currentToken);
         return currentToken;
       } else {
         console.warn('No registration token available. Request permission to generate one.');
