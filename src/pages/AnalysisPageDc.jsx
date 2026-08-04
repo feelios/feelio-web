@@ -497,14 +497,24 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
           <div css={{
             display: 'flex',
             gap: 12,
-            flex: 1
+            flex: 1,
+            '@media (max-width: 820px)': {
+              flexDirection: 'column',
+              width: '100%'
+            }
           }}>
             {emotionCards.map(insight => {
                const isFlipped = flippedCards[insight.emotion];
                return (
                  <div
                    key={insight.emotion}
-                   css={{ flex: 1, perspective: 1200, minHeight: 180, cursor: 'pointer' }}
+                   css={{ 
+                     flex: 1, 
+                     perspective: 1200, 
+                     minHeight: 170, 
+                     cursor: 'pointer',
+                     '@media (max-width: 820px)': { width: '100%', minHeight: 150 }
+                   }}
                    onClick={() => toggleFlip(insight.emotion)}
                  >
                    <div css={{
@@ -520,11 +530,29 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        background: 'var(--card)',
                        display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 3,
                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-                       '@media (max-width: 820px)': { padding: '16px 12px' }
+                       '@media (max-width: 820px)': { 
+                         display: 'grid',
+                         gridTemplateColumns: '1fr auto',
+                         gridTemplateAreas: '"percent emotion" "percent amount"',
+                         alignItems: 'center',
+                         padding: '16px 20px',
+                         gap: 2,
+                         border: `1px solid ${insight.color + '60'}`,
+                         background: `linear-gradient(135deg, var(--card) 40%, ${insight.color + '1A'})`
+                       }
                      }}>
-                       <span css={{ fontSize: 'clamp(13px, 3vw, 16px)', color: 'var(--sub)', fontWeight: 800 }}>{insight.emotion}</span>
-                       <b css={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 5.5vw, 36px)', color: 'var(--text)', lineHeight: 1 }}>{insight.percent}%</b>
-                       <span css={{ fontSize: 'clamp(11px, 2.5vw, 14px)', color: insight.color, fontWeight: 900 }}>{insight.amount}</span>
+                       <span css={{ 
+                         fontSize: 'clamp(13px, 3vw, 16px)', color: 'var(--sub)', fontWeight: 800,
+                         '@media (max-width: 820px)': { gridArea: 'emotion', justifySelf: 'end', color: 'var(--text)', marginBottom: 2, fontSize: 18 }
+                       }}>{insight.emotion}</span>
+                       <b css={{ 
+                         fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 5.5vw, 36px)', color: 'var(--text)', lineHeight: 1,
+                         '@media (max-width: 820px)': { gridArea: 'percent', fontSize: 'clamp(36px, 8vw, 44px)', color: 'var(--text)' }
+                       }}>{insight.percent}%</b>
+                       <span css={{ 
+                         fontSize: 'clamp(11px, 2.5vw, 14px)', color: insight.color, fontWeight: 900,
+                         '@media (max-width: 820px)': { gridArea: 'amount', justifySelf: 'end', color: insight.color, fontWeight: 900, fontSize: 16 }
+                       }}>{insight.amount}</span>
                      </div>
                      
                      <div css={{
@@ -533,12 +561,19 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        padding: '24px 20px', borderRadius: 16,
                        border: `1.5px solid ${insight.color}`, 
                        background: insight.color + '15',
-                       display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                       display: 'flex', flexDirection: 'column', 
+                       justifyContent: 'center',
                        boxShadow: `0 8px 24px ${insight.color}20`,
-                       '@media (max-width: 820px)': { padding: '16px 10px' }
+                       overflowY: 'auto',
+                       scrollbarWidth: 'none',
+                       '&::-webkit-scrollbar': { display: 'none' },
+                       '@media (max-width: 820px)': { 
+                         padding: '16px 14px',
+                         justifyContent: 'flex-start'
+                       }
                      }}>
-                       <div css={{ fontSize: 'clamp(12px, 3.2vw, 16px)', fontWeight: 900, marginBottom: 'clamp(6px, 2vw, 12px)', color: 'var(--text)', wordBreak: 'keep-all', lineHeight: 1.3 }}>{insight.title}</div>
-                       <div css={{ fontSize: 'clamp(10px, 2.5vw, 13px)', color: 'var(--sub)', lineHeight: 1.45, wordBreak: 'keep-all' }}>{insight.desc}</div>
+                       <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', fontWeight: 900, marginBottom: 'clamp(6px, 2vw, 10px)', color: 'var(--text)', wordBreak: 'keep-all', lineHeight: 1.35 }}>{insight.title}</div>
+                       <div css={{ fontSize: 'clamp(12px, 3.2vw, 14px)', color: 'var(--text)', opacity: 0.9, lineHeight: 1.5, wordBreak: 'keep-all' }}>{insight.desc}</div>
                      </div>
                    </div>
                  </div>
