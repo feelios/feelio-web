@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { getAnalytics } from "firebase/analytics";
+import useStore from '../stores/useFeelioStore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAg9_490y4fCDpicBo9OiQLCbOUpFJQcYQ",
@@ -17,6 +18,14 @@ export const app = initializeApp(firebaseConfig);
 export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
 export const messaging = typeof window !== "undefined" ? getMessaging(app) : null;
 console.warn('[배포 디버그] Firebase 초기화 완료. messaging 객체:', !!messaging);
+
+// 포그라운드(화면을 보고 있을 때) 알림 수신 대기
+if (messaging) {
+  onMessage(messaging, (payload) => {
+    console.log("🔥 [포그라운드 알림 수신]: ", payload);
+    useStore.getState().actions.showToastNotification(payload.data || payload.notification);
+  });
+}
 
 export const requestForToken = async () => {
   console.warn('[배포 디버그] requestForToken 함수 호출됨!');
