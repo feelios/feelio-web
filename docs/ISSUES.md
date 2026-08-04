@@ -86,7 +86,7 @@
 | [ ] | - | F13-5 | AI 분석 대시보드 UI 골격 및 위험도 렌더링 | feat/ai-dashboard-skeleton | - | Component | - | 신규 | API 연동 및 응답의 소비위험도(Red/Yellow/Green) 기반 컨테이너 색상/아이콘 동적 렌더링 구현 (AI 데이터는 Mock 처리) |
 | [ ] | - | F13-6 | 팩트 리포트 & 맞춤 챌린지 실데이터 바인딩 | feat/ai-dashboard-fact-challenge | - | Component | - | 신규 | 팩트 폭격기 텍스트 렌더링 및 맞춤 챌린지 칩(Chip) UI에 실제 AI 응답 데이터 바인딩 |
 | [ ] | - | F13-7 | 감정소비 분석 실데이터 바인딩 및 예외 처리 | feat/ai-dashboard-emotion | - | Component | - | 신규 | 3단계 감정 분석 텍스트 바인딩 적용 및 AI 응답 지연/에러 시 화면 깨짐 방지용 Fallback(빈 박스/로딩) 처리 |
-
+| [x] | - | A1-1 | 감정소비 분석 AI 프롬프트 간소화 (Light Empathy) | main | - | 백엔드 | - | 완료 | 백엔드 GptInsightCardGenerator.java 프롬프트를 50자 이내의 가벼운 공감 톤으로 대폭 축소 및 푸시 완료 |
 
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.
