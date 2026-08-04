@@ -1,128 +1,133 @@
-﻿## ?꾨줎?몄뿏???묒뾽 ?듭떖 ?먯튃 (Core Directive)
-**"?꾩옱 ?뱀쓽 ?뺥깭? ?붿옄??UI/UX)? ?덈? ?쇱넀?섏? ?딅뒗??"**
-紐⑤뱺 ?꾨줎?몄뿏???묒뾽? 湲곗〈 酉?View) ?쒗뵆由욧낵 ?ㅽ??쇰쭅??100% ?좎????곹깭?먯꽌 **API ?듭떊, ?곗씠??諛붿씤?? 鍮꾩쫰?덉뒪 濡쒖쭅(?ㅻ쪟 ?섏젙) ?곌껐**?먮쭔 援?븳?⑸땲?? ?먯씠?꾪듃媛 ?꾩쓽濡??붾㈃ ?붿옄?몄씠???덉씠?꾩썐???섏젙?섎뒗 寃껋쓣 ?꾧꺽??湲덉??⑸땲??
+## 프론트엔드 작업 핵심 원칙 (Core Directive)
+**"현재 웹의 형태와 디자인(UI/UX)은 절대 훼손하지 않는다."**
+모든 프론트엔드 작업은 기존 뷰(View) 템플릿과 스타일링을 100% 유지한 상태에서 **API 통신, 데이터 바인딩, 비즈니스 로직(오류 수정) 연결**에만 국한됩니다. 에이전트가 임의로 화면 디자인이나 레이아웃을 수정하는 것을 엄격히 금지합니다.
 
-# Feelio ?꾨줎?몄뿏??湲곕뒫 ?댁뒋 ??(SSOT)
+# Feelio 프론트엔드 기능 이슈 표 (SSOT)
 
-> **Claude / Gemini ?대뼡 ?꾧뎄濡??묒뾽?섎뱺 ???쒕? 怨듯넻 湲곗??쇰줈 ?쇰뒗??**
-> ?댁뒋 肄붾뱶(?? F1-1)濡?釉뚮옖移샕룰퀎??짠)쨌怨꾩링쨌罹먯떆?ㅒ룹긽?쑣룹셿猷뚭린以???뺤젙?쒕떎.
-> 洹쒖튃 ?꾩껜??[AGENTS.md](../AGENTS.md), API 怨꾩빟? [docs/API-CONTRACT.md](./API-CONTRACT.md)媛 SSOT.
-> 肄붾뱶 泥닿퀎: 
-> - F1=湲곕컲 ?덉젙?? F2=?⑤낫?? F3=?듭떖 嫄곕옒, F4=紐⑺몴쨌遺꾩꽍쨌?ㅼ젙, F5=UX 怨좊룄?? F6=蹂댁븞 諛??꾪궎?띿쿂 由ы뙥?좊쭅,
-> - **F7=?숈쟻 ?덉궛 諛??먯궛 愿由?怨좊룄??*: 異붽? 媛쒖꽑 ??珥앹옄???ㅼ??댄봽 UI 諛?嫄곕옒 ?댁뿭 ?섎룞 ?湲?紐⑺몴 ?곕룞) 泥섎━ (留덉씪?ㅽ넠 7)
-> - **F8=?ロ뵿??諛?UX ?대━??(Quick Wins)**: ?ъ슜??寃쏀뿕??吏곸젒?곸쑝濡??곹뼢??誘몄튂??踰꾧렇瑜??닿껐?섍퀬 媛꾨떒??UI/UX 媛쒖꽑??吏꾪뻾?⑸땲??
-> - **F9=?곗씠???쒓컖??諛???쒕낫??怨좊룄??*: ??쒕낫?쒖? 遺꾩꽍 ?섏씠吏???곗씠???쒖떆 諛⑹떇 諛??ㅻ퉬寃뚯씠??媛쒖꽑
-> - **F10=?몃옖??뀡 愿由?諛?怨좉툒 API ?곕룞**: ?덈줈??API(?ㅼ쨷 ??젣, ?⑦꽩 遺꾩꽍 ?? ?곕룞???듯븳 蹂듭옟??湲곕뒫 援ы쁽
-> - **F11=UI 怨좊룄??*: 湲?섏뒪紐⑦뵾利????꾨━誘몄뾼 ?붿옄??猷??곸슜 諛??붾㈃ 媛??곹깭 ?곕룞 怨좊룄??
-> ?곹깭: ?꾨즺(癒몄??? 쨌 ?덉젙 쨌 ?좉퇋(諛깆뿏??怨꾩빟??留욎떠 ?좉퇋 ?몄꽦, ?덉젙)
+> **Claude / Gemini 어떤 도구로 작업하든 이 표를 공통 기준으로 삼는다.**
+> 이슈 코드(예: F1-1)로 브랜치·계약(§)·계층·캐시키·상태·완료기준을 확정한다.
+> 규칙 전체는 [AGENTS.md](../AGENTS.md), API 계약은 [docs/API-CONTRACT.md](./API-CONTRACT.md)가 SSOT.
+> 코드 체계: 
+> - F1=기반 안정화, F2=온보딩, F3=핵심 거래, F4=목표·분석·설정, F5=UX 고도화, F6=보안 및 아키텍처 리팩토링,
+> - **F7=동적 예산 및 자산 관리 고도화**: 추가 개선 외 총자산 스와이프 UI 및 거래 내역 수동 저금(목표 연동) 처리 (마일스톤 7)
+> - **F8=핫픽스 및 UX 폴리싱 (Quick Wins)**: 사용자 경험에 직접적으로 영향을 미치는 버그를 해결하고 간단한 UI/UX 개선을 진행합니다.
+> - **F9=데이터 시각화 및 대시보드 고도화**: 대시보드와 분석 페이지의 데이터 표시 방식 및 네비게이션 개선
+> - **F10=트랜잭션 관리 및 고급 API 연동**: 새로운 API(다중 삭제, 패턴 분석 등) 연동을 통한 복잡한 기능 구현
+> - **F11=UI 고도화**: 글래스모피즘 등 프리미엄 디자인 룰 적용 및 화면 간 상태 연동 고도화
+> 상태: 완료(머지됨) · 예정 · 신규(백엔드 계약에 맞춰 신규 편성, 예정)
 
-| 泥댄겕 | ?댁뒋# | 肄붾뱶 | ?쒕ぉ | 釉뚮옖移?| 怨꾩빟 | 怨꾩링 | 罹먯떆??| ?곹깭 | ?꾨즺湲곗?(?듭떖) |
-| [x] | - | F1-1 | Axios 401 ?좏겙 ?щ컻湲?荑좏궎) | `fix/auth-interceptor-cookie` | 짠3 | api | ??| ?꾨즺 | 濡쒖뺄?ㅽ넗由ъ? ?좏겙쨌Authorization 媛뺤젣二쇱엯 ?쒓굅 ??401 ??諛붾뵒 ?놁씠 `/auth/token/refresh` ?몄텧(荑좏궎 ?먮룞?꾩넚) ?????붿껌 ?ъ떆??|
-| [x] | - | F1-2 | 硫뷀??곗씠????諛붿씤??| `fix/meta-form-binding` | 짠5 | Page쨌Hook쨌api | `['meta']` | ?꾨즺 | `RecordPage` ?섎뱶肄붾뵫 移댄뀒怨좊━ ?쒓굅, `useMetadata`濡?媛먯젙쨌移댄뀒怨좊━ ?듭뀡 諛붿씤?? ?깅줉 ??罹먯떆 臾댄슚??|
-| [x] | - | F2-1 | ?⑤낫???셋룸땳?ㅼ엫 寃利?| `feat/users-me` | 짠4 | Page쨌api쨌Store | `['user']` | ?꾨즺 | ?됰꽕??1~8??寃利?UI, ?⑤낫??API ?곕룞 ??`{onboardingDone:true}` 媛깆떊 ????由щ떎?대젆??|
-| [x] | - | F3-1 | 嫄곕옒 紐⑸줉쨌臾댄븳?ㅽ겕濡?| `feat/tx-list` | 짠6 | Page쨌Hook쨌api | `['tx','list']` | ?꾨즺 | `mockTransactions` ?쒓굅, `useTransactionsQuery` ?곕룞, 臾댄븳?ㅽ겕濡?+ ?????꾪꽣 + 寃?됱뼱 ?붾컮?댁뒪 |
-| [x] | - | F3-2 | 嫄곕옒 ?곸꽭쨌?섏젙쨌??젣 | `feat/tx-crud` | 짠6 | Page쨌Hook쨌api | `['tx','detail']` | ?꾨즺 | ?곸꽭 紐⑤떖 諛붿씤?? ?섏젙/??젣 Mutation, ?꾨즺 ??紐⑸줉 罹먯떆 臾댄슚??諛?利됱떆 諛섏쁺 |
-| [x] | - | F4-1 | 紐⑺몴 CRUD쨌??쒕ぉ??| `feat/goals` | 짠7 | Page쨌Hook쨌api | `['goals']` | ?꾨즺 | 紐⑺몴 ?낅젰 ??遺꾨━ + CRUD 諛붿씤?? `isMain` ?ㅼ젙/?댁젣 ?좉? ?곕룞 |
-| [x] | - | F4-2 | ??罹섎┛???붿빟 | `feat/summary-cal` | 짠8 | Page쨌Hook쨌api | `['summary','calendar']` | ?꾨즺 | ?쇰퀎 媛먯젙 ?꾩씠肄샕룹?異??⑷퀎 罹섎┛??留ㅽ븨, ?곗씠???녿뒗 ?좎쭨 ?덉쇅泥섎━ |
-| [x] | - | F4-3 | 媛먯젙 ?붿빟 李⑦듃쨌?꾩썡?鍮?| `feat/summary-emo` | 짠8 | Page쨌Hook쨌api | `['summary','emotion']` | ?꾨즺 | 李⑦듃(Recharts/D3) 諛붿씤?? `prevMonth` 利앷컧瑜?怨꾩궛쨌?뚮뜑 |
-| [ ] | - | F4-4 | ?ㅼ젙(?뚮쭏)쨌?뚯썝?덊눜 | `feat/user-settings` | 짠4 | Page쨌api쨌Store | `['user']` | ?덉젙 | ?뚮쭏 ?ㅼ젙 Store 利됱떆 諛섏쁺, ?덊눜 API + 濡쒖뺄쨌?꾩뿭 Store쨌罹먯떆 ?꾩껜 ?뚭린 |
-| [x] | - | F4-5 | ?됲뻾?곗＜ UI | `feat/universe` | 짠9 | Page쨌Hook쨌api | `['universe']` | ?꾨즺 | 짠9 ?쒕? ?ㅽ궎留?諛붿씤?? 3D/?명꽣?숉떚釉??곹깭쨌?좊땲硫붿씠???곕룞 |
-| [ ] | - | F4-6 | ?붽컙 遺꾩꽍(analysis) ?붾㈃ | `feat/analysis` | 짠9 | Page쨌Hook쨌api | `['analysis']` | ?좉퇋 | 짠9 `/analysis/monthly` ?곕룞(移댄뀒怨좊━쨌?쒓컙?쨌媛먯젙 吏묎퀎 + ?몄궗?댄듃). ??AnalysisPage` 湲곗〈 ?곹솴(situation) 湲곕컲 evidence ?쒓굅쨌?ъ뿰??|
-| [x] | - | F4-7 | 而ㅼ뒪? 移댄뀒怨좊━ ?ㅼ젙 | `feat/custom-category` | 짠12 | Page쨌Hook쨌api | `['categories']` | ?꾨즺 | 짠12 而ㅼ뒪? 移댄뀒怨좊━ 異붽?/??젣 + 怨듯넻쨌而ㅼ뒪? ?듯빀 ?뺣젹(?쒕옒洹? ??Β룸컲??(而ㅻ컠 b7b91e1: api/hook + RecordPage ?곕룞) |
-| [ ] | - | F5-1 | Skeleton/Suspense 濡쒕뵫 | `feat/ux-loading` | ??| Page쨌而댄룷?뚰듃 | ??| ?덉젙 | `isLoading` + Suspense 諛붿슫?붾━, 硫붿씤/?곸꽭 ?ㅼ펷?덊넠 而댄룷?뚰듃 ?몄텧 |
-| [ ] | - | F5-2 | ?꾩뿭 ErrorBoundary | `feat/ux-error` | 짠1 | 而댄룷?뚰듃 | ??| ?덉젙 | ?쇱슦???⑥쐞 ErrorBoundary, 500 ???ㅻ쪟 ???ъ떆??踰꾪듉 ?ы븿 Fallback UI |
-| [ ] | - | F5-3 | 嫄곕옒쨌紐⑺몴 ?숆????낅뜲?댄듃 | `feat/ux-optimistic` | 짠10 | Hook | `['tx']`쨌`['goals']` | ?덉젙 | `onMutate` 罹먯떆 ?좊컲?? `onError` ???댁쟾 罹먯떆濡?濡ㅻ갚 |
-| [ ] | - | F6-1 | ?꾩뿭 ?곹깭(濡쒖뺄 ?ㅽ넗由ъ?) 蹂댁븞 諛?理쒖쟻??| `refactor/storage-whitelist` | 짠13 | Store쨌Hook | ??| ?좉퇋 | 짠13 誘쇨컧/鍮꾩쫰?덉뒪 ?곗씠???ㅽ넗由ъ??먯꽌 ?쒓굅 + UI ?곹깭(themeMode, aurora ??留?濡쒖뺄 ?좎?(partialize ?곸슜) |
-| [ ] | - | F6-2 | JWT 蹂댁븞 ?듭떊 諛?Silent Refresh 援ы쁽 | `feat/auth-interceptor` | 짠14 | api쨌Store | ??| ?좉퇋 | 짠14 Access ?좏겙 硫붾え由??꾩뿭 ?곹깭) 愿由?+ 401 ?먮윭 媛먯? ???좏겙 ?щ컻湲?Axios ?명꽣?됲꽣 援ы쁽 (withCredentials ?ы븿) |
-| [ ] | - | F6-3 | 寃곗젣/紐⑺몴 ?곗씠???쒕쾭 ?곕룞(Fetching) ?꾪솚 | `refactor/data-fetching` | 짠15 | Page쨌Hook | `['transactions']`, `['goals']` | ?좉퇋 | 짠15 濡쒖뺄 ?ㅽ넗由ъ? ?섏〈??100% ?쒓굅 + HomePage ???⑥? ?붾㈃ 而댄룷?뚰듃 留덉슫????API ?⑥묶(React Query)?쇰줈 ?꾩쟾 ?꾪솚 |
-| [ ] | - | F7-1 | '?異? 湲곕낯 移댄뀒怨좊━ ?꾪솚 諛?UI 媛쒗렪 | `refactor/default-category-savings` | - | Component쨌Page쨌api | `['categories']`, `['transactions']` | ?좉퇋 | 而ㅼ뒪? '?異? ?앹꽦 UI/POST 濡쒖쭅 ?쒓굅 ???ㅽ????곸닔(?꾩씠肄??뚮쭏) 留ㅽ븨 ??湲곕낯 移댄뀒怨좊━ ?섎떒(Order 9) ?몄텧 諛?嫄곕옒 ?앹꽦 寃利?|
-| [ ] | - | F7-2 | AI 遺꾩꽍: ?곗씠??遺議???鍮?諛뺤뒪(Empty Box) ?덉쇅 泥섎━ | `feat/analysis-empty-state` | - | Component쨌Page | - | ?좉퇋 | ?곗씠??遺??諛곗뿴 0 or 珥앺빀 0) ?먮퀎 ??李⑦듃 Early Return ??臾멸뎄/踰꾪듉 ?놁씠 湲곗〈 ?곸뿭 ?ш린 ?좎??섎뒗 鍮?諛뺤뒪(Empty Box) ?뚮뜑留?|
-| [x] | - | F7-3 | AI 硫섑듃 API ?곕룞 諛??붾? ?띿뒪???쒓굅 | `feat/analysis-ai-insights-api` | - | api쨌Page쨌Hook | `['aiInsights']` | ?꾨즺 | `AnalysisPageDc.jsx` ???붾?(`aiQuickInsights` ?? ?꾨㈃ ?쒓굅 ??`useAiInsightsQuery` ???앹꽦/諛붿씤????Mock 媛깆떊 ??UI 利됯컖 諛섏쁺 |
-| [x] | - | F7-4 | 吏異?異붿씠 李⑦듃 API ?곕룞 諛??섎뱶肄붾뵫 ?쒓굅 | `feat/analysis-trend-api` | - | api쨌Page쨌Hook | `['analysis', 'trend']` | ?꾨즺 | 1. `api/analysis.js` ?듭떊 ?⑥닔 諛?`useMonthlyTrendQuery` ???앹꽦.<br>2. ?寃??뚯씪(`AnalysisPageDc.jsx`) ???섎뱶肄붾뵫??湲덉븸, 利앷컧瑜? 7媛쒖썡 移??붾? 諛곗뿴 ?꾨㈃ ??젣.<br>3. API ?묐떟 ?곗씠??`currentTotalAmount`, `monthlyData` ??瑜?湲곕컲?쇰줈 ?곗륫 ?곷떒 ?띿뒪??諛?李⑦듃 ?숈쟻 諛붿씤??<br>4. ?곗씠??鍮?諛곗뿴 ??"?곗씠???섏쭛 以? UI 諛⑹뼱 濡쒖쭅 ?뺤긽 ?곌껐 ?뺤씤. |
-| [x] | - | F7-5 | ?덉궛 ?꾪솴 UI 諛붿씤??諛??꾨줎???꾩쓽 濡쒖쭅 ?쒓굅 | `feat/analysis-budget-api` | - | api쨌Page쨌Hook | `['analysis', 'budget']` | ?꾨즺 | 1. `api/analysis.js` ?듭떊 ?⑥닔 諛?`useBudgetStatusQuery` ???앹꽦.<br>2. `AnalysisPageDc.jsx` ?대??먯꽌 ?꾩쓽濡?95%(`prevAmount * 0.95`)瑜?怨깊빐 ?덉궛???곗텧?섎뜕 ?듭? ?곗궛 濡쒖쭅 ?꾩쟾 ?쒓굅.<br>3. ?쒕쾭 ?묐떟媛?`budget`, `currentAmount`)???⑥쟾???ъ슜?섏뿬 吏꾪뻾瑜??쇱꽱??怨꾩궛.<br>4. 吏꾪뻾瑜좎뿉 ?곕Ⅸ "?덉젙", "二쇱쓽", "珥덇낵" ?띿뒪??諛?遺꾧린 ?됱긽(`#E87573` ?? ?뚮뜑留?寃利? |
-| [x] | #132 | F7-6 | ?⑤낫??'珥앹옄?? ??異붽? | `feat/onboarding-total-asset` | - | Page쨌Component | - | ?꾨즺 | ?⑤낫???꾨즺 ??珥앹옄???곗씠?곕? ?④퍡 ?낅젰諛쏆븘 ?쒕쾭濡??꾩넚 |
-| [x] | - | F7-7 | ???붾㈃ 珥앹옄?걔룸ぉ???ㅼ??댄봽 UI | `feat/home-asset-swipe` | - | Component | - | ?꾨즺 | ???붾㈃ ?곷떒??珥앹옄??移대뱶 諛?媛쒕퀎 紐⑺몴 移대뱶?ㅼ쓣 ?ㅼ??댄봽/?좉?濡??섍꺼蹂대뒗 UI 援ы쁽 |
-| [x] | - | F7-8 | 嫄곕옒 ??'紐⑺몴 ?좏깮(?異?' ?숈쟻 UI | `feat/transaction-goal-select` | - | Component | - | ?꾨즺 | 移댄뀒怨좊━瑜?'?異??쇰줈 ?좏깮 ???섎떒???대뼡 紐⑺몴?몄? 留듯븨?섎뒗 Select ?쒕∼?ㅼ슫 ?몄텧 |
-| [x] | - | F7-9 | 紐⑺몴 移대뱶 ?ㅼ씠?됲듃 ?湲??곕룞 | `feat/goal-direct-deposit` | - | Component | - | ?꾨즺 | 紐⑺몴 移대뱶 ??'?湲덊븯湲? 踰꾪듉 ?대┃ ??移댄뀒怨좊━(?異?/紐⑺몴媛 誘몃━ ?좏깮???곹깭濡?嫄곕옒 紐⑤떖 ?앹뾽 |
-| [ ] | - | F7-10 | ???붾㈃ ?덉궛 ?ъ꽦/誘몃떖 ?숈쟻 ?뚮뜑留?| `feat/home-dynamic-budget-ui` | - | Component | `['analysis', 'budget']` | ?좉퇋 | ?덉궛 珥덇낵 ?ъ꽦 諛?誘몃떖 ?쒕굹由ъ삤???곕씪 李⑦듃? ?뚮┝ 臾멸뎄瑜??ㅻⅤ寃??뚮뜑留?|
-| [ ] | - | F8-1 | 吏異??섏엯 ?좎쭨 珥덇린???ㅻ쪟 ?섏젙 | `fix/transaction-date-init` | - | Component | - | ?좉퇋 | ?좎쭨 ?좏깮湲???????곹깭 ?좎? ?ㅻ쪟 ?섏젙 |
-| [ ] | - | F8-2 | 嫄곕옒 ?섏젙 移댄뀒怨좊━ ?ㅻ쪟 ?닿껐 | `fix/transaction-category-edit` | - | Component | - | ?좉퇋 | 湲곗〈 移댄뀒怨좊━ ?뺤긽 ?뚮뜑留?諛??섏젙 API ?곕룞 ?섏젙 |
-| [ ] | - | F8-3 | ?좎쭨 吏???щ젰 ?뚮쭏 ?섏젙 | `feat/transaction-calendar-theme` | - | Component | - | ?좉퇋 | ?щ젰 ?좎쭨 ?대┃ ???섏씠?쇱씠???뚮쭏/?ㅽ??쇰쭅 ?곸슜 |
-| [ ] | - | F8-4 | ?щ젰 ?ㅻ퉬寃뚯씠????援ы쁽 | `feat/calendar-time-tabs` | - | Component | - | ?좉퇋 | "吏湲? 踰꾪듉??怨쇨굅/吏湲?誘몃옒 ??쑝濡?媛쒗렪 諛??쇱슦??|
-| [ ] | - | F8-5 | 紐⑺몴 '紐⑥? ?? ?낅젰 踰꾧렇 ?섏젙 | `fix/goal-amount-binding` | - | Component | - | ?좉퇋 | 紐⑺몴 湲덉븸 ?낅젰 ???レ옄 ?뚯떛 ?ㅻ쪟 諛?NaN 諛⑹뼱 濡쒖쭅 異붽? |
-| [ ] | - | F8-6 | 嫄곕옒 媛먯젙 Select ?ㅻ쪟 ?섏젙 諛?UI ?뺣? | `fix/transaction-emotion-select` | - | Component | - | ?좉퇋 | 媛먯젙 珥덇린媛?諛붿씤???ㅻ쪟 ?닿껐 諛?移댄뀒怨좊━/媛먯젙 Select 而댄룷?뚰듃 ?곗튂 ?곸뿭(?⑤뵫) ?뺣? (F8-2 ?곌퀎) |
-| [ ] | - | F8-7 | 罹섎┛??誘몃옒 ?좎쭨 ?좏깮 ?쒗븳(Disabled) | `fix/calendar-future-disable` | - | Component | - | ?좉퇋 | 吏異??섏엯 湲곕줉 罹섎┛??諛?嫄곕옒 ?섏젙 紐⑤떖 ??罹섎┛?붿뿉???ㅻ뒛 湲곗? '誘몃옒 ?좎쭨'???대┃ 遺덇??ν븯?꾨줉(disabled) 諛⑹뼱 泥섎━ |
-| [x] | #121 | F8-8 | 嫄곕옒 ?섏젙 罹섎┛???덉씠?꾩썐 諛?遺??⑥쐞 異붽? | `fix/transaction-edit-calendar` | - | Component | - | ?꾨즺 | 嫄곕옒 ?섏젙 紐⑤떖 ??罹섎┛??吏ㅻ┝ ?꾩긽(CSS) ?닿껐 諛?湲곗〈 ?쒓컙 ?좏깮 ??遺?minute) ?⑥쐞 ?ㅼ젙 異붽? |
-| [ ] | #125 | F8-10 | ?⑤낫??'?섎쭔??紐⑺몴' 吏곸젒 ?낅젰 UI | `feat/onboarding-custom-goal` | - | Component | - | ?좉퇋 | ?⑤낫??2/6)?먯꽌 '?섎쭔??紐⑺몴' ?대┃ ???띿뒪??Input?쇰줈 ?꾪솚?섏뼱 ?ъ슜?먭? 吏곸젒 紐⑺몴紐낆쓣 ?묒꽦?섎룄濡?援ы쁽 |
-| [ ] | #126 | F8-11 | ???붾㈃ UI 踰꾧렇 醫낇빀 ?섏젙(留먮옉???щ젰) | `fix/home-ui-bugs` | - | Component | - | ?좉퇋 | ??留먮옉???꾨줈 ?ㅼ??댄봽 ???뚮뜑留?踰꾧렇 ?섏젙, 罹섎┛???곗륫 ??吏ㅻ┝(?덉씠?꾩썐) ?섏젙, 罹섎┛???좏깮 ?좎쭨(7??1??怨좎젙)瑜??ㅻ뒛 ?좎쭨濡??숈쟻 ?섏젙 |
-| [ ] | - | F8-12 | ?⑤낫???꾨즺 ?붿껌??totalAsset ?꾨씫 ?섏젙 | `fix/onboarding-completion-request` | 짠4쨌짠7 | Page쨌Hook쨌api쨌docs | `['users','me']` | ?좉퇋 | ?⑤낫???꾨즺 ?붿껌??`{totalAsset}` ?꾨떖 ???좉퇋쨌?ш????ъ슜??`onboardingDone:true` 諛섏쁺 諛???吏꾩엯 ??API 怨꾩빟 臾몄꽌 ?숆린?? lint쨌build ?듦낵 |
-| [ ] | - | F8-13 | ?⑤낫??紐⑺몴 ?앹꽦 ?붿껌??留덇컧???꾨씫 ?섏젙 | `fix/onboarding-goal-due-date` | 짠7 | Page쨌Component쨌docs | `['goals']`쨌`['universe']` | ?좉퇋 | ?⑤낫??湲곌컙??`YYYY-MM-DD` ?뺤떇??`dueDate`濡?蹂?섑빐 紐⑺몴 ?앹꽦 ?붿껌???꾨떖 ??湲고? ?좏깮 ??怨듯넻 `SegmentDatePicker` ?ъ궗????怨쇨굅 ?좎쭨 ?쒖텧 諛⑹? 諛?API 怨꾩빟 臾몄꽌 ?숆린??|
-| [x] | - | F8-14 | ?꾩뿭 ?섎뱶肄붾뵫 ?됱긽 ?뚮쭏 ?ㅽ겕由쏀듃 ?꾪솚 | `fix/hardcoded-colors` | - | Page쨌Component | - | ?꾨즺 | ?꾩뿭???⑥?/?섎뱶肄붾뵫??HEX 而щ윭瑜?var(--bg-1), var(--text) ??CSS ?뚮쭏 蹂?섎줈 移섑솚 |
-| [ ] | - | F9-1 | ?뚮퉬 肄붿뼱 媛먯젙 8醫??몄텧 | `feat/core-emotion-display` | - | Component | - | ?좉퇋 | ?곗씠??0嫄댁씤 媛먯젙???꾨씫 ?놁씠 8媛??뚮뜑留?泥섎━ |
-| [ ] | - | F9-2 | 媛먯젙 遺꾩꽍 ?쇱꽱??濡쒖쭅 蹂寃?| `feat/analysis-percentage-logic` | - | Utils쨌Component | - | ?좉퇋 | 遺꾩꽍 ?쇱꽱?몃? 湲덉븸 湲곗??먯꽌 ?잛닔 湲곗??쇰줈 蹂寃?|
-| [ ] | - | F9-3 | 吏異?異붿씠 移대뱶 ?대┃ ?대룞 | `feat/monthly-trend-navigation` | - | Component | - | ?좉퇋 | ?붾퀎 諛??ъ씤???대┃ ???대떦 ???곸꽭 酉곕줈 ?대룞 |
-| [ ] | - | F9-4 | AI ?붾퀎 遺꾩꽍 寃곌낵 ?곕룞 | `feat/ai-analysis-monthly-link` | - | Component | - | ?좉퇋 | AI ??쒕낫?쒖뿉 ?붾퀎 由ы룷???대룞 留곹겕 異붽? 諛??곗씠??議고쉶 ?곕룞 |
-| [ ] | #123 | F9-5 | ?됲뻾?곗＜ REC 紐⑺몴 ?좏깮 諛??됱꽦 ?숈쟻 蹂寃?| `feat/universe-rec-target-select` | - | Component | `['universe']` | ?좉퇋 | REC 踰꾪듉 ?대┃ ???붾㈃ ?섎떒??紐⑺몴 由ъ뒪???몄텧 ??紐⑺몴 ?좏깮 ???쒕??덉씠???됱꽦(議곌툑 以꾩뿬蹂몃떎硫? 寃곌낵媛??숈쟻 蹂寃?|
-| [x] | - | F10-1 | 嫄곕옒?댁뿭 ?ㅼ쨷 ??젣 UI | `feat/transaction-bulk-delete-ui` | - | api쨌Component | `['tx','list']` | ?꾨즺 | 泥댄겕諛뺤뒪 ?ㅼ쨷 ?좏깮 UI 諛???젣 API ?곕룞 |
-| [x] | - | F10-2 | ?⑦꽩 遺꾩꽍 ?곕룞 諛?UI | `feat/recurring-pattern-ui` | 짠analysis/pattern | api쨌Component | `['analysis', 'pattern']` | ?꾨즺 | 寃곗젙濡?吏묎퀎 諛⑺뼢 ?뺤젙(議고빀쨌?잛닔쨌洹쇨굅=GROUP BY, 臾멸뎄留??쒕쾭 ?앹꽦/AI). `GET /analysis/pattern` 怨꾩빟 臾몄꽌??+ `analysisAPI.getPattern`쨌`usePatternQuery`쨌AnalysisPageDc 諛붿씤???꾨즺(evidence 媛앹껜 shape). 諛깆뿏???붾뱶?ъ씤??援ы쁽 ?湲?|
-| [ ] | - | F11-1 | 紐⑺몴 湲?섏뒪紐⑦뵾利?諛?留뚮즺 ?곹깭 ?ㅽ???| `feat/goal-design-update` | - | Component | - | ?좉퇋 | 紐⑺몴 ???щ챸??5% ?곸슜 諛?怨쇨굅 紐⑺몴 ?묐갚(Grayscale) 泥섎━ |
-| [ ] | - | F11-2 | 硫붿씤 ?щ젰 ?щ챸??Glassmorphism) ?곸슜 | `feat/calendar-glassmorphism` | - | Component | - | 蹂대쪟 | ?좎쭨 ?좏깮湲?DatePickerDc) 湲?섏뒪 ?쒕룄(5%/紐⑤떖+?ㅽ겕由??덉쑝??諛⑺뼢 誘명솗?????꾩옱 **遺덊닾紐??먮났**. ???붿씪 ?쒓???2026??N??쨌 ??????紐?湲?????留?諛섏쁺. ?삳え諛붿씪?먯꽌 ?쒓컙 ?⑤꼸???붾㈃ 諛뽰쑝濡??섏튂???덉씠?꾩썐 踰꾧렇 蹂꾨룄 諛쒓껄 |
-| [ ] | - | F11-3 | ?쒖꽦 紐⑺몴(isMain) ?댟룻룊?됱슦二??곕룞 | `feat/goal-main-sync` | - | Component | `['goals']` | ?좉퇋 | isMain=true ???쒖꽦 紐⑺몴 ?곗씠?곕? ?ㅼ떆媛?援щ룆?섏뿬 ???곗＜???뚮뜑留?諛섏쁺 |
-| [x] | - | F12-1 | 嫄곕옒?댁뿭 ?ㅼ쨷 ?좏깮 CSS 諛?泥댄겕留덊겕 ?쒖씤??媛쒖꽑 | feat/tx-list-ux-improvements | - | Page쨌Component | - | ?꾨즺 | ?ㅼ쨷 ?좏깮 紐⑥꽌由?寃뱀묠 ?붿옄??Radius) 臾몄젣 ?닿껐, ?쇱씠??紐⑤뱶 泥댄겕留덊겕 ?쒖씤??媛쒖꽑 |
-| [ ] | - | F12-2 | 移댄뀒怨좊━ ?쒖꽌 蹂寃??몃뵒耳?댄꽣 ?뚮뜑留?| feat/category-dnd-indicator | - | Component | - | ?좉퇋 | 移댄뀒怨좊━ ?쒕옒洹???留덉슦??諛⑺뼢???몃줈 ???뚮뜑留?|
-| [ ] | - | F12-3 | ?됲뻾?곗＜ ?쒕굹由ъ삤 ?곹샇?묒슜 諛?紐⑺몴 ?곕룞 | feat/universe-scenario-interaction | - | api쨌Page쨌Component | ['universe'] | ?좉퇋 | ?쒕굹由ъ삤 ?붿냼 踰꾪듉??諛??섎떒 紐⑺몴 ?대┃ ???됱꽦 ?쒕??덉씠???숈쟻 諛섏쁺 |
-| [ ] | - | F12-4 | ?덉궛 ?곗씠??湲濡쒕쾶 ?곹깭??諛???쒕낫???곕룞 | feat/global-budget-sync | - | Store쨌Page쨌Component | - | ?좉퇋 | ??留먮옉?댁? ?꾩뿭 ?덉궛 ?곹깭 ?곕룞 諛?由ъ뒪???곸쐞 5媛??꾪꽣留??뚮뜑留?|
-| [ ] | - | F12-5 | ?⑤낫??'?섎쭔??紐⑺몴' 而ㅼ뒪? ?낅젰 湲곕뒫 援ы쁽 | feat/onboarding-custom-goal-input | - | Component | - | ?좉퇋 | ?섎쭔??紐⑺몴 ?대┃ ??Input ?꾨뱶 ?꾪솚 諛?諛붿씤??|
-| [ ] | - | F12-6 | ?⑤낫??'湲고?' ???좏깮 ???덉씠?꾩썐 ?щ갚 踰꾧렇 ?섏젙 | fix/onboarding-date-gap | - | Component | - | ?좉퇋 | ??而⑦뀒?대꼫 ?쎌갹 ???곷떒 而⑦뀗痢좎???媛꾧꺽(gap/margin) ?좎? |
-| [ ] | - | F12-7 | 嫄곕옒?댁뿭 ?섏젙 ?뺤궛湲??⑹튂湲?Merge) UI 諛??좉? ??젣 | feat/transaction-edit-merge | - | Component쨌api | ['tx'] | ?좉퇋 | ?붿튂?섏씠 誘몄젙??由ъ뒪??諛??섏엯/吏異??좉? 湲곕뒫 ?꾩쟾 ??젣. ?섏젙 紐⑤떖 ?댁뿉 ?뺤궛諛쏆? 湲덉븸 ?낅젰(Merge) UI ?좎꽕 諛?李④컧 API ?곕룞 |
-| [ ] | - | F12-8 | 嫄곕옒?댁뿭 ?붾퀎 ?꾪꽣 諛??곗썡 ?좏깮湲?UI 媛쒖꽑 | feat/tx-list-month-nav | - | Page쨌Component | - | ?좉퇋 | ?붾퀎 ?꾪꽣 1~12???몄텧, ?곗썡 ?좏깮湲?異붽? |
-| [ ] | - | F12-9 | 嫄곕옒?댁뿭 ?꾪꽣 ??????媛쒕퀎 ?좏깮 湲곕뒫 | feat/tx-list-month-day-filter | - | Page쨌Component | - | ?좉퇋 | ?꾪꽣?먯꽌 ?붽낵 ?쇱쓣 媛곴컖 ?좏깮?섎뒗 UI 援ы쁽. (?좑툘 二쇱쓽: ?묒뾽 ??諛섎뱶???대떦 ??먯뿉寃??붿옄???쒖븞??臾몄쓽 ???묒뾽??寃? |
-| [ ] | - | F12-10 | ???紐⑺몴 ?ㅼ젙 UX 蹂寃?諛?湲덉븸 ?낅젰李?怨좊룄??| feat/goal-main-toggle | - | Component | ['goals'] | ?좉퇋 | 紐⑺몴 移대뱶 ?붾툝?대┃ UX ?쒓굅 諛??????좉? 異붽?. 紐⑺몴 湲덉븸 ?낅젰 ??3?먮━ 肄ㅻ쭏(,) ?щ㎎???곸슜 諛?湲곕낯 ?レ옄 ?ㅽ뵾???꾩븘??踰꾪듉) ?쒓굅 |
-| [ ] | - | F12-11 | ?됲뻾?곗＜ REC ?좊땲硫붿씠???먮났 | fix/universe-rec-animation | - | Component | - | ?좉퇋 | ?됲뻾?곗＜ ?붾㈃??REC ?붿냼 ?좊땲硫붿씠?섏쓣 ?먮옒 ?곹깭濡??섎룎由ш린 |
-| [ ] | - | F13-1 | 寃곗젣 ?듯깭洹?FCM ???몄떆 援ы쁽 | feat/fcm-web-push | - | Component쨌SW | - | ?좉퇋 | firebase-messaging-sw.js?먯꽌 data-only ?뚮┝ 泥섎━ 諛?/quick-tag ?λ쭅???곌껐 |
-| [ ] | - | F13-2 | 嫄곕옒?댁뿭 ?섏젙 李④컧(Merge) UI/State ?꾩쟾 ??젣 | feat/transaction-edit-remove-merge | - | Component | - | ?좉퇋 | 嫄곕옒?댁뿭 ?섏젙 紐⑤떖 ???뺤궛諛쏆? 湲덉븸(李④컧) ?낅젰 UI 諛?愿???곹깭媛??꾨㈃ ??젣 |
-| [ ] | - | F13-3 | 紐⑤컮??AI 遺꾩꽍 移대뱶 ?몃줈 ?뺣젹 諛??뚮┰ 諛섏쓳??| feat/ai-analysis-mobile-layout | - | Component | - | ?좉퇋 | 紐⑤컮??酉곗뿉???대? 3媛?移대뱶瑜?媛濡쒗룺??苑?李④쾶 ?몃줈 ?뺣젹?섍퀬, ?뚮┰(Flip) ?룸㈃??AI 硫섑듃 湲몄씠??留욎떠 湲???ш린 議곗쑉 諛?諛뺤뒪 ?섏묠 諛⑹? 泥섎━ |
-| [ ] | - | F13-4 | 紐⑤컮???뚮쭏 ?좉? DB ?숆린??踰꾧렇 ?섏젙 | fix/mobile-theme-sync | - | Component | - | ?좉퇋 | 紐⑤컮???섍꼍?먯꽌 ?뚮쭏(?ㅽ겕/?쇱씠?? 蹂寃???DB ???API ?몄텧???꾨씫?섏뼱 ?덈줈怨좎묠 ??珥덇린?붾릺??踰꾧렇 ?섏젙 |
-| [ ] | - | F13-5 | AI 遺꾩꽍 ??쒕낫??UI 怨④꺽 諛??꾪뿕???뚮뜑留?| feat/ai-dashboard-skeleton | - | Component | - | ?좉퇋 | API ?곕룞 諛??묐떟???뚮퉬?꾪뿕??Red/Yellow/Green) 湲곕컲 而⑦뀒?대꼫 ?됱긽/?꾩씠肄??숈쟻 ?뚮뜑留?援ы쁽 (AI ?곗씠?곕뒗 Mock 泥섎━) |
-| [ ] | - | F13-6 | ?⑺듃 由ы룷??& 留욎땄 梨뚮┛吏 ?ㅻ뜲?댄꽣 諛붿씤??| feat/ai-dashboard-fact-challenge | - | Component | - | ?좉퇋 | ?⑺듃 ??꺽湲??띿뒪???뚮뜑留?諛?留욎땄 梨뚮┛吏 移?Chip) UI???ㅼ젣 AI ?묐떟 ?곗씠??諛붿씤??|
-| [ ] | - | F13-7 | 媛먯젙?뚮퉬 遺꾩꽍 ?ㅻ뜲?댄꽣 諛붿씤??諛??덉쇅 泥섎━ | feat/ai-dashboard-emotion | - | Component | - | ?좉퇋 | 3?④퀎 媛먯젙 遺꾩꽍 ?띿뒪??諛붿씤???곸슜 諛?AI ?묐떟 吏???먮윭 ???붾㈃ 源⑥쭚 諛⑹???Fallback(鍮?諛뺤뒪/濡쒕뵫) 泥섎━ |
-| [x] | - | A1-1 | 媛먯젙?뚮퉬 遺꾩꽍 AI ?꾨＼?꾪듃 媛꾩냼??(Light Empathy) | main | - | 諛깆뿏??| - | ?꾨즺 | 諛깆뿏??GptInsightCardGenerator.java ?꾨＼?꾪듃瑜?50???대궡??媛踰쇱슫 怨듦컧 ?ㅼ쑝濡????異뺤냼 諛??몄떆 ?꾨즺 |
+| 체크 | 이슈# | 코드 | 제목 | 브랜치 | 계약 | 계층 | 캐시키 | 상태 | 완료기준(핵심) |
+| [x] | - | F1-1 | Axios 401 토큰 재발급(쿠키) | `fix/auth-interceptor-cookie` | §3 | api | — | 완료 | 로컬스토리지 토큰·Authorization 강제주입 제거 → 401 시 바디 없이 `/auth/token/refresh` 호출(쿠키 자동전송) → 원 요청 재시도 |
+| [x] | - | F1-2 | 메타데이터 폼 바인딩 | `fix/meta-form-binding` | §5 | Page·Hook·api | `['meta']` | 완료 | `RecordPage` 하드코딩 카테고리 제거, `useMetadata`로 감정·카테고리 옵션 바인딩, 등록 후 캐시 무효화 |
+| [x] | - | F2-1 | 온보딩 폼·닉네임 검증 | `feat/users-me` | §4 | Page·api·Store | `['user']` | 완료 | 닉네임 1~8자 검증 UI, 온보딩 API 연동 후 `{onboardingDone:true}` 갱신 → 홈 리다이렉트 |
+| [x] | - | F3-1 | 거래 목록·무한스크롤 | `feat/tx-list` | §6 | Page·Hook·api | `['tx','list']` | 완료 | `mockTransactions` 제거, `useTransactionsQuery` 연동, 무한스크롤 + 연/월 필터 + 검색어 디바운스 |
+| [x] | - | F3-2 | 거래 상세·수정·삭제 | `feat/tx-crud` | §6 | Page·Hook·api | `['tx','detail']` | 완료 | 상세 모달 바인딩, 수정/삭제 Mutation, 완료 시 목록 캐시 무효화 및 즉시 반영 |
+| [x] | - | F4-1 | 목표 CRUD·대표목표 | `feat/goals` | §7 | Page·Hook·api | `['goals']` | 완료 | 목표 입력 폼 분리 + CRUD 바인딩, `isMain` 설정/해제 토글 연동 |
+| [x] | - | F4-2 | 홈 캘린더 요약 | `feat/summary-cal` | §8 | Page·Hook·api | `['summary','calendar']` | 완료 | 일별 감정 아이콘·지출 합계 캘린더 매핑, 데이터 없는 날짜 예외처리 |
+| [x] | - | F4-3 | 감정 요약 차트·전월대비 | `feat/summary-emo` | §8 | Page·Hook·api | `['summary','emotion']` | 완료 | 차트(Recharts/D3) 바인딩, `prevMonth` 증감률 계산·렌더 |
+| [ ] | - | F4-4 | 설정(테마)·회원탈퇴 | `feat/user-settings` | §4 | Page·api·Store | `['user']` | 예정 | 테마 설정 Store 즉시 반영, 탈퇴 API + 로컬·전역 Store·캐시 전체 파기 |
+| [x] | - | F4-5 | 평행우주 UI | `feat/universe` | §9 | Page·Hook·api | `['universe']` | 완료 | §9 시뮬 스키마 바인딩, 3D/인터랙티브 상태·애니메이션 연동 |
+| [ ] | - | F4-6 | 월간 분석(analysis) 화면 | `feat/analysis` | §9 | Page·Hook·api | `['analysis']` | 신규 | §9 `/analysis/monthly` 연동(카테고리·시간대·감정 집계 + 인사이트). ※`AnalysisPage` 기존 상황(situation) 기반 evidence 제거·재연동 |
+| [x] | - | F4-7 | 커스텀 카테고리 설정 | `feat/custom-category` | §12 | Page·Hook·api | `['categories']` | 완료 | §12 커스텀 카테고리 추가/삭제 + 공통·커스텀 통합 정렬(드래그) 저장·반환 (커밋 b7b91e1: api/hook + RecordPage 연동) |
+| [ ] | - | F5-1 | Skeleton/Suspense 로딩 | `feat/ux-loading` | — | Page·컴포넌트 | — | 예정 | `isLoading` + Suspense 바운더리, 메인/상세 스켈레톤 컴포넌트 노출 |
+| [ ] | - | F5-2 | 전역 ErrorBoundary | `feat/ux-error` | §1 | 컴포넌트 | — | 예정 | 라우트 단위 ErrorBoundary, 500 등 오류 시 재시도 버튼 포함 Fallback UI |
+| [ ] | - | F5-3 | 거래·목표 낙관적 업데이트 | `feat/ux-optimistic` | §10 | Hook | `['tx']`·`['goals']` | 예정 | `onMutate` 캐시 선반영, `onError` 시 이전 캐시로 롤백 |
+| [ ] | - | F6-1 | 전역 상태(로컬 스토리지) 보안 및 최적화 | `refactor/storage-whitelist` | §13 | Store·Hook | — | 신규 | §13 민감/비즈니스 데이터 스토리지에서 제거 + UI 상태(themeMode, aurora 등)만 로컬 유지(partialize 적용) |
+| [ ] | - | F6-2 | JWT 보안 통신 및 Silent Refresh 구현 | `feat/auth-interceptor` | §14 | api·Store | — | 신규 | §14 Access 토큰 메모리(전역 상태) 관리 + 401 에러 감지 시 토큰 재발급 Axios 인터셉터 구현 (withCredentials 포함) |
+| [ ] | - | F6-3 | 결제/목표 데이터 서버 연동(Fetching) 전환 | `refactor/data-fetching` | §15 | Page·Hook | `['transactions']`, `['goals']` | 신규 | §15 로컬 스토리지 의존성 100% 제거 + HomePage 등 남은 화면 컴포넌트 마운트 시 API 패칭(React Query)으로 완전 전환 |
+| [ ] | - | F7-1 | '저축' 기본 카테고리 전환 및 UI 개편 | `refactor/default-category-savings` | - | Component·Page·api | `['categories']`, `['transactions']` | 신규 | 커스텀 '저축' 생성 UI/POST 로직 제거 → 스타일 상수(아이콘/테마) 매핑 → 기본 카테고리 하단(Order 9) 노출 및 거래 생성 검증 |
+| [ ] | - | F7-2 | AI 분석: 데이터 부족 시 빈 박스(Empty Box) 예외 처리 | `feat/analysis-empty-state` | - | Component·Page | - | 신규 | 데이터 부재(배열 0 or 총합 0) 판별 → 차트 Early Return → 문구/버튼 없이 기존 영역 크기 유지하는 빈 박스(Empty Box) 렌더링 |
+| [x] | - | F7-3 | AI 멘트 API 연동 및 더미 텍스트 제거 | `feat/analysis-ai-insights-api` | - | api·Page·Hook | `['aiInsights']` | 완료 | `AnalysisPageDc.jsx` 내 더미(`aiQuickInsights` 등) 전면 제거 → `useAiInsightsQuery` 훅 생성/바인딩 → Mock 갱신 시 UI 즉각 반영 |
+| [x] | - | F7-4 | 지출 추이 차트 API 연동 및 하드코딩 제거 | `feat/analysis-trend-api` | - | api·Page·Hook | `['analysis', 'trend']` | 완료 | 1. `api/analysis.js` 통신 함수 및 `useMonthlyTrendQuery` 훅 생성.<br>2. 타겟 파일(`AnalysisPageDc.jsx`) 내 하드코딩된 금액, 증감률, 7개월 치 더미 배열 전면 삭제.<br>3. API 응답 데이터(`currentTotalAmount`, `monthlyData` 등)를 기반으로 우측 상단 텍스트 및 차트 동적 바인딩.<br>4. 데이터 빈 배열 시 "데이터 수집 중" UI 방어 로직 정상 연결 확인. |
+| [x] | - | F7-5 | 예산 현황 UI 바인딩 및 프론트 임의 로직 제거 | `feat/analysis-budget-api` | - | api·Page·Hook | `['analysis', 'budget']` | 완료 | 1. `api/analysis.js` 통신 함수 및 `useBudgetStatusQuery` 훅 생성.<br>2. `AnalysisPageDc.jsx` 내부에서 임의로 95%(`prevAmount * 0.95`)를 곱해 예산을 산출하던 억지 연산 로직 완전 제거.<br>3. 서버 응답값(`budget`, `currentAmount`)을 온전히 사용하여 진행률 퍼센트 계산.<br>4. 진행률에 따른 "안정", "주의", "초과" 텍스트 및 분기 색상(`#E87573` 등) 렌더링 검증. |
+| [x] | #132 | F7-6 | 온보딩 '총자산' 폼 추가 | `feat/onboarding-total-asset` | - | Page·Component | - | 완료 | 온보딩 완료 시 총자산 데이터를 함께 입력받아 서버로 전송 |
+| [x] | - | F7-7 | 홈 화면 총자산·목표 스와이프 UI | `feat/home-asset-swipe` | - | Component | - | 완료 | 홈 화면 상단에 총자산 카드 및 개별 목표 카드들을 스와이프/토글로 넘겨보는 UI 구현 |
+| [x] | - | F7-8 | 거래 폼 '목표 선택(저축)' 동적 UI | `feat/transaction-goal-select` | - | Component | - | 완료 | 카테고리를 '저축'으로 선택 시 하단에 어떤 목표인지 맵핑하는 Select 드롭다운 노출 |
+| [x] | - | F7-9 | 목표 카드 다이렉트 저금 연동 | `feat/goal-direct-deposit` | - | Component | - | 완료 | 목표 카드 내 '저금하기' 버튼 클릭 시 카테고리(저축)/목표가 미리 선택된 상태로 거래 모달 팝업 |
+| [ ] | - | F7-10 | 홈 화면 예산 달성/미달 동적 렌더링 | `feat/home-dynamic-budget-ui` | - | Component | `['analysis', 'budget']` | 신규 | 예산 초과 달성 및 미달 시나리오에 따라 차트와 알림 문구를 다르게 렌더링 |
+| [ ] | - | F8-1 | 지출 수입 날짜 초기화 오류 수정 | `fix/transaction-date-init` | - | Component | - | 신규 | 날짜 선택기 저장 시 상태 유지 오류 수정 |
+| [ ] | - | F8-2 | 거래 수정 카테고리 오류 해결 | `fix/transaction-category-edit` | - | Component | - | 신규 | 기존 카테고리 정상 렌더링 및 수정 API 연동 수정 |
+| [ ] | - | F8-3 | 날짜 지정 달력 테마 수정 | `feat/transaction-calendar-theme` | - | Component | - | 신규 | 달력 날짜 클릭 시 하이라이트 테마/스타일링 적용 |
+| [ ] | - | F8-4 | 달력 네비게이션 탭 구현 | `feat/calendar-time-tabs` | - | Component | - | 신규 | "지금" 버튼을 과거/지금/미래 탭으로 개편 및 라우팅 |
+| [ ] | - | F8-5 | 목표 '모은 돈' 입력 버그 수정 | `fix/goal-amount-binding` | - | Component | - | 신규 | 목표 금액 입력 시 숫자 파싱 오류 및 NaN 방어 로직 추가 |
+| [ ] | - | F8-6 | 거래 감정 Select 오류 수정 및 UI 확대 | `fix/transaction-emotion-select` | - | Component | - | 신규 | 감정 초기값 바인딩 오류 해결 및 카테고리/감정 Select 컴포넌트 터치 영역(패딩) 확대 (F8-2 연계) |
+| [ ] | - | F8-7 | 캘린더 미래 날짜 선택 제한(Disabled) | `fix/calendar-future-disable` | - | Component | - | 신규 | 지출/수입 기록 캘린더 및 거래 수정 모달 내 캘린더에서 오늘 기준 '미래 날짜'는 클릭 불가능하도록(disabled) 방어 처리 |
+| [x] | #121 | F8-8 | 거래 수정 캘린더 레이아웃 및 분 단위 추가 | `fix/transaction-edit-calendar` | - | Component | - | 완료 | 거래 수정 모달 내 캘린더 짤림 현상(CSS) 해결 및 기존 시간 선택 시 분(minute) 단위 설정 추가 |
+| [ ] | #125 | F8-10 | 온보딩 '나만의 목표' 직접 입력 UI | `feat/onboarding-custom-goal` | - | Component | - | 신규 | 온보딩(2/6)에서 '나만의 목표' 클릭 시 텍스트 Input으로 전환되어 사용자가 직접 목표명을 작성하도록 구현 |
+| [ ] | #126 | F8-11 | 홈 화면 UI 버그 종합 수정(말랑이/달력) | `fix/home-ui-bugs` | - | Component | - | 신규 | 홈 말랑이 위로 스와이프 시 렌더링 버그 수정, 캘린더 우측 끝 짤림(레이아웃) 수정, 캘린더 선택 날짜(7월 1일 고정)를 오늘 날짜로 동적 수정 |
+| [ ] | - | F8-12 | 온보딩 완료 요청의 totalAsset 누락 수정 | `fix/onboarding-completion-request` | §4·§7 | Page·Hook·api·docs | `['users','me']` | 신규 | 온보딩 완료 요청에 `{totalAsset}` 전달 → 신규·재가입 사용자 `onboardingDone:true` 반영 및 홈 진입 → API 계약 문서 동기화, lint·build 통과 |
+| [ ] | - | F8-13 | 온보딩 목표 생성 요청의 마감일 누락 수정 | `fix/onboarding-goal-due-date` | §7 | Page·Component·docs | `['goals']`·`['universe']` | 신규 | 온보딩 기간을 `YYYY-MM-DD` 형식의 `dueDate`로 변환해 목표 생성 요청에 전달 → 기타 선택 시 공통 `SegmentDatePicker` 재사용 → 과거 날짜 제출 방지 및 API 계약 문서 동기화 |
+| [x] | - | F8-14 | 전역 하드코딩 색상 테마 스크립트 전환 | `fix/hardcoded-colors` | - | Page·Component | - | 완료 | 전역에 남은/하드코딩된 HEX 컬러를 var(--bg-1), var(--text) 등 CSS 테마 변수로 치환 |
+| [ ] | - | F9-1 | 소비 코어 감정 8종 노출 | `feat/core-emotion-display` | - | Component | - | 신규 | 데이터 0건인 감정도 누락 없이 8개 렌더링 처리 |
+| [ ] | - | F9-2 | 감정 분석 퍼센트 로직 변경 | `feat/analysis-percentage-logic` | - | Utils·Component | - | 신규 | 분석 퍼센트를 금액 기준에서 횟수 기준으로 변경 |
+| [ ] | - | F9-3 | 지출 추이 카드 클릭 이동 | `feat/monthly-trend-navigation` | - | Component | - | 신규 | 월별 바/포인트 클릭 시 해당 달 상세 뷰로 이동 |
+| [ ] | - | F9-4 | AI 월별 분석 결과 연동 | `feat/ai-analysis-monthly-link` | - | Component | - | 신규 | AI 대시보드에 월별 리포트 이동 링크 추가 및 데이터 조회 연동 |
+| [ ] | #123 | F9-5 | 평행우주 REC 목표 선택 및 행성 동적 변경 | `feat/universe-rec-target-select` | - | Component | `['universe']` | 신규 | REC 버튼 클릭 시 화면 하단에 목표 리스트 노출 → 목표 선택 시 시뮬레이션 행성(조금 줄여본다면) 결과값 동적 변경 |
+| [x] | - | F10-1 | 거래내역 다중 삭제 UI | `feat/transaction-bulk-delete-ui` | - | api·Component | `['tx','list']` | 완료 | 체크박스 다중 선택 UI 및 삭제 API 연동 |
+| [x] | - | F10-2 | 패턴 분석 연동 및 UI | `feat/recurring-pattern-ui` | §analysis/pattern | api·Component | `['analysis', 'pattern']` | 완료 | 결정론 집계 방향 확정(조합·횟수·근거=GROUP BY, 문구만 서버 생성/AI). `GET /analysis/pattern` 계약 문서화 + `analysisAPI.getPattern`·`usePatternQuery`·AnalysisPageDc 바인딩 완료(evidence 객체 shape). 백엔드 엔드포인트 구현 대기 |
+| [ ] | - | F11-1 | 목표 글래스모피즘 및 만료 상태 스타일 | `feat/goal-design-update` | - | Component | - | 신규 | 목표 폼 투명도 5% 적용 및 과거 목표 흑백(Grayscale) 처리 |
+| [ ] | - | F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 보류 | 날짜 선택기(DatePickerDc) 글래스 시도(5%/모달+스크림)했으나 방향 미확정 → 현재 **불투명 원복**. 월/요일 한글화(2026년 N월 · 월 화 수 목 금 토 일)만 반영. ※모바일에서 시간 패널이 화면 밖으로 넘치는 레이아웃 버그 별도 발견 |
+| [ ] | - | F11-3 | 활성 목표(isMain) 홈·평행우주 연동 | `feat/goal-main-sync` | - | Component | `['goals']` | 신규 | isMain=true 인 활성 목표 데이터를 실시간 구독하여 홈/우주에 렌더링 반영 |
+| [x] | - | F12-1 | 거래내역 다중 선택 CSS 및 체크마크 시인성 개선 | feat/tx-list-ux-improvements | - | Page·Component | - | 완료 | 다중 선택 모서리 겹침 디자인(Radius) 문제 해결, 라이트 모드 체크마크 시인성 개선 |
+| [ ] | - | F12-2 | 카테고리 순서 변경 인디케이터 렌더링 | feat/category-dnd-indicator | - | Component | - | 신규 | 카테고리 드래그 시 마우스 방향에 세로 선 렌더링 |
+| [ ] | - | F12-3 | 평행우주 시나리오 상호작용 및 목표 연동 | feat/universe-scenario-interaction | - | api·Page·Component | ['universe'] | 신규 | 시나리오 요소 버튼화 및 하단 목표 클릭 시 행성 시뮬레이션 동적 반영 |
+| [ ] | - | F12-4 | 예산 데이터 글로벌 상태화 및 대시보드 연동 | feat/global-budget-sync | - | Store·Page·Component | - | 신규 | 홈 말랑이와 전역 예산 상태 연동 및 리스트 상위 5개 필터링 렌더링 |
+| [ ] | - | F12-5 | 온보딩 '나만의 목표' 커스텀 입력 기능 구현 | feat/onboarding-custom-goal-input | - | Component | - | 신규 | 나만의 목표 클릭 시 Input 필드 전환 및 바인딩 |
+| [ ] | - | F12-6 | 온보딩 '기타' 탭 선택 시 레이아웃 여백 버그 수정 | fix/onboarding-date-gap | - | Component | - | 신규 | 폼 컨테이너 팽창 시 상단 컨텐츠와의 간격(gap/margin) 유지 |
+| [ ] | - | F12-7 | 거래내역 수정 정산금 합치기(Merge) UI 및 토글 삭제 | feat/transaction-edit-merge | - | Component·api | ['tx'] | 신규 | 더치페이 미정산 리스트 및 수입/지출 토글 기능 완전 삭제. 수정 모달 내에 정산받은 금액 입력(Merge) UI 신설 및 차감 API 연동 |
+| [ ] | - | F12-8 | 거래내역 월별 필터 및 연월 선택기 UI 개선 | feat/tx-list-month-nav | - | Page·Component | - | 신규 | 월별 필터 1~12월 노출, 연월 선택기 추가 |
+| [ ] | - | F12-9 | 거래내역 필터 내 월/일 개별 선택 기능 | feat/tx-list-month-day-filter | - | Page·Component | - | 신규 | 필터에서 월과 일을 각각 선택하는 UI 구현. (⚠️ 주의: 작업 전 반드시 담당 팀원에게 디자인 시안을 문의 후 작업할 것) |
+| [ ] | - | F12-10 | 대표 목표 설정 UX 변경 및 금액 입력창 고도화 | feat/goal-main-toggle | - | Component | ['goals'] | 신규 | 목표 카드 더블클릭 UX 제거 및 폼 내 토글 추가. 목표 금액 입력 시 3자리 콤마(,) 포맷팅 적용 및 기본 숫자 스피너(위아래 버튼) 제거 |
+| [ ] | - | F12-11 | 평행우주 REC 애니메이션 원복 | fix/universe-rec-animation | - | Component | - | 신규 | 평행우주 화면의 REC 요소 애니메이션을 원래 상태로 되돌리기 |
+| [ ] | - | F13-1 | 결제 퀵태그 FCM 웹 푸시 구현 | feat/fcm-web-push | - | Component·SW | - | 신규 | firebase-messaging-sw.js에서 data-only 알림 처리 및 /quick-tag 딥링크 연결 |
+| [ ] | - | F13-2 | 거래내역 수정 차감(Merge) UI/State 완전 삭제 | feat/transaction-edit-remove-merge | - | Component | - | 신규 | 거래내역 수정 모달 내 정산받은 금액(차감) 입력 UI 및 관련 상태값 전면 삭제 |
+| [ ] | - | F13-3 | 모바일 AI 분석 카드 세로 정렬 및 플립 반응형 | feat/ai-analysis-mobile-layout | - | Component | - | 신규 | 모바일 뷰에서 내부 3개 카드를 가로폭에 꽉 차게 세로 정렬하고, 플립(Flip) 뒷면의 AI 멘트 길이에 맞춰 글자 크기 조율 및 박스 넘침 방지 처리 |
+| [ ] | - | F13-4 | 모바일 테마 토글 DB 동기화 버그 수정 | fix/mobile-theme-sync | - | Component | - | 신규 | 모바일 환경에서 테마(다크/라이트) 변경 시 DB 저장 API 호출이 누락되어 새로고침 시 초기화되는 버그 수정 |
+| [ ] | - | F13-5 | AI 분석 대시보드 UI 골격 및 위험도 렌더링 | feat/ai-dashboard-skeleton | - | Component | - | 신규 | API 연동 및 응답의 소비위험도(Red/Yellow/Green) 기반 컨테이너 색상/아이콘 동적 렌더링 구현 (AI 데이터는 Mock 처리) |
+| [ ] | - | F13-6 | 팩트 리포트 & 맞춤 챌린지 실데이터 바인딩 | feat/ai-dashboard-fact-challenge | - | Component | - | 신규 | 팩트 폭격기 텍스트 렌더링 및 맞춤 챌린지 칩(Chip) UI에 실제 AI 응답 데이터 바인딩 |
+| [ ] | - | F13-7 | 감정소비 분석 실데이터 바인딩 및 예외 처리 | feat/ai-dashboard-emotion | - | Component | - | 신규 | 3단계 감정 분석 텍스트 바인딩 적용 및 AI 응답 지연/에러 시 화면 깨짐 방지용 Fallback(빈 박스/로딩) 처리 |
+| [x] | - | A1-1 | 감정소비 분석 AI 프롬프트 간소화 (Light Empathy) | main | - | 백엔드 | - | 완료 | 백엔드 GptInsightCardGenerator.java 프롬프트를 50자 이내의 가벼운 공감 톤으로 대폭 축소 및 푸시 완료 |
+| [ ] | - | F14-1 | 모바일 및 데스크탑 AI 분석 카드 텍스트 깨짐 현상 수정 | `fix/ai-analysis-text-overflow` | - | Component | - | 신규 | 모바일 긴 글 줄바꿈 보정 및 웹 환경 카드 멘트 짤림 현상 수정 |
+| [ ] | - | F14-2 | 홈 화면 말랑이 빈 상태(물음표) 렌더링 로직 개선 | `feat/home-mallang-logic` | - | Component | - | 신규 | 전체 거래내역이 없을 때만 물음표 노출, 이번 달 감정 부재 시 저번 달 대표 감정으로 폴백(Fallback) |
+| [ ] | - | F14-3 | 감정 리스트 하드코딩 전환 (API 최적화) | `refactor/hardcode-emotions-categories` | - | api·Component | - | 신규 | 지출/수입 등록용 불변 감정 데이터를 프론트 단에 하드코딩하여 API 불필요한 로딩 제거 |
+| [ ] | - | F14-4 | 캘린더 날짜 선택 시 감정 색상 연동 및 그림자 효과 추가 | `feat/calendar-emotion-color` | - | Component | - | 신규 | 달력에 선택된 감정 색상을 적용하고, 미선택 시에는 그림자 효과(Stroke & Shadow)만 렌더링 |
+| [ ] | - | F14-5 | 캘린더 날짜 및 시간 뷰(모드) 선택 UI 분리 | `feat/calendar-mode-split` | - | Component | - | 신규 | 날짜 클릭 시 캘린더(날짜 뷰)만 띄우고, 시간 클릭 시 휠(시간 뷰)만 별도로 노출 |
 
-> **怨꾩링** = ?꾨줎???덉씠??`src/pages` ??`src/hooks` ??`src/api` ??`src/store`). **罹먯떆??* = TanStack Query Key(諛곗뿴 臾몄옄??瑗?'tx' ?? 荑쇰━ ?뚮씪誘명꽣???ы븿?섏? ?딆쓬).
-> **GitHub ?깅줉 ?댁뒋(Open)**: #32(F4-4) 쨌 #33(F5-1) 쨌 #34(F5-2) 쨌 #36(F5-3) ????4媛쒓? ?ㅼ젣 ?? ? ?깅줉 ?묒뾽.
-> **F4-6**: ISSUES.md?먮쭔 ?덇퀬 GitHub 誘몃벑濡?(諛깆뿏??짠9 analysis ?좏뻾 ?꾩슂) ??李⑹닔 ???댁뒋 ?깅줉 ?꾩슂.
-> **F4-7**: GitHub ?댁뒋 ?놁씠 肄붾뱶媛 癒쇱? 援ы쁽??耳?댁뒪(而ㅻ컠 b7b91e1) ??'?꾨즺' 泥섎━. 蹂꾨룄 ?댁뒋 ?깅줉 遺덊븘??
+> **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
+> **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.
+> **F4-6**: ISSUES.md에만 있고 GitHub 미등록 (백엔드 §9 analysis 선행 필요) → 착수 전 이슈 등록 필요.
+> **F4-7**: GitHub 이슈 없이 코드가 먼저 구현된 케이스(커밋 b7b91e1) → '완료' 처리. 별도 이슈 등록 불필요.
 
-## 蹂묐젹 ?묒뾽 洹쒖튃 (?먯씠?꾪듃 媛?異⑸룎 諛⑹?)
+## 병렬 작업 규칙 (에이전트 간 충돌 방지)
 
-- **?꾨찓???⑥쐞 遺꾪븷**: F1(?몄쬆/?좎?)쨌F3(嫄곕옒)쨌F4(紐⑺몴/遺꾩꽍/?ㅼ젙) ?깆? ?쒕줈 ?ㅻⅨ ?먯씠?꾪듃媛 ?숈떆???묒뾽?대룄 臾대갑?섎떎.
-- **怨듯넻 而댄룷?뚰듃 ?ъ쟾 怨좎젙**: 踰꾪듉쨌紐⑤떖쨌?낅젰李???`components/common/` ?섏쐞??F ?묒뾽 ?꾩뿉 ?뺤젙?섎ŉ, ?꾩쓽 ?섏젙 湲덉?.
-- **理쒖슦???좏뻾**: `F1-1` Axios ?명꽣?됲꽣???꾩껜 API???곹뼢??誘몄튂誘濡??ㅻⅨ API ?곕룞 ?댁쟾???⑥씪 ?먯씠?꾪듃媛 癒쇱? ?꾩닔?쒕떎. (?꾩옱 ?꾨즺)
-- **罹먯떆 ??Query Key) ?꾩닔**: ?쒖뿉 紐낆떆??洹쒖튃(`['tx','list']` ?????덈? ?곕Ⅸ?? ?꾩쓽 罹먯떆 ?ㅻ줈 ?꾩뿭 ?곹깭媛 瑗ъ씠??寃껋쓣 諛⑹??쒕떎.
-- **釉뚮옖移섎챸 ?쇱튂**: ?쒖쓽 釉뚮옖移섎챸??洹몃?濡??ъ슜?쒕떎. **1?댁뒋 = 1釉뚮옖移?= 1PR.**
+- **도메인 단위 분할**: F1(인증/유저)·F3(거래)·F4(목표/분석/설정) 등은 서로 다른 에이전트가 동시에 작업해도 무방하다.
+- **공통 컴포넌트 사전 고정**: 버튼·모달·입력창 등 `components/common/` 하위는 F 작업 전에 확정하며, 임의 수정 금지.
+- **최우선 선행**: `F1-1` Axios 인터셉터는 전체 API에 영향을 미치므로 다른 API 연동 이전에 단일 에이전트가 먼저 완수한다. (현재 완료)
+- **캐시 키(Query Key) 엄수**: 표에 명시된 규칙(`['tx','list']` 등)을 절대 따른다. 임의 캐시 키로 전역 상태가 꼬이는 것을 방지한다.
+- **브랜치명 일치**: 표의 브랜치명을 그대로 사용한다. **1이슈 = 1브랜치 = 1PR.**
 
-## [李멸퀬] ?숈쟻 ?덉궛 諛??먯궛 愿由?怨좊룄??(諛깆뿏??M6, ?꾨줎?몄뿏??M7) ?듭떖 鍮꾩쫰?덉뒪 濡쒖쭅
-> **?좑툘 AI ?먯씠?꾪듃(Claude, Gemini ?? ?꾨룆:** A6(諛깆뿏?? 諛?F7(?꾨줎?몄뿏?? ?묒뾽???섑뻾?????꾨옒???뚭퀎 猷곗쓣 諛섎뱶??以?섑빐???⑸땲??
+## [참고] 동적 예산 및 자산 관리 고도화 (백엔드 M6, 프론트엔드 M7) 핵심 비즈니스 로직
+> **⚠️ AI 에이전트(Claude, Gemini 등) 필독:** A6(백엔드) 및 F7(프론트엔드) 작업을 수행할 때 아래의 회계 룰을 반드시 준수해야 합니다.
 
-### 1. 湲고쉷 諛곌꼍 諛??듭떖 紐⑺몴
-*   **湲곗〈???쒓퀎:** 臾댁“嫄??꾩썡 吏異쒖쓽 5%瑜??덉빟?섎룄濡??덉궛 怨좎젙??
-*   **蹂寃쎈릺???꾪궎?띿쿂:** ?ъ슜?먭? ?ㅼ젙??紐⑤뱺 紐⑺몴??'?붾퀎 ?꾩슂 ?異뺤븸'???⑹궛?섏뿬 洹?珥앹븸留뚰겮 ???곕룄濡?**?숈쟻 ?덉궛** ?몄꽦.
-*   **?섎룞 ?좊떦(遊됲닾 ?덉궛踰? ?꾩엯:** ?덉궛??紐⑥옄?????ъ슜?먭? 吏곸젒 ?대뼡 紐⑺몴???곗꽑?곸쑝濡??덉쓣 ?ｌ쓣吏 ?좏깮(?섎룞 ?湲??섎뒗 ?먯궛 愿由?UX 援ы쁽.
+### 1. 기획 배경 및 핵심 목표
+*   **기존의 한계:** 무조건 전월 지출의 5%를 절약하도록 예산 고정됨.
+*   **변경되는 아키텍처:** 사용자가 설정한 모든 목표의 '월별 필요 저축액'을 합산하여 그 총액만큼 덜 쓰도록 **동적 예산** 편성.
+*   **수동 할당(봉투 예산법) 도입:** 예산이 모자랄 때 사용자가 직접 어떤 목표에 우선적으로 돈을 넣을지 선택(수동 저금)하는 자산 관리 UX 구현.
 
-### 2. 珥앹옄??Total Asset)怨?紐⑺몴(Goal)???뚭퀎 洹쒖튃
-*   '珥앹옄??? ?ъ슜?먯쓽 ?ㅼ젣 ?꾩껜 ?먯궛?대ŉ, '紐⑺몴 湲덉븸'? 珥앹옄???덉뿉??"???????쇰줈 瑗щ━?쒕? ?ъ븘???덉엯?덈떎.
-*   **?대룞(Transfer) 媛쒕뀗 ?곸슜:** 紐⑺몴??10留??먯쓣 ?異뺥븳?ㅺ퀬 ?댁꽌 '珥앹옄???먯꽌 ?덉쓣 鍮쇰쾭由щ㈃ ???⑸땲?? ?대??곸쑝濡?`珥앹옄??500留? = 誘명븷???먯궛(490留? + 臾띠씤 ?먯궛(紐⑺몴 10留?`?쇰줈 ?곹깭留?蹂寃쎈릺?댁빞 ?섎ŉ, ?꾩껜 珥앹옄???섏튂???좎??⑸땲??
-*   **?쒕굹由ъ삤蹂??덉궛 ?숈쟻 ???**
-    1. **?덉궛 ?ъ꽦:** 怨꾪쉷???덉궛留뚰겮 ?덉빟 ?깃났 ?? 紐⑺몴移?洹몃옒???뺤긽 ?깆옣.
-    2. **?덉궛 珥덇낵 ?ъ꽦:** 紐⑺몴 ?異뺤븸??紐⑤몢 梨꾩슦怨??⑥? ?덉? '?섏쓽 珥앹옄??誘명븷???먯궛)'???뚮윭???꾩쟻.
-    3. **?덉궛 誘몃떖:** 紐⑺몴瑜?梨꾩슱 ???녿뒗 ?곹깭?대?濡??먮룞 ?깆옣??硫덉텛硫? ?ъ슜?먭? ?섎룞?쇰줈 ???붾㈃?먯꽌 [?湲덊븯湲?瑜??뚮윭 嫄곕옒 ?댁뿭怨?紐⑺몴瑜?留ㅽ븨(goal_id)?댁빞 ??
+### 2. 총자산(Total Asset)과 목표(Goal)의 회계 규칙
+*   '총자산'은 사용자의 실제 전체 자산이며, '목표 금액'은 총자산 안에서 "안 쓸 돈"으로 꼬리표를 달아둔 돈입니다.
+*   **이동(Transfer) 개념 적용:** 목표에 10만 원을 저축한다고 해서 '총자산'에서 돈을 빼버리면 안 됩니다. 내부적으로 `총자산(500만) = 미할당 자산(490만) + 묶인 자산(목표 10만)`으로 상태만 변경되어야 하며, 전체 총자산 수치는 유지됩니다.
+*   **시나리오별 예산 동적 대응:**
+    1. **예산 달성:** 계획된 예산만큼 절약 성공 시, 목표치 그래프 정상 성장.
+    2. **예산 초과 달성:** 목표 저축액을 모두 채우고 남은 돈은 '나의 총자산(미할당 자산)'에 플러스 누적.
+    3. **예산 미달:** 목표를 채울 수 없는 상태이므로 자동 성장이 멈추며, 사용자가 수동으로 홈 화면에서 [저금하기]를 눌러 거래 내역과 목표를 매핑(goal_id)해야 함.
 
-### 3. UI/UX 援ы쁽 ???덈? 二쇱쓽?ы빆 (AI ?먯씠?꾪듃 ?됰룞 媛뺣졊)
-> **?슚 STOP! 肄붾뱶瑜?吏쒓린 ?꾩뿉 諛섎뱶??湲고쉷?먯뿉寃?吏덈Ц?섏꽭??**
-蹂?紐낆꽭??F7-6 ~ F7-10)?먮뒗 ?듭떖 湲곕뒫留?紐낆떆?섏뼱 ?덉쑝硫? 援ъ껜?곸씤 ?쒓컖???뷀뀒???? ?ㅼ??댄봽 ?명꽣?숈뀡 諛⑹떇, ?쒕∼?ㅼ슫 ?좊땲硫붿씠?? 鍮??붾㈃(Empty State) ?덈궡 臾멸뎄 ??? ?섎룄?곸쑝濡?鍮꾩썙???덉뒿?덈떎. 
-?곕씪??AI ?먯씠?꾪듃???묒뾽?먮뒗 **?덈?濡?蹂몄씤???꾩쓽?濡??붿옄?몄쓣 ?곸긽?섏뿬 肄붾뱶瑜??묒꽦?섎㈃ ???⑸땲??** (?붿옄??踰뺤튂 諛??섎꽕??洹쒖젙 ?꾨컲 諛⑹?)
+### 3. UI/UX 구현 시 절대 주의사항 (AI 에이전트 행동 강령)
+> **🚨 STOP! 코드를 짜기 전에 반드시 기획자에게 질문하세요.**
+본 명세서(F7-6 ~ F7-10)에는 핵심 기능만 명시되어 있으며, 구체적인 시각적 디테일(예: 스와이프 인터랙션 방식, 드롭다운 애니메이션, 빈 화면(Empty State) 안내 문구 등)은 의도적으로 비워져 있습니다. 
+따라서 AI 에이전트나 작업자는 **절대로 본인의 임의대로 디자인을 상상하여 코드를 작성하면 안 됩니다.** (디자인 법치 및 하네스 규정 위반 방지)
 
-**[AI ?꾩닔 ?댄뻾 ?꾨줈?몄뒪]**
-?묒뾽 ?쒖옉 ?? 諛섎뱶???ъ슜??湲고쉷???먭쾶 ?ㅼ쓬 ?뺤떇?쇰줈 **癒쇱? 吏덈Ц?섍퀬 ?뱀씤(Confirm)??諛쏆븘???⑸땲??**
-- *"??湲곕뒫(?? 紐⑺몴 ?좏깮 ?숈쟻 UI)????????[?대윴 ?덉씠?꾩썐/?좊땲硫붿씠?????곸슜?섎젮怨??섎뒗?? 湲곗〈 DatePickerDc??猷곗뿉 鍮꾩텛??蹂댁븯?????대젃寃?援ы쁽?대룄 ?좉퉴??"*
-?뱀씤???⑥뼱吏湲??꾧퉴吏???덈? 肄붾뱶瑜??묒꽦?섍굅???섏젙?섏? 留덉떗?쒖삤.
+**[AI 필수 이행 프로세스]**
+작업 시작 전, 반드시 사용자(기획자)에게 다음 형식으로 **먼저 질문하고 승인(Confirm)을 받아야 합니다.**
+- *"이 기능(예: 목표 선택 동적 UI)에 대해 저는 [이런 레이아웃/애니메이션]을 적용하려고 하는데, 기존 DatePickerDc의 룰에 비추어 보았을 때 이렇게 구현해도 될까요?"*
+승인이 떨어지기 전까지는 절대 코드를 작성하거나 수정하지 마십시오.
