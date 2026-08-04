@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -17,6 +17,16 @@ export const app = initializeApp(firebaseConfig);
 export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
 export const messaging = typeof window !== "undefined" ? getMessaging(app) : null;
 console.warn('[배포 디버그] Firebase 초기화 완료. messaging 객체:', !!messaging);
+
+// 포그라운드(화면을 보고 있을 때) 알림 수신 대기
+if (messaging) {
+  onMessage(messaging, (payload) => {
+    console.log("🔥 [포그라운드 알림 수신]: ", payload);
+    const title = payload.notification?.title || payload.data?.title || "새 알림";
+    const body = payload.notification?.body || payload.data?.body || "내용이 없습니다.";
+    alert(`[알림 도착!]\n제목: ${title}\n내용: ${body}`);
+  });
+}
 
 export const requestForToken = async () => {
   console.warn('[배포 디버그] requestForToken 함수 호출됨!');
