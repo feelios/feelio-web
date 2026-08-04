@@ -106,6 +106,7 @@ export default function UniversePageDc() {
     const savedAmount = reduced.monthlySaving - current.monthlySaving;
 
     return {
+      goalName: goal.name,
       current: {
         tag: "현재 우주",
         title: current.title,
@@ -114,7 +115,10 @@ export default function UniversePageDc() {
         accent: focus ? focus.color : "#9E96EE",
         narratives: [ current.narration ],
         goalNote: currentNote,
-        emotionTag: focus ? focus.name : "감정"
+        emotionTag: focus ? focus.name : "감정",
+        monthlySaving: current.monthlySaving,
+        monthsToGoal: current.monthsToGoal,
+        estimatedAchieveDate: current.estimatedAchieveDate
       },
       reduced: {
         tag: "다른 우주",
@@ -124,7 +128,10 @@ export default function UniversePageDc() {
         accent: "#82E2C2",
         narratives: [ reduced.narration ],
         goalNote: reducedNote,
-        emotionTag: "평온 · 뿌듯함"
+        emotionTag: "평온 · 뿌듯함",
+        monthlySaving: reduced.monthlySaving,
+        monthsToGoal: reduced.monthsToGoal,
+        estimatedAchieveDate: reduced.estimatedAchieveDate
       }
     };
   }, [universeData]);
@@ -467,10 +474,12 @@ export default function UniversePageDc() {
 
           {egg && (
             <UniverseEasterEgg 
-              eggPct={Math.round(calc)} calc={calc}
-              eggDistA={((calc / 100) * 4.24).toFixed(2)} eggTimeA={Math.round((calc / 100) * 37)}
-              eggDistB={((calc / 100) * 7.81).toFixed(2)} eggTimeB={Math.round((calc / 100) * 63)}
-              eggCurv={((calc / 100) * 0.83).toFixed(2)}
+              goalName={U_DATA.goalName}
+              current={U_DATA.current}
+              reduced={U_DATA.reduced}
+              revealProgress={Math.round(calc)}
+              isMobile={isMobile}
+              isShortMobile={isShortMobile}
             />
           )}
 
