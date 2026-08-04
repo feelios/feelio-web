@@ -250,17 +250,23 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
     return new Date(now - tzOffset).toISOString().slice(0, 16);
   };
 
-  const [form, setForm] = useState(() => ({
-    type: 'expense',
-    amount: '',
-    category: prefill?.goalId != null ? '저축' : null,
-    emotion: null,
-    situation: [],
-    memo: '',
-    savingsType: prefill?.goalId != null ? '목표' : null,
-    goalId: prefill?.goalId ?? null,
-    date: getInitialDate()
-  }));
+  const [form, setForm] = useState(() => {
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+    const urlAmount = searchParams.get('amount');
+    const urlMerchant = searchParams.get('merchant');
+    
+    return {
+      type: 'expense',
+      amount: urlAmount || '',
+      category: prefill?.goalId != null ? '저축' : null,
+      emotion: null,
+      situation: [],
+      memo: urlMerchant || '',
+      savingsType: prefill?.goalId != null ? '목표' : null,
+      goalId: prefill?.goalId ?? null,
+      date: getInitialDate()
+    };
+  });
 
   useEffect(() => {
     if (prefill?.goalId != null) onConsumePrefill?.();

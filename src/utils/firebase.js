@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { getAnalytics } from "firebase/analytics";
+import useStore from '../stores/useFeelioStore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAg9_490y4fCDpicBo9OiQLCbOUpFJQcYQ",
@@ -22,9 +23,7 @@ console.warn('[배포 디버그] Firebase 초기화 완료. messaging 객체:', 
 if (messaging) {
   onMessage(messaging, (payload) => {
     console.log("🔥 [포그라운드 알림 수신]: ", payload);
-    const title = payload.notification?.title || payload.data?.title || "새 알림";
-    const body = payload.notification?.body || payload.data?.body || "내용이 없습니다.";
-    alert(`[알림 도착!]\n제목: ${title}\n내용: ${body}`);
+    useStore.getState().actions.showToastNotification(payload.data || payload.notification);
   });
 }
 
@@ -40,9 +39,11 @@ export const requestForToken = async () => {
     const permission = await Notification.requestPermission();
     console.warn('[배포 디버그] 권한 요청 결과:', permission);
     
-    if (permission === 'granted') {
+      if (permission === 'granted') {
       console.warn('[배포 디버그] 권한 granted 됨. getToken 시도...');
-      const currentToken = await getToken(messaging);
+      const currentToken = await getToken(messaging, {
+        vapidKey: 'BL4bUHfyu8jpm5UPuOeOLHfnb-r0yFhtwy0O3Zaxo_zsGfa5g3MX2pk6sQwR5ePMNsz0nHNd3Z6qVq-QU-TS-w8'
+      });
       
       if (currentToken) {
         console.warn('✅ [배포 디버그] FCM 토큰 발급 완벽 성공:', currentToken);
