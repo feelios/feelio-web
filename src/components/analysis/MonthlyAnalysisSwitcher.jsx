@@ -2,6 +2,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import styled from '@emotion/styled';
+import { theme } from '../../styles/theme.js';
 
 const MONTH_LABELS = [
   "1월", "2월", "3월", "4월", "5월", "6월",
@@ -51,6 +52,7 @@ const NavButton = styled.button`
 `;
 
 const TitleButton = styled.button`
+  font-family: ${theme.font};
   font-size: 18px;
   font-weight: 800;
   color: var(--text);
