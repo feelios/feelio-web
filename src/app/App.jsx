@@ -10,7 +10,7 @@ import { useFeelioStore } from '../stores/useFeelioStore.js';
 import { AppLayoutDc } from '../components/common/AppLayoutDc.jsx';
 import { BudgetSync } from '../components/common/BudgetSync.jsx';
 import { ErrorBoundary } from '../components/common/ErrorBoundary.jsx';
-import { Toast } from '../components/common/Toast.jsx';
+import { Toast, NotificationToast } from '../components/common/Toast.jsx';
 import ProfileModalDc from '../components/profile/ProfileModalDc.jsx';
 import TransactionDetailModal from '../components/transactions/TransactionDetailModal.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
@@ -153,6 +153,26 @@ export default function App() {
       {profileOpen && <ProfileModalDc state={state} actions={actions} onClose={() => setProfileOpen(false)} />}
       {selectedTxn && <TransactionDetailModal transaction={selectedTxn} actions={actions} onClose={() => setSelectedTxn(null)} />}
       <Toast message={state.toast} onDone={actions.clearToast} />
+      <NotificationToast 
+        notification={state.toastNotification} 
+        onClose={actions.clearToastNotification} 
+        onClick={(noti) => {
+          if (noti.url) {
+            try {
+              const url = new URL(noti.url, window.location.origin);
+              // Push query params to history so RecordPage can read them
+              window.history.pushState({}, '', url.pathname + url.search);
+              if (url.pathname.includes('record')) {
+                setRoute('record');
+              } else {
+                setRoute(url.pathname.replace('/', '') || 'home');
+              }
+            } catch (e) {
+              console.error('Invalid URL in notification', e);
+            }
+          }
+        }} 
+      />
     </Root>
   );
 }

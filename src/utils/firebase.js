@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { getAnalytics } from "firebase/analytics";
+import useStore from '../stores/useFeelioStore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAg9_490y4fCDpicBo9OiQLCbOUpFJQcYQ",
@@ -22,9 +23,7 @@ console.warn('[배포 디버그] Firebase 초기화 완료. messaging 객체:', 
 if (messaging) {
   onMessage(messaging, (payload) => {
     console.log("🔥 [포그라운드 알림 수신]: ", payload);
-    const title = payload.notification?.title || payload.data?.title || "새 알림";
-    const body = payload.notification?.body || payload.data?.body || "내용이 없습니다.";
-    alert(`[알림 도착!]\n제목: ${title}\n내용: ${body}`);
+    useStore.getState().actions.showToastNotification(payload.data || payload.notification);
   });
 }
 

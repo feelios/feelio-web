@@ -12,7 +12,8 @@ const initialState = {
   user: { nickname: '서연', provider: 'Google', email: '' },
   goals: [],
   transactions: [],
-  toast: ''
+  toast: '',
+  toastNotification: null
 };
 
 function normalizeMode(mode) {
@@ -183,6 +184,12 @@ const useStore = create(
         },
         showToast: (message) => {
           set((prev) => ({ state: { ...prev.state, toast: message } }));
+        },
+        clearToastNotification: () => {
+          set((prev) => ({ state: { ...prev.state, toastNotification: null } }));
+        },
+        showToastNotification: (payload) => {
+          set((prev) => ({ state: { ...prev.state, toastNotification: payload } }));
         },
         resetData: () => {
           set((prev) => ({
