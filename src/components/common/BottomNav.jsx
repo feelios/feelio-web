@@ -6,9 +6,10 @@ const Bar = styled.nav`
   position: fixed;
   left: 12px;
   right: 12px;
-  bottom: calc(12px + env(safe-area-inset-bottom));
+  bottom: calc(var(--mobile-nav-offset) + env(safe-area-inset-bottom, 0px));
   z-index: 40;
   display: none;
+  height: var(--mobile-nav-height);
   grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   padding: 8px;
