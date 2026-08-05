@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 import { GlassCard } from '../components/common/GlassCard.jsx';
@@ -211,6 +211,10 @@ export default function OnboardingPage({ onComplete }) {
   const [current, setCurrent] = useState(0);
   const [totalAsset, setTotalAsset] = useState(0);
 
+  // 제출 잠금. isPending 은 렌더를 거쳐야 반영돼서, 제출이 끝났는데 화면이 아직
+  // 안 넘어간 사이에 다시 눌리면 목표가 또 만들어진다. ref 는 즉시 걸린다.
+  const submittingRef = useRef(false);
+
   const updateMeMutation = useUpdateMeMutation();
   const createGoalMutation = useCreateGoalMutation();
   const completeOnboardingMutation = useCompleteOnboardingMutation();
@@ -234,12 +238,15 @@ export default function OnboardingPage({ onComplete }) {
     if (step === 1 && !isGoalValid) return;
 
     if (step >= 6) {
+      if (submittingRef.current) return;
+
       const dueDate = getDueDate();
       if (!dueDate || dueDate < formatLocalDate(new Date())) {
         alert('마감 날짜는 오늘 이후로 설정해 주세요.');
         return;
       }
 
+      submittingRef.current = true;
       try {
         await updateMeMutation.mutateAsync({ nickname: nickname.trim(), totalAsset });
 
@@ -255,6 +262,8 @@ export default function OnboardingPage({ onComplete }) {
         
         onComplete();
       } catch (err) {
+        // 실패했을 때만 잠금을 푼다. 성공 뒤엔 화면이 넘어갈 때까지 잠근 채로 둔다.
+        submittingRef.current = false;
         console.error('[onboarding] submit failed:', err);
         alert('온보딩 처리 중 오류가 발생했습니다. 다시 시도해 주세요.');
       }
