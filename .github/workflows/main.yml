@@ -12,7 +12,12 @@ jobs:
     steps:  
       - name: "환경변수 세팅"
         run: |
-            if [ "${{ github.ref }}" = "refs/heads/deploy-kmj" ]; then
+            BRANCH_NAME="${{ github.ref_name }}"
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              BRANCH_NAME="${{ github.base_ref }}"
+            fi
+
+            if [ "$BRANCH_NAME" = "deploy-kmj" ]; then
           
               echo "GCP_VM_HOST=${{ secrets.GCP_VM_HOST_KMJ }}" >> $GITHUB_ENV
               echo "GCP_VM_USERNAME=${{ secrets.GCP_VM_USERNAME_KMJ }}" >> $GITHUB_ENV
@@ -25,7 +30,7 @@ jobs:
               echo "APPLICATION_SECRET=${{ secrets.APPLICATION_SECRET_KMJ }}" >> $GITHUB_ENV
               echo "ENV=${{ secrets.ENV_KMJ }}" >> $GITHUB_ENV
 
-            elif [ "${{ github.ref }}" = "refs/heads/deploy-kec" ]; then
+            elif [ "$BRANCH_NAME" = "deploy-kec" ]; then
               # ... (나머지 브랜치 환경변수는 기존과 동일하게 유지)
               echo "GCP_VM_HOST=${{ secrets.GCP_VM_HOST_KEC }}" >> $GITHUB_ENV
               echo "GCP_VM_USERNAME=${{ secrets.GCP_VM_USERNAME_KEC }}" >> $GITHUB_ENV
@@ -37,7 +42,7 @@ jobs:
               echo "APPLICATION_SECRET=${{ secrets.APPLICATION_SECRET_KEC }}" >> $GITHUB_ENV
               echo "ENV=${{ secrets.ENV_KEC }}" >> $GITHUB_ENV
 
-            elif [ "${{ github.ref }}" = "refs/heads/deploy-npr" ]; then
+            elif [ "$BRANCH_NAME" = "deploy-npr" ]; then
               # ... (나머지 브랜치 환경변수는 기존과 동일하게 유지)
               echo "GCP_VM_HOST=${{ secrets.GCP_VM_HOST_NPR }}" >> $GITHUB_ENV
               echo "GCP_VM_USERNAME=${{ secrets.GCP_VM_USERNAME_NPR }}" >> $GITHUB_ENV
@@ -65,13 +70,18 @@ jobs:
       - name: React Web Build and Docker image build and push
         run: |
           # 1. 프론트엔드는 src/main/resources 가 아니라 최상단에 .env 로 생성합니다.
-          echo ${{env.APPLICATION_SECRET}} | base64 --decode > .env
+          echo "${{env.APPLICATION_SECRET}}" | base64 --decode > .env
           
-          echo "${{env.DOCKER_PASSWORD}}" | docker login -u ${{env.DOCKER_USERNAME}} --password-stdin
+          if [ -z "${{env.DOCKER_USERNAME}}" ]; then
+            echo "Error: DOCKER_USERNAME is empty. Secrets might not be loaded properly."
+            exit 1
+          fi
+          
+          echo "${{env.DOCKER_PASSWORD}}" | docker login -u "${{env.DOCKER_USERNAME}}" --password-stdin
           
           # 2. 이미지 이름을 spring-app 에서 web-app 으로 변경합니다.
-          docker build -t ${{env.DOCKER_USERNAME}}/web-app:latest .
-          docker push ${{env.DOCKER_USERNAME}}/web-app:latest
+          docker build -t "${{env.DOCKER_USERNAME}}/web-app:latest" .
+          docker push "${{env.DOCKER_USERNAME}}/web-app:latest"
 
 
       - name: GCP SSH REMOTE 원격접속
