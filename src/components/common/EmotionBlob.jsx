@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { EmptyEmotionBlob } from './EmptyEmotionBlob.jsx';
+import { useFeelioStore } from '../../stores/useFeelioStore.js';
 
 const EMOTIONS = {
   신남: { core: '#FF9DC4', light: '#FFF0F6', accent: '#FFC49A', ink: '#B84B7C', face: 'excited' },
@@ -28,6 +30,7 @@ const SILHOUETTE =
 let uid = 0;
 
 function normalizeEmotion(emotion) {
+  if (emotion === '물음표') return '물음표';
   return EMOTIONS[emotion] ? emotion : ALIASES[emotion] || '평온';
 }
 
@@ -141,7 +144,9 @@ function Face({ face, ink }) {
 }
 
 export function EmotionBlob({ emotion = '평온', size = 140, interactive = true, onDragChange }) {
+  const { state } = useFeelioStore();
   const emotionName = normalizeEmotion(emotion);
+  
   const meta = EMOTIONS[emotionName];
   const idRef = useRef(`eb${uid++}`);
   const turbulenceRef = useRef(null);
@@ -288,6 +293,10 @@ export function EmotionBlob({ emotion = '평온', size = 140, interactive = true
   const physicsTransform = drag.isDragging
     ? `translate(${drag.dx * 0.38}px, ${drag.dy * 0.38}px) rotate(${dragAngle}rad) scaleX(${dragStretchX}) scaleY(${dragStretchY}) rotate(${-dragAngle}rad)`
     : `scaleX(${springScale.x}) scaleY(${springScale.y})`;
+
+  if (emotionName === '물음표') {
+    return <EmptyEmotionBlob size={size} dark={state.mode === 'dark'} />;
+  }
 
   return (
     <div
