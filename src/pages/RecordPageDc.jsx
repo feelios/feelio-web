@@ -401,7 +401,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
       situationIds: [],
       memo: form.memo || null,
       goalId: isGoalSaving ? form.goalId : undefined,
-      occurredAt: new Date(form.date).toISOString()
+      occurredAt: form.date.length === 16 ? form.date + ':00' : form.date
     };
 
     mutation.mutate(payload, {

@@ -377,7 +377,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
         categoryId: Number(form.categoryId),
         emotionId: Number(form.emotionId),
         memo: form.memo,
-        occurredAt: form.date ? new Date(form.date).toISOString() : transaction.occurredAt
+        occurredAt: form.date ? (form.date.length === 16 ? form.date + ':00' : form.date) : transaction.occurredAt
       }
     });
     setMode('detail');
