@@ -1,4 +1,4 @@
-﻿## 프론트엔드 작업 핵심 원칙 (Core Directive)
+## 프론트엔드 작업 핵심 원칙 (Core Directive)
 **"현재 웹의 형태와 디자인(UI/UX)은 절대 훼손하지 않는다."**
 모든 프론트엔드 작업은 기존 뷰(View) 템플릿과 스타일링을 100% 유지한 상태에서 **API 통신, 데이터 바인딩, 비즈니스 로직(오류 수정) 연결**에만 국한됩니다. 에이전트가 임의로 화면 디자인이나 레이아웃을 수정하는 것을 엄격히 금지합니다.
 
@@ -86,6 +86,7 @@
 | [x] | - | F13-5 | AI 분석 대시보드 UI 골격 및 위험도 렌더링 | feat/ai-dashboard-skeleton | - | Component | - | 신규 | API 연동 및 응답의 소비위험도(Red/Yellow/Green) 기반 컨테이너 색상/아이콘 동적 렌더링 구현 (AI 데이터는 Mock 처리) |
 | [ ] | - | F13-6 | 팩트 리포트 & 맞춤 챌린지 실데이터 바인딩 | feat/ai-dashboard-fact-challenge | - | Component | - | 신규 | 팩트 폭격기 텍스트 렌더링 및 맞춤 챌린지 칩(Chip) UI에 실제 AI 응답 데이터 바인딩 |
 | [ ] | - | F13-7 | 감정소비 분석 실데이터 바인딩 및 예외 처리 | feat/ai-dashboard-emotion | - | Component | - | 신규 | 3단계 감정 분석 텍스트 바인딩 적용 및 AI 응답 지연/에러 시 화면 깨짐 방지용 Fallback(빈 박스/로딩) 처리 |
+| [ ] | - | F13-8 | AI 분석 리포트 실제 엔드포인트 연동 (A8-2 연계) | `feat/bind-ai-report-api` | - | Hook·Page | `['aiReport']` | 신규 | 기존 목업용 `useAiInsightsQuery`를 실제 AI가 연동된 `useAiReportQuery`(`/api/analysis/ai-report`)로 교체 및 응답 DTO를 F13-6에서 분리한 컴포넌트들에 매핑 |
 
 | [ ] | - | F14-1 | 모바일 및 데스크탑 AI 분석 카드 텍스트 깨짐 현상 수정 | `fix/ai-analysis-text-overflow` | - | Component | - | 신규 | 모바일 긴 글 줄바꿈 보정 및 웹 환경 카드 멘트 짤림 현상 수정 |
 | [ ] | - | F14-2 | 홈 화면 말랑이 빈 상태(물음표) 렌더링 로직 개선 | `feat/home-mallang-logic` | - | Component | - | 신규 | 전체 거래내역이 없을 때만 물음표 노출, 이번 달 감정 부재 시 저번 달 대표 감정으로 폴백(Fallback) |
