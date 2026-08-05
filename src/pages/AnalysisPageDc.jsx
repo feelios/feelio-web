@@ -313,7 +313,6 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                   <i key={lamp} className={lamp === risk?.lamp ? `${lamp} active` : lamp} />
                 ))}
               </RiskSignal>
-              </RiskSignal>
             ) : (
               <span css={{
                 width: item.type === 'fact' ? 10 : 8,
@@ -344,7 +343,6 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                       display: 'none',
                       '@media (min-width: 821px)': { display: 'inline' }
                     }}>{item.note}</span>}
-              </div>
               </div>
               {isInsightsLoading ? (
                 <Skeleton w="82%" h={item.type === 'fact' ? 17 : 16} radius={6} css={{ marginTop: 4 }} />

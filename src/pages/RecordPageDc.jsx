@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, Fragment, useRef } from 'react';
 import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
@@ -242,6 +242,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
   const [addingText, setAddingText] = useState('');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [datePickerInitialMode, setDatePickerInitialMode] = useState('date');
+  const datePickerAnchorRef = useRef(null);
 
   const getInitialDate = () => {
     const now = new Date();
@@ -591,15 +592,15 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
               placeholder="한 줄 메모 - 그 순간, 왜 그 마음이었을까요?"
               css={{ marginTop: 14, minHeight: 76, resize: 'none', width: '100%', boxSizing: 'border-box', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 13, padding: '12px 15px', color: 'var(--text)', outline: 0, fontFamily: 'inherit' }}
             />
-            <label css={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
+            <label ref={datePickerAnchorRef} css={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
               <div css={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.06)', padding: 4, borderRadius: 12 }}>
                 <button 
                   type="button" 
-                  onClick={() => setField('date', getInitialDate())}
+                  onClick={() => { setField('date', getInitialDate()); setIsDatePickerOpen(false); }}
                   css={{ 
                     padding: '6px 14px', borderRadius: 10, border: 0, 
-                    background: form.date === getInitialDate() || new Date(form.date).toDateString() === new Date().toDateString() ? (accent || 'var(--ink)') : 'transparent',
-                    color: form.date === getInitialDate() || new Date(form.date).toDateString() === new Date().toDateString() ? 'var(--bg-1)' : 'var(--sub)', 
+                    background: (!isDatePickerOpen && new Date(form.date).toDateString() === new Date().toDateString()) ? (accent || 'var(--ink)') : 'transparent',
+                    color: (!isDatePickerOpen && new Date(form.date).toDateString() === new Date().toDateString()) ? 'var(--bg-1)' : 'var(--sub)', 
                     fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s'
                   }}
                 >
@@ -610,8 +611,8 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
                   onClick={() => setIsDatePickerOpen(true)}
                   css={{ 
                     padding: '6px 14px', borderRadius: 10, border: 0, 
-                    background: new Date(form.date).toDateString() !== new Date().toDateString() ? (accent || 'var(--ink)') : 'transparent',
-                    color: new Date(form.date).toDateString() !== new Date().toDateString() ? 'var(--bg-1)' : 'var(--sub)', 
+                    background: (isDatePickerOpen || new Date(form.date).toDateString() !== new Date().toDateString()) ? (accent || 'var(--ink)') : 'transparent',
+                    color: (isDatePickerOpen || new Date(form.date).toDateString() !== new Date().toDateString()) ? 'var(--bg-1)' : 'var(--sub)', 
                     fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s'
                   }}
                 >
@@ -634,6 +635,9 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
                   onChange={(newDate) => setField('date', newDate)}
                   onClose={() => setIsDatePickerOpen(false)}
                   initialTimePanelOpen={datePickerInitialMode === 'time'}
+                  emotionColor={accent}
+                  overlay
+                  anchorRef={datePickerAnchorRef}
                 />
               )}
             </label>

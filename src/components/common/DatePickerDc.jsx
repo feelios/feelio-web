@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import styled from "@emotion/styled";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const ACCENT_COLOR = "#3E5FF5";
+const ACCENT_COLOR = "#C8CDD8";
 const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
@@ -75,7 +75,7 @@ const Card = styled.div`
   width: var(--date-card-w, 300px);
   background: color-mix(in srgb, var(--bg-1) 95%, transparent);
   border-radius: 28px;
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  box-shadow: 10px 10px 20px #dbdbdb;
   padding: 14px 15px;
   display: flex;
   flex-direction: column;
@@ -162,7 +162,8 @@ const DateCell = styled.button`
     if (isSelected) {
       return `
         color: var(--text);
-        background-color: var(--accent);
+        background-color: color-mix(in srgb, var(--accent) 40%, transparent);
+        box-shadow: 1px 1px #dbdbdb;
       `;
     }
     if (isToday) {
@@ -269,7 +270,7 @@ const TimeListPanel = styled.div`
   overflow: hidden;
   background: color-mix(in srgb, var(--bg-1) 95%, transparent);
   border-radius: 24px;
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  box-shadow: 10px 10px 20px #dbdbdb;
   padding: 8px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -333,7 +334,7 @@ const WheelItem = styled.button`
   cursor: pointer;
   font-size: ${({ active }) => active ? '16px' : '13px'};
   font-weight: ${({ active }) => active ? 900 : 600};
-  color: ${({ active }) => active ? 'var(--accent)' : 'var(--sub)'};
+  color: ${({ active }) => active ? 'color-mix(in srgb, var(--accent) 85%, var(--text))' : 'var(--sub)'};
   transition: color .15s, font-size .15s, font-weight .15s;
 `;
 
@@ -482,7 +483,11 @@ function WheelColumn({ options, value, onSelect, bandRef }) {
   );
 }
 
-export default function DatePickerDc({ value, onChange, onClose, scale = 1, placement = 'top', initialTimePanelOpen = false, overlay = false, anchorRef = null }) {
+export default function DatePickerDc({ value, onChange, onClose, scale = 1, placement = 'top', overlay = false, anchorRef = null,
+  useInline = false,
+  initialTimePanelOpen = false,
+  emotionColor
+}) {
   const initDate = value && !isNaN(new Date(value).getTime()) ? new Date(value) : new Date();
   
   const today = useMemo(() => new Date(), []);
@@ -511,19 +516,19 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
     return () => window.removeEventListener('resize', onResize);
   }, []);
   // 모바일에서만 카드 안 인라인 시/분 선택 (데스크톱은 모달이어도 옆 시간 패널 사용)
-  const useInline = isMobile;
+  const useInlineState = isMobile || useInline;
 
   // overlay 휠 패널 높이를 달력 카드와 동일하게 (달력은 월에 따라 5~6줄로 높이가 달라짐)
   const cardRef = useRef(null);
   const bandRef = useRef(null);
   const [panelH, setPanelH] = useState(null);
   useLayoutEffect(() => {
-    if (!overlay || useInline) return;
+    if (!overlay || useInlineState) return;
     const measure = () => { if (cardRef.current) setPanelH(cardRef.current.offsetHeight); };
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [overlay, useInline, timePanelOpen, viewMonth, viewYear]);
+  }, [overlay, useInlineState, timePanelOpen, viewMonth, viewYear]);
 
   // overlay + anchorRef: 트리거(날짜 필드) 바로 위에 좌측 정렬로 위치 (포털이라 모달에 안 잘림)
   const [anchorStyle, setAnchorStyle] = useState(null);
@@ -547,7 +552,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
   const hourScrollRef = useRef(null);
   const minuteScrollRef = useRef(null);
   useEffect(() => {
-    if (!timePanelOpen || !useInline) return;
+    if (!timePanelOpen || !useInlineState) return;
     const centerOn = (node, index) => {
       if (!node) return;
       const child = node.children[index];
@@ -558,7 +563,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
     centerOn(minuteScrollRef.current, MINUTE_OPTIONS.indexOf(selectedMinute));
     // 열릴 때 한 번만 정렬 (선택 시마다 재정렬하면 튐)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timePanelOpen, useInline]);
+  }, [timePanelOpen, useInlineState]);
 
   const cells = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
  
@@ -619,7 +624,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
         placement={placement}
         overlay={overlay}
         style={{
-          "--accent": ACCENT_COLOR,
+          "--accent": emotionColor || ACCENT_COLOR,
           ...(overlay && anchorStyle ? {
             left: anchorStyle.left,
             top: 'auto',
@@ -662,6 +667,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
                 isSelected={isSelected}
                 isToday={isToday}
                 disabled={isFutureDate}
+                emotionColor={emotionColor}
                 aria-label={isFutureDate ? `${date.getDate()}일, 선택할 수 없는 미래 날짜` : undefined}
               >
                 {date.getDate()}

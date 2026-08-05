@@ -476,12 +476,13 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
             </button>
             {isDatePickerOpen && (
               <DatePickerDc
-                value={form.date}
-                onChange={(newDate) => setField('date', newDate)}
-                onClose={() => setIsDatePickerOpen(false)}
-                overlay
-                anchorRef={dateFieldRef}
-              />
+                  value={form.date}
+                  onChange={(newDate) => setField('date', newDate)}
+                  onClose={() => setIsDatePickerOpen(false)}
+                  overlay
+                  anchorRef={dateFieldRef}
+                  emotionColor={form.emotionId ? (EMOTIONS.find(e => e.emotionId === Number(form.emotionId))?.color) : null}
+                />
             )}
           </Field>
           <Button type="button" primary onClick={save} disabled={updateTx.isPending} css={{ width: '100%', flex: '0 0 auto', marginTop: 'auto' }}>저장</Button>
