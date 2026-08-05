@@ -126,7 +126,8 @@ const useStore = create(
               user: { nickname: '', provider: '', email: '' },
               goals: [], // fix 브랜치 회원탈퇴 시 클리어 데이터 보존
               transactions: [], // fix 브랜치 회원탈퇴 시 클리어 데이터 보존
-              toast: '회원탈퇴가 완료되었어요'
+              // 완료 안내는 확인창과 맞춰 window.alert 로 띄운다(ProfileModalDc) — 토스트와 겹치지 않게 비워 둔다
+              toast: ''
             }
           }));
         },

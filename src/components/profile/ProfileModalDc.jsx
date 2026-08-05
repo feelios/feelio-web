@@ -513,11 +513,15 @@ export default function ProfileModalDc({ state, actions, onClose }) {
     setIsWithdrawing(true);
     try {
       await withdrawMutation.mutateAsync({ reason: '사용 빈도 낮음' });
+      // 확인창과 같은 브라우저 기본 알림으로 알린다. 화면이 로그인으로 넘어가기 전에 띄운다.
+      window.alert('회원탈퇴가 완료되었어요');
       actions.clearAccount();
       onClose();
     } catch (error) {
       console.error('Failed to withdraw account', error);
-      actions.showToast('탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      // 서버가 사유를 주면 그대로 보여준다(예: 남은 정산이 있어요). 없으면 재시도 안내.
+      const serverMessage = error?.response?.data?.error?.message;
+      actions.showToast(serverMessage || '탈퇴 처리에 실패했어요. 잠시 후 다시 시도해 주세요.');
     } finally {
       setIsWithdrawing(false);
     }
