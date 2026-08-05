@@ -1,6 +1,5 @@
 import styled from '@emotion/styled';
 import { routes } from '../../app/routes.js';
-import { EmotionBlob } from './EmotionBlob.jsx';
 import { MenuIcon } from './MenuIcon.jsx';
 
 const Aside = styled.aside`
@@ -109,9 +108,7 @@ export function SidebarDesign({ route, onRoute, user, onProfile }) {
   return (
     <Aside>
       <Brand>
-        {user?.profileImageUrl
-          ? <img src={user.profileImageUrl} alt="프로필" referrerPolicy="no-referrer" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
-          : <EmotionBlob emotion="설렘" size={40} interactive={false} />}
+        <img src="/feelio-logo.jpg" alt="feelio" style={{ width: 40, height: 40, borderRadius: 12, objectFit: 'cover', display: 'block' }} />
         <div><strong>feelio</strong><span>Feel + I/O</span></div>
       </Brand>
       <Nav>
