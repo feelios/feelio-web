@@ -75,10 +75,18 @@ export default function App() {
 
   const [globalDate, setGlobalDate] = useState(() => new Date());
   const [profileOpen, setProfileOpen] = useState(false);
+  // 프로필 모달을 어느 화면으로 열지 (홈 목표 카드에서 목표 관리로 바로 들어오는 경로용)
+  const [profileView, setProfileView] = useState('profile');
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [recordPrefill, setRecordPrefill] = useState(null);
 
   // 목표 카드 '저금하기' → 저축·해당 목표 프리필된 기록 화면으로 (F7-9)
+  // 다 모은 목표 카드 '목표 관리로 가기' → 프로필 모달의 목표 관리 화면으로
+  const openGoals = () => {
+    setProfileView('goals');
+    setProfileOpen(true);
+  };
+
   const openRecordForGoal = (goalId) => {
     setRecordPrefill({ goalId });
     setRoute('record');
@@ -134,7 +142,7 @@ export default function App() {
   const colors = getAurora(state.aurora).colors;
 
   const content = {
-    home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={globalDate} onSelectDate={setGlobalDate} onSaveToGoal={openRecordForGoal} />,
+    home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={globalDate} onSelectDate={setGlobalDate} onSaveToGoal={openRecordForGoal} onOpenGoals={openGoals} />,
     record: <RecordPageDc state={state} actions={actions} prefill={recordPrefill} onConsumePrefill={() => setRecordPrefill(null)} onSaved={(date) => {
       setGlobalDate(new Date(date));
     }} />,
@@ -189,7 +197,14 @@ export default function App() {
           </QueryErrorResetBoundary>
         </AppLayoutDc>
       )}
-      {state.isLoggedIn && profileOpen && <ProfileModalDc state={state} actions={actions} onClose={() => setProfileOpen(false)} />}
+      {state.isLoggedIn && profileOpen && (
+        <ProfileModalDc
+          state={state}
+          actions={actions}
+          initialView={profileView}
+          onClose={() => { setProfileOpen(false); setProfileView('profile'); }}
+        />
+      )}
       {state.isLoggedIn && selectedTxn && <TransactionDetailModal transaction={selectedTxn} actions={actions} onClose={() => setSelectedTxn(null)} />}
       <Toast message={state.toast} onDone={actions.clearToast} />
       <NotificationToast 
