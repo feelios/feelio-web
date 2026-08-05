@@ -3,6 +3,7 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { Skeleton } from '../components/common/Skeleton.jsx';
+import { ChallengeFlag } from '../components/analysis/ChallengeFlag.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
 import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
@@ -99,6 +100,10 @@ const RISK_LEVELS = {
   YELLOW: { lamp: 'yellow', color: '#F2C766', value: '주의', note: '조금 빨라' },
   RED: { lamp: 'red', color: '#E87573', value: '위험', note: '많이 썼어' }
 };
+
+// 챌린지 칸은 위험 루트와 type이 같아('default') label로 가른다.
+// 서버(AiQuickInsightAssembler)가 이 label 4종을 고정으로 맞춰 보낸다.
+const CHALLENGE_LABEL = 'AI 맞춤 챌린지';
 
 // 위험도 값이 없으면 null → 신호등 세 칸 모두 꺼진 상태로 둔다. 임의로 한 칸을 켜지 않는다.
 function resolveRisk(raw) {
@@ -313,7 +318,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                   <i key={lamp} className={lamp === risk?.lamp ? `${lamp} active` : lamp} />
                 ))}
               </RiskSignal>
-              </RiskSignal>
+            ) : item.label === CHALLENGE_LABEL ? (
+              <ChallengeFlag expanded={isExpanded} />
             ) : (
               <span css={{
                 width: item.type === 'fact' ? 10 : 8,
@@ -344,7 +350,6 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                       display: 'none',
                       '@media (min-width: 821px)': { display: 'inline' }
                     }}>{item.note}</span>}
-              </div>
               </div>
               {isInsightsLoading ? (
                 <Skeleton w="82%" h={item.type === 'fact' ? 17 : 16} radius={6} css={{ marginTop: 4 }} />
