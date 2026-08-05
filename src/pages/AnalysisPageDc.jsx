@@ -4,6 +4,7 @@ import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { Skeleton } from '../components/common/Skeleton.jsx';
 import { ChallengeFlag } from '../components/analysis/ChallengeFlag.jsx';
+import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
 import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
@@ -100,6 +101,10 @@ const RISK_LEVELS = {
   YELLOW: { lamp: 'yellow', color: '#F2C766', value: '주의', note: '조금 빨라' },
   RED: { lamp: 'red', color: '#E87573', value: '위험', note: '많이 썼어' }
 };
+
+// 서버는 지배 감정이 없는 예산 항목에 '보통'을 채워 보낸다(AnalysisService).
+// 감정 8종에 없는 값이라 EmotionBlob에 그대로 넘기면 '평온'으로 폴백돼 없는 감정을 보여주게 된다.
+const NO_EMOTION = '보통';
 
 // 챌린지 칸은 위험 루트와 type이 같아('default') label로 가른다.
 // 서버(AiQuickInsightAssembler)가 이 label 4종을 고정으로 맞춰 보낸다.
@@ -340,41 +345,67 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                 <span css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', flexShrink: 0 }}>{item.label}</span>
                 {isInsightsLoading
                   ? <Skeleton w="44px" h={11} radius={5} />
-                  : <span css={{ 
-                      color: item.type === 'fact' ? '#E87573' : item.color, 
-                      fontSize: 11, 
-                      fontWeight: 900, 
+                  : <span css={{
+                      color: item.type === 'fact' ? '#E87573' : item.color,
+                      fontSize: 11,
+                      fontWeight: 900,
                       whiteSpace: isExpanded ? 'normal' : 'nowrap',
                       overflow: isExpanded ? 'visible' : 'hidden',
                       textOverflow: isExpanded ? 'clip' : 'ellipsis',
                       textAlign: 'right',
                       wordBreak: isExpanded ? 'keep-all' : 'normal',
                       minWidth: 0,
-                      display: 'none',
+                      display: isExpanded ? 'inline' : 'none',
                       '@media (min-width: 821px)': { display: 'inline' }
                     }}>{item.note}</span>}
+                {/* 접힘/펼침 표시 — 모바일에서만 (데스크톱은 늘 펼친 상태라 표시할 게 없다) */}
+                <svg
+                  aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                  css={{
+                    flex: '0 0 auto', marginLeft: 'auto', alignSelf: 'center',
+                    color: 'var(--sub)', opacity: .5,
+                    transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform .24s ease',
+                    '@media (min-width: 821px)': { display: 'none' }
+                  }}
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
               </div>
-              {isInsightsLoading ? (
-                <Skeleton w="82%" h={item.type === 'fact' ? 17 : 16} radius={6} css={{ marginTop: 4 }} />
-              ) : (
+
+              {/* 0fr → 1fr 로 높이를 부드럽게 여닫는다. 데스크톱은 항상 열린 상태 */}
               <div css={{
-                marginTop: 3,
-                color: item.type === 'fact' ? '#E87573' : 'var(--text)',
-                fontSize: item.type === 'fact' ? 14 : 13,
-                fontWeight: item.type === 'fact' ? 950 : 900,
-                lineHeight: 1.35,
-                overflow: isExpanded ? 'visible' : 'hidden',
-                textOverflow: isExpanded ? 'clip' : 'ellipsis',
-                whiteSpace: isExpanded ? 'normal' : 'nowrap',
-                wordBreak: isExpanded ? 'keep-all' : 'normal',
-                overflowWrap: isExpanded ? 'anywhere' : 'normal',
-                '@media (min-width: 821px)': {
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }
-              }}>{item.value}</div>
-              )}
+                display: 'grid',
+                gridTemplateRows: isExpanded ? '1fr' : '0fr',
+                transition: 'grid-template-rows .24s ease',
+                '@media (min-width: 821px)': { gridTemplateRows: '1fr' }
+              }}>
+                <div css={{ minHeight: 0, overflow: 'hidden' }}>
+                  {isInsightsLoading ? (
+                    <Skeleton w="82%" h={item.type === 'fact' ? 17 : 16} radius={6} css={{ marginTop: 4 }} />
+                  ) : (
+                  <div css={{
+                    marginTop: 3,
+                    color: item.type === 'fact' ? '#E87573' : 'var(--text)',
+                    fontSize: item.type === 'fact' ? 14 : 13,
+                    fontWeight: item.type === 'fact' ? 950 : 900,
+                    lineHeight: 1.35,
+                    overflow: 'visible',
+                    whiteSpace: 'normal',
+                    wordBreak: 'keep-all',
+                    overflowWrap: 'anywhere',
+                    '@media (min-width: 821px)': {
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      wordBreak: 'normal',
+                      overflowWrap: 'normal'
+                    }
+                  }}>{item.value}</div>
+                  )}
+                </div>
+              </div>
             </div>
           </InsightItem>
         )})}
@@ -424,10 +455,27 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                 const statusText = item.isMeasuring ? '측정중' : item.isOver ? '초과' : item.progress >= 90 ? '주의' : '안정';
                 const statusColor = item.isMeasuring ? 'var(--sub)' : item.isOver ? '#E87573' : 'var(--sub)';
 
-                return <div key={item.name} css={{ display: 'grid', gridTemplateColumns: 'minmax(76px, .52fr) 1fr minmax(82px, auto)', alignItems: 'center', gap: 12 }}>
-                  <div css={{ minWidth: 0 }}>
-                    <b css={{ display: 'block', fontSize: 13, color: 'var(--text)' }}>{item.name}</b>
-                    <span css={{ display: 'inline-block', marginTop: 3, color: 'var(--sub)', fontSize: 10, fontWeight: 850 }}>{item.emotion}</span>
+                return <div key={item.name} css={{ display: 'grid', gridTemplateColumns: 'minmax(118px, .52fr) 1fr minmax(82px, auto)', alignItems: 'center', gap: 12 }}>
+                  {/* 감정은 이름 대신 말랑이로 보여준다 (F15-3). 감정 값이 없으면 아무것도 그리지 않는다. */}
+                  <div css={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
+                    {item.emotion && item.emotion !== NO_EMOTION && (
+                      <span
+                        title={item.emotion}
+                        aria-label={item.emotion}
+                        role="img"
+                        css={{ flex: '0 0 auto', display: 'grid', placeItems: 'center', width: 50, height: 50 }}
+                      >
+                        <EmotionBlob emotion={item.emotion} size={50} interactive={false} />
+                      </span>
+                    )}
+                    <b css={{
+                      minWidth: 0,
+                      fontSize: 13,
+                      color: 'var(--text)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>{item.name}</b>
                   </div>
 
                   <div css={{ display: 'grid', gap: 5 }}>
@@ -643,27 +691,34 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        border: `1.5px solid ${insight.color}`, 
                        background: insight.color + '15',
                        display: 'flex', flexDirection: 'column', 
-                       justifyContent: 'center',
+                       justifyContent: 'flex-start',
                        boxShadow: `0 8px 24px ${insight.color}20`,
                        overflowY: 'auto',
                        scrollbarWidth: 'none',
                        '&::-webkit-scrollbar': { display: 'none' },
                        '@media (max-width: 820px)': { 
                          padding: '16px 14px',
-                         justifyContent: 'flex-start'
                        }
                      }}>
                        {isInsightsLoading ? (
-                         <div css={{ display: 'grid', gap: 7 }} aria-hidden="true">
+                         <div css={{ display: 'grid', gap: 7, width: '100%', margin: 'auto 0' }} aria-hidden="true">
                            <Skeleton w="72%" h={15} radius={6} />
                            <Skeleton w="100%" h={13} radius={6} />
                            <Skeleton w="88%" h={13} radius={6} />
                          </div>
+                       ) : insight.amount === '0원' ? (
+                         <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', color: 'var(--sub)', lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'break-word', width: '100%', margin: 'auto 0' }}>
+                           아직 이 감정으로 소비한 내역이 없어요.
+                         </div>
+                       ) : !insight.title ? (
+                         <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', color: 'var(--sub)', lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'break-word', width: '100%', margin: 'auto 0' }}>
+                           일시적인 오류로 분석을 불러오지 못했어요.
+                         </div>
                        ) : (
-                         <>
-                           <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', fontWeight: 900, marginBottom: 'clamp(6px, 2vw, 10px)', color: 'var(--text)', wordBreak: 'keep-all', overflowWrap: 'anywhere', lineHeight: 1.35 }}>{insight.title}</div>
-                           <div css={{ fontSize: 'clamp(12px, 3.2vw, 14px)', color: 'var(--text)', opacity: 0.9, lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>{insight.desc}</div>
-                         </>
+                         <div css={{ width: '100%', margin: 'auto 0' }}>
+                           <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', fontWeight: 900, marginBottom: 'clamp(6px, 2vw, 10px)', color: 'var(--text)', wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: 1.35 }}>{insight.title}</div>
+                           <div css={{ fontSize: 'clamp(12px, 3.2vw, 14px)', color: 'var(--text)', opacity: 0.9, lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{insight.desc}</div>
+                         </div>
                        )}
                      </div>
                    </div>

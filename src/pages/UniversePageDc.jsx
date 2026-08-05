@@ -288,9 +288,9 @@ export default function UniversePageDc() {
   return (
     <>
       <Global styles={globalStyles} />
-      <Container ref={containerRef} style={isMobile ? { height: 'calc(100dvh - 190px)', padding: '0', borderRadius: 0, boxShadow: 'none', overflow: 'hidden' } : {}}>
+      <Container ref={containerRef} style={isMobile ? { height: '100%', minHeight: 0, padding: '0', borderRadius: 24, boxShadow: 'none', overflow: 'hidden' } : {}}>
         <div style={isMobile ? { width: '100%', height: '100%' } : { transform: `scale(${scale})`, transformOrigin: "center center" }}>
-          <PageWrapper style={isMobile ? { width: '100%', height: '100%', borderRadius: '24px 24px 0 0', overflow: 'hidden', transform: 'none' } : {}}>
+          <PageWrapper style={isMobile ? { width: '100%', height: '100%', borderRadius: 24, overflow: 'hidden', transform: 'none' } : {}}>
 
           <div style={{ position: "absolute", inset: 0, opacity: parked && phase !== "flying" ? 0 : 1, pointerEvents: phase === "idle" ? "auto" : "none", transition: "opacity .45s ease" }}>
             <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>

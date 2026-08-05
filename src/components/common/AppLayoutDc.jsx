@@ -21,6 +21,9 @@ const Shell = styled.div`
   --modal-bg: ${({ mode }) => mode === 'dark' ? 'rgba(22,24,34,.58)' : 'rgba(248,245,240,.58)'};
   --scrim: ${({ mode }) => mode === 'dark' ? 'rgba(5,6,12,.42)' : 'rgba(40,32,24,.22)'};
   --shadow: ${({ mode }) => mode === 'dark' ? theme.darkShadow : theme.shadow};
+  --mobile-nav-height: 67px;
+  --mobile-nav-offset: 12px;
+  --mobile-nav-clearance: calc(var(--mobile-nav-height) + var(--mobile-nav-offset) + env(safe-area-inset-bottom, 0px));
   position: relative;
   height: 100dvh;
   overflow: hidden;
@@ -53,7 +56,7 @@ const Main = styled.main`
   overflow: hidden;
 
   @media (max-width: 820px) {
-    padding: 22px 16px calc(96px + env(safe-area-inset-bottom));
+    padding: 22px 16px var(--mobile-nav-clearance);
   }
 `;
 

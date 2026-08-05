@@ -26,27 +26,13 @@ export const usersAPI = {
     return response.data.data;
   },
 
+  // 다른 호출과 같은 axios 클라이언트를 쓴다.
+  // 직접 fetch로 URL을 조립하면 baseURL의 '/api'가 빠져 배포에서 404가 나고,
+  // 401 토큰 갱신 인터셉터도 타지 못한다.
   withdraw: async (data = {}) => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-    const response = await fetch(`${baseUrl}/users/me`, {
-      method: 'DELETE',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json'
-      },
-      body: JSON.stringify({
-        reason: data.reason || '사용 빈도 낮음'
-      })
+    const response = await client.delete('/users/me', {
+      data: { reason: data.reason || '사용 빈도 낮음' }
     });
-
-    const payload = await response.json().catch(() => null);
-
-    if (!response.ok) {
-      const message = payload?.error?.message || payload?.message || '회원탈퇴 요청에 실패했습니다.';
-      throw new Error(message);
-    }
-
-    return payload?.data ?? payload ?? { withdrawn: true };
+    return response.data?.data ?? { withdrawn: true };
   }
 };
