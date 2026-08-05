@@ -108,7 +108,7 @@ export function SidebarDesign({ route, onRoute, user, onProfile }) {
   return (
     <Aside>
       <Brand>
-        <img src="/feelio-logo.jpg" alt="feelio" style={{ width: 40, height: 40, borderRadius: 12, objectFit: 'cover', display: 'block' }} />
+        <img src="/feelio-logo.png" alt="feelio" style={{ width: 40, height: 40, borderRadius: 12, objectFit: 'cover', display: 'block' }} />
         <div><strong>feelio</strong><span>Feel + I/O</span></div>
       </Brand>
       <Nav>
