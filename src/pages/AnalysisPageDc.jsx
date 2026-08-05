@@ -654,16 +654,24 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        }
                      }}>
                        {isInsightsLoading ? (
-                         <div css={{ display: 'grid', gap: 7 }} aria-hidden="true">
+                         <div css={{ display: 'grid', gap: 7, width: '100%' }} aria-hidden="true">
                            <Skeleton w="72%" h={15} radius={6} />
                            <Skeleton w="100%" h={13} radius={6} />
                            <Skeleton w="88%" h={13} radius={6} />
                          </div>
+                       ) : insight.amount === '0원' ? (
+                         <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', color: 'var(--sub)', lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'break-word', width: '100%' }}>
+                           아직 이 감정으로 소비한 내역이 없어요.
+                         </div>
+                       ) : !insight.title ? (
+                         <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', color: 'var(--sub)', lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'break-word', width: '100%' }}>
+                           일시적인 오류로 분석을 불러오지 못했어요.
+                         </div>
                        ) : (
-                         <>
-                           <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', fontWeight: 900, marginBottom: 'clamp(6px, 2vw, 10px)', color: 'var(--text)', wordBreak: 'keep-all', overflowWrap: 'anywhere', lineHeight: 1.35 }}>{insight.title}</div>
-                           <div css={{ fontSize: 'clamp(12px, 3.2vw, 14px)', color: 'var(--text)', opacity: 0.9, lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>{insight.desc}</div>
-                         </>
+                         <div css={{ width: '100%' }}>
+                           <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', fontWeight: 900, marginBottom: 'clamp(6px, 2vw, 10px)', color: 'var(--text)', wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: 1.35 }}>{insight.title}</div>
+                           <div css={{ fontSize: 'clamp(12px, 3.2vw, 14px)', color: 'var(--text)', opacity: 0.9, lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{insight.desc}</div>
+                         </div>
                        )}
                      </div>
                    </div>
