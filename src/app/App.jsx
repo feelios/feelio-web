@@ -110,6 +110,20 @@ export default function App() {
     }
   }, [state.isLoggedIn]);
 
+  // 로그아웃·세션 만료로 인증이 풀리면 열려 있던 모달·팝업과 라우트를 되돌린다 (F15-8).
+  // 로그아웃 버튼이 프로필 모달 안에 있어 이걸 안 지우면 다시 로그인했을 때 그 모달이 다시 뜬다.
+  // effect가 아니라 렌더 중에 맞춰야 로그인 화면이 한 프레임도 옛 상태로 그려지지 않는다.
+  const [wasLoggedIn, setWasLoggedIn] = useState(state.isLoggedIn);
+  if (wasLoggedIn !== state.isLoggedIn) {
+    setWasLoggedIn(state.isLoggedIn);
+    if (!state.isLoggedIn) {
+      setProfileOpen(false);
+      setSelectedTxn(null);
+      setRecordPrefill(null);
+      setRoute('home');
+    }
+  }
+
   if (isInitializing) {
     return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
   }
@@ -175,8 +189,8 @@ export default function App() {
           </QueryErrorResetBoundary>
         </AppLayoutDc>
       )}
-      {profileOpen && <ProfileModalDc state={state} actions={actions} onClose={() => setProfileOpen(false)} />}
-      {selectedTxn && <TransactionDetailModal transaction={selectedTxn} actions={actions} onClose={() => setSelectedTxn(null)} />}
+      {state.isLoggedIn && profileOpen && <ProfileModalDc state={state} actions={actions} onClose={() => setProfileOpen(false)} />}
+      {state.isLoggedIn && selectedTxn && <TransactionDetailModal transaction={selectedTxn} actions={actions} onClose={() => setSelectedTxn(null)} />}
       <Toast message={state.toast} onDone={actions.clearToast} />
       <NotificationToast 
         notification={state.toastNotification} 
