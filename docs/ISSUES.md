@@ -58,6 +58,7 @@
 | [ ] | - | F8-12 | 온보딩 완료 요청의 totalAsset 누락 수정 | `fix/onboarding-completion-request` | §4·§7 | Page·Hook·api·docs | `['users','me']` | 신규 | 온보딩 완료 요청에 `{totalAsset}` 전달 → 신규·재가입 사용자 `onboardingDone:true` 반영 및 홈 진입 → API 계약 문서 동기화, lint·build 통과 |
 | [ ] | - | F8-13 | 온보딩 목표 생성 요청의 마감일 누락 수정 | `fix/onboarding-goal-due-date` | §7 | Page·Component·docs | `['goals']`·`['universe']` | 신규 | 온보딩 기간을 `YYYY-MM-DD` 형식의 `dueDate`로 변환해 목표 생성 요청에 전달 → 기타 선택 시 공통 `SegmentDatePicker` 재사용 → 과거 날짜 제출 방지 및 API 계약 문서 동기화 |
 | [x] | - | F8-14 | 전역 하드코딩 색상 테마 스크립트 전환 | `fix/hardcoded-colors` | - | Page·Component | - | 완료 | 전역에 남은/하드코딩된 HEX 컬러를 var(--bg-1), var(--text) 등 CSS 테마 변수로 치환 |
+| [ ] | - | F8-15 | 모바일 공통 레이아웃 하단 공백 및 콘텐츠 잘림 수정 | `fix/mobile-bottom-layout-gap` | - | Component·Page | - | 신규 | `AppLayoutDc`의 하단 예약 공간과 고정 `BottomNav`의 실제 점유 영역을 일치시켜 전 페이지의 불필요한 하단 공백 제거 → 마지막 콘텐츠의 내비게이션 겹침 방지 및 safe-area 보장 → 평행우주 모바일 컨테이너의 하단 모서리 잘림 수정 → 820px 이하 브라우저와 실제 모바일 환경 검증 |
 | [ ] | - | F9-1 | 소비 코어 감정 8종 노출 | `feat/core-emotion-display` | - | Component | - | 신규 | 데이터 0건인 감정도 누락 없이 8개 렌더링 처리 |
 | [ ] | - | F9-2 | 감정 분석 퍼센트 로직 변경 | `feat/analysis-percentage-logic` | - | Utils·Component | - | 신규 | 분석 퍼센트를 금액 기준에서 횟수 기준으로 변경 |
 | [ ] | - | F9-3 | 지출 추이 카드 클릭 이동 | `feat/monthly-trend-navigation` | - | Component | - | 신규 | 월별 바/포인트 클릭 시 해당 달 상세 뷰로 이동 |
