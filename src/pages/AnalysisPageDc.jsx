@@ -132,6 +132,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const [flippedCards, setFlippedCards] = useState({});
   const [activeChartTab, setActiveChartTab] = useState('emotion');
   const [patternFlipped, setPatternFlipped] = useState(false);
+  const [expandedInsight, setExpandedInsight] = useState(null);
 
   const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery();
@@ -287,13 +288,31 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   return (
     <Page>
       <InsightRail>
-        {aiQuickInsights.map(item => (
-          <InsightItem key={item.label}>
+        {aiQuickInsights.map(item => {
+          const isExpanded = expandedInsight === item.label;
+          return (
+          <InsightItem 
+            key={item.label}
+            onClick={() => {
+              if (window.innerWidth <= 820) {
+                setExpandedInsight(isExpanded ? null : item.label);
+              }
+            }}
+            css={{
+              cursor: 'pointer',
+              alignItems: isExpanded ? 'flex-start' : 'center',
+              paddingTop: isExpanded ? 12 : 6,
+              paddingBottom: isExpanded ? 12 : 6,
+              transition: 'all 0.2s ease',
+              '@media (min-width: 821px)': { cursor: 'default', alignItems: 'center', paddingTop: 6, paddingBottom: 6 }
+            }}
+          >
             {item.type === 'risk' ? (
-              <RiskSignal glow={risk?.color} role="img" aria-label={`소비 위험도 ${risk?.value ?? '측정중'}`}>
+              <RiskSignal glow={risk?.color} role="img" aria-label={`소비 위험도 ${risk?.value ?? '측정중'}`} css={{ marginTop: isExpanded ? 2 : 0, '@media (min-width: 821px)': { marginTop: 0 } }}>
                 {['green', 'yellow', 'red'].map(lamp => (
                   <i key={lamp} className={lamp === risk?.lamp ? `${lamp} active` : lamp} />
                 ))}
+              </RiskSignal>
               </RiskSignal>
             ) : (
               <span css={{
@@ -302,15 +321,30 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                 borderRadius: 99,
                 background: item.color,
                 opacity: item.type === 'fact' ? 1 : (isDark ? 0.86 : 0.72),
-                boxShadow: item.type === 'fact' ? '0 0 0 4px rgba(232,117,115,.12)' : `0 10px 22px -14px ${item.color}`
+                boxShadow: item.type === 'fact' ? '0 0 0 4px rgba(232,117,115,.12)' : `0 10px 22px -14px ${item.color}`,
+                marginTop: isExpanded ? 2 : 0,
+                '@media (min-width: 821px)': { marginTop: 0 }
               }} />
             )}
             <div css={{ minWidth: 0 }}>
-              <div css={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-                <span css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap' }}>{item.label}</span>
+              <div css={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, width: '100%' }}>
+                <span css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', flexShrink: 0 }}>{item.label}</span>
                 {isInsightsLoading
                   ? <Skeleton w="44px" h={11} radius={5} />
-                  : <span css={{ color: item.type === 'fact' ? '#E87573' : item.color, fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap' }}>{item.note}</span>}
+                  : <span css={{ 
+                      color: item.type === 'fact' ? '#E87573' : item.color, 
+                      fontSize: 11, 
+                      fontWeight: 900, 
+                      whiteSpace: isExpanded ? 'normal' : 'nowrap',
+                      overflow: isExpanded ? 'visible' : 'hidden',
+                      textOverflow: isExpanded ? 'clip' : 'ellipsis',
+                      textAlign: 'right',
+                      wordBreak: isExpanded ? 'keep-all' : 'normal',
+                      minWidth: 0,
+                      display: 'none',
+                      '@media (min-width: 821px)': { display: 'inline' }
+                    }}>{item.note}</span>}
+              </div>
               </div>
               {isInsightsLoading ? (
                 <Skeleton w="82%" h={item.type === 'fact' ? 17 : 16} radius={6} css={{ marginTop: 4 }} />
@@ -320,15 +354,22 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                 color: item.type === 'fact' ? '#E87573' : 'var(--text)',
                 fontSize: item.type === 'fact' ? 14 : 13,
                 fontWeight: item.type === 'fact' ? 950 : 900,
-                lineHeight: 1.25,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
+                lineHeight: 1.35,
+                overflow: isExpanded ? 'visible' : 'hidden',
+                textOverflow: isExpanded ? 'clip' : 'ellipsis',
+                whiteSpace: isExpanded ? 'normal' : 'nowrap',
+                wordBreak: isExpanded ? 'keep-all' : 'normal',
+                overflowWrap: isExpanded ? 'anywhere' : 'normal',
+                '@media (min-width: 821px)': {
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }
               }}>{item.value}</div>
               )}
             </div>
           </InsightItem>
-        ))}
+        )})}
       </InsightRail>
       <Duo>
         <Card>
@@ -612,8 +653,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                          </div>
                        ) : (
                          <>
-                           <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', fontWeight: 900, marginBottom: 'clamp(6px, 2vw, 10px)', color: 'var(--text)', wordBreak: 'keep-all', lineHeight: 1.35 }}>{insight.title}</div>
-                           <div css={{ fontSize: 'clamp(12px, 3.2vw, 14px)', color: 'var(--text)', opacity: 0.9, lineHeight: 1.5, wordBreak: 'keep-all' }}>{insight.desc}</div>
+                           <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', fontWeight: 900, marginBottom: 'clamp(6px, 2vw, 10px)', color: 'var(--text)', wordBreak: 'keep-all', overflowWrap: 'anywhere', lineHeight: 1.35 }}>{insight.title}</div>
+                           <div css={{ fontSize: 'clamp(12px, 3.2vw, 14px)', color: 'var(--text)', opacity: 0.9, lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>{insight.desc}</div>
                          </>
                        )}
                      </div>
