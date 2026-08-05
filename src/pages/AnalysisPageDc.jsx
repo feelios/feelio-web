@@ -340,41 +340,67 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                 <span css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', flexShrink: 0 }}>{item.label}</span>
                 {isInsightsLoading
                   ? <Skeleton w="44px" h={11} radius={5} />
-                  : <span css={{ 
-                      color: item.type === 'fact' ? '#E87573' : item.color, 
-                      fontSize: 11, 
-                      fontWeight: 900, 
+                  : <span css={{
+                      color: item.type === 'fact' ? '#E87573' : item.color,
+                      fontSize: 11,
+                      fontWeight: 900,
                       whiteSpace: isExpanded ? 'normal' : 'nowrap',
                       overflow: isExpanded ? 'visible' : 'hidden',
                       textOverflow: isExpanded ? 'clip' : 'ellipsis',
                       textAlign: 'right',
                       wordBreak: isExpanded ? 'keep-all' : 'normal',
                       minWidth: 0,
-                      display: 'none',
+                      display: isExpanded ? 'inline' : 'none',
                       '@media (min-width: 821px)': { display: 'inline' }
                     }}>{item.note}</span>}
+                {/* 접힘/펼침 표시 — 모바일에서만 (데스크톱은 늘 펼친 상태라 표시할 게 없다) */}
+                <svg
+                  aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                  css={{
+                    flex: '0 0 auto', marginLeft: 'auto', alignSelf: 'center',
+                    color: 'var(--sub)', opacity: .5,
+                    transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform .24s ease',
+                    '@media (min-width: 821px)': { display: 'none' }
+                  }}
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
               </div>
-              {isInsightsLoading ? (
-                <Skeleton w="82%" h={item.type === 'fact' ? 17 : 16} radius={6} css={{ marginTop: 4 }} />
-              ) : (
+
+              {/* 0fr → 1fr 로 높이를 부드럽게 여닫는다. 데스크톱은 항상 열린 상태 */}
               <div css={{
-                marginTop: 3,
-                color: item.type === 'fact' ? '#E87573' : 'var(--text)',
-                fontSize: item.type === 'fact' ? 14 : 13,
-                fontWeight: item.type === 'fact' ? 950 : 900,
-                lineHeight: 1.35,
-                overflow: isExpanded ? 'visible' : 'hidden',
-                textOverflow: isExpanded ? 'clip' : 'ellipsis',
-                whiteSpace: isExpanded ? 'normal' : 'nowrap',
-                wordBreak: isExpanded ? 'keep-all' : 'normal',
-                overflowWrap: isExpanded ? 'anywhere' : 'normal',
-                '@media (min-width: 821px)': {
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }
-              }}>{item.value}</div>
-              )}
+                display: 'grid',
+                gridTemplateRows: isExpanded ? '1fr' : '0fr',
+                transition: 'grid-template-rows .24s ease',
+                '@media (min-width: 821px)': { gridTemplateRows: '1fr' }
+              }}>
+                <div css={{ minHeight: 0, overflow: 'hidden' }}>
+                  {isInsightsLoading ? (
+                    <Skeleton w="82%" h={item.type === 'fact' ? 17 : 16} radius={6} css={{ marginTop: 4 }} />
+                  ) : (
+                  <div css={{
+                    marginTop: 3,
+                    color: item.type === 'fact' ? '#E87573' : 'var(--text)',
+                    fontSize: item.type === 'fact' ? 14 : 13,
+                    fontWeight: item.type === 'fact' ? 950 : 900,
+                    lineHeight: 1.35,
+                    overflow: 'visible',
+                    whiteSpace: 'normal',
+                    wordBreak: 'keep-all',
+                    overflowWrap: 'anywhere',
+                    '@media (min-width: 821px)': {
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      wordBreak: 'normal',
+                      overflowWrap: 'normal'
+                    }
+                  }}>{item.value}</div>
+                  )}
+                </div>
+              </div>
             </div>
           </InsightItem>
         )})}
