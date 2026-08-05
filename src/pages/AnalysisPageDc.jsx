@@ -5,7 +5,7 @@ import { GlassCard } from '../components/common/GlassCard.jsx';
 import { Skeleton } from '../components/common/Skeleton.jsx';
 import { ChallengeFlag } from '../components/analysis/ChallengeFlag.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
-import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
+import { useMonthlyAnalysisQuery, useAiReportQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
 
 const Page = styled.div`
@@ -144,7 +144,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const [expandedInsight, setExpandedInsight] = useState(null);
 
   const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
-  const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery();
+  const { data: insightsData, isLoading: isInsightsLoading } = useAiReportQuery();
   const { data: trendData } = useMonthlyTrendQuery();
   // 예산 현황은 전역 스토어(BudgetSync가 동기화)를 구독한다 (#145)
   const serverBudgetItems = useBudgetStore((s) => s.budgetItems);
@@ -152,25 +152,25 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
 
   const monthly = trendData?.monthlyData ?? [];
 
-  // 소비 위험도: 서버 riskLevel → 위험도 항목의 level 순으로 본다. 둘 다 없으면 null (F13-5)
-  const riskItem = insightsData?.aiQuickInsights?.find(item => item.type === 'risk');
-  const risk = resolveRisk(insightsData?.riskLevel ?? riskItem?.level ?? riskItem?.value);
+  const risk = resolveRisk(insightsData?.consumptionRisk);
 
-  const aiQuickInsights = (insightsData?.aiQuickInsights?.length > 0 ? insightsData.aiQuickInsights : [
+  const aiQuickInsights = [
     { label: '위험 루트', value: '-', note: '-', color: 'var(--sub)', type: 'default' },
-    { label: '팩트 리포트', value: '-', note: '-', color: '#E87573', type: 'fact' },
-    { label: '소비 위험도', type: 'risk' },
-    { label: 'AI 맞춤 챌린지', value: '-', note: '-', color: 'var(--sub)', type: 'default' }
-  ]).map(item => item.type === 'risk'
-    ? {
-      ...item,
-      color: risk?.color ?? 'var(--sub)',
-      value: item.value ?? risk?.value ?? '-',
-      note: item.note ?? risk?.note ?? '-'
-    }
-    : item);
+    { label: '팩트 리포트', value: insightsData?.ai?.fact ?? '-', note: '-', color: '#E87573', type: 'fact' },
+    { label: '소비 위험도', type: 'risk', color: risk?.color ?? 'var(--sub)', value: risk?.value ?? '-', note: risk?.note ?? '-' },
+    { label: 'AI 맞춤 챌린지', value: insightsData?.ai?.challenge ?? '-', note: '-', color: 'var(--sub)', type: 'default' }
+  ];
 
-  const emotionCardsData = insightsData?.emotionCards ?? [];
+  const emotionCardsData = [];
+  if (insightsData?.ai?.emotion && insightsData.ai.emotion !== '-') {
+    const text = insightsData.ai.emotion;
+    const match1 = text.match(/\[발견\]:\s*(.*?)(?=\[의미\]:|$)/s);
+    const match2 = text.match(/\[의미\]:\s*(.*?)(?=\[조언\]:|$)/s);
+    const match3 = text.match(/\[조언\]:\s*(.*)/s);
+    if (match1) emotionCardsData.push({ title: '발견', desc: match1[1].trim() });
+    if (match2) emotionCardsData.push({ title: '의미', desc: match2[1].trim() });
+    if (match3) emotionCardsData.push({ title: '조언', desc: match3[1].trim() });
+  }
   const evidence = patternData?.evidence ?? [];
   const pattern = patternData?.pattern ?? null;
   const hasPattern = pattern != null && pattern.count > 0;
