@@ -4,8 +4,7 @@ import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
-import { getEmotion } from '../data/emotions.js';
-import { useMetadata } from '../hooks/queries/useMetadata.js';
+import { EMOTIONS, getEmotion } from '../constants/metadata.js';
 import { useCreateTransactionMutation } from '../hooks/queries/useTransactions.js';
 import {
   useCategoriesQuery,
@@ -272,10 +271,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
     if (prefill?.goalId != null) onConsumePrefill?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const { data: metaData } = useMetadata();
-  const emotions = metaData?.emotions || [];
-
+  // Removed useMetadata
   const { data: goalsData } = useGoalsQuery();
   const goals = goalsData?.goals || [];
 
@@ -384,7 +380,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
       return;
     }
 
-    const matchedEmotion = emotions.find(e => e.name === form.emotion);
+    const matchedEmotion = EMOTIONS.find(e => e.name === form.emotion);
     if (!matchedEmotion) {
       actions.showToast('감정 정보를 확인할 수 없습니다.');
       return;
@@ -456,11 +452,11 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
 
           <section css={{ position: 'relative' }}>
             <div css={{ fontSize: 15, fontWeight: 900 }}>
-              이 소비, 어떤 기분이었어요?
+              이 {form.type === 'income' ? '수입' : '소비'}, 어떤 기분이었어요?
               {form.emotion && <span css={{ color: selected.color }}> · {form.emotion}</span>}
             </div>
             <BlobGrid>
-              {emotions.map(emotionItem => {
+              {EMOTIONS.map(emotionItem => {
                 const name = emotionItem.name;
                 const active = form.emotion === name;
                 return (

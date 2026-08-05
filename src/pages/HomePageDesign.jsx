@@ -14,12 +14,17 @@ import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 
 const Grid = styled.div`
   width: 100%;
-  min-height: 100%;
+  height: 100%;
   margin: 0;
   display: grid;
   grid-template-columns: clamp(620px, 52vw, 840px) minmax(0, 1fr);
   gap: 100px;
   align-items: stretch;
+  overflow: hidden;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   @media (max-width: 1180px) {
     grid-template-columns: clamp(540px, 50vw, 740px) minmax(0, 1fr);

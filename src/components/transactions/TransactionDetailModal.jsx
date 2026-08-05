@@ -4,9 +4,9 @@ import styled from '@emotion/styled';
 import { Modal } from '../common/Modal.jsx';
 import { EmotionBlob } from '../common/EmotionBlob.jsx';
 import { money, signedMoney } from '../../utils/format.js';
-import { useMetadata } from '../../hooks/queries/useMetadata.js';
 import { useTransactionDetailQuery, useUpdateTransactionMutation, useDeleteTransactionMutation } from '../../hooks/queries/useTransactions.js';
 import { useCategoriesQuery } from '../../hooks/queries/useCategories.js';
+import { EMOTIONS } from '../../constants/metadata.js';
 import DatePickerDc from '../common/DatePickerDc.jsx';
 
 const Wrap = styled.div`
@@ -287,8 +287,7 @@ function dateLabel(value) {
 }
 
 export default function TransactionDetailModal({ transaction: initialTxn, onClose }) {
-  const { data: metaData } = useMetadata();
-  const emotions = metaData?.emotions || [];
+  // Removed useMetadata
 
   const { data: transaction } = useTransactionDetailQuery(initialTxn.transactionId, initialTxn);
   const updateTx = useUpdateTransactionMutation();
@@ -450,7 +449,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
           <div css={{ marginBottom: isMobile ? 4 : 16 }}>
             <div css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 900 }}>감정</div>
             <EmotionGrid>
-              {emotions.map(item => {
+              {EMOTIONS.map(item => {
                 return (
                   <EmotionChoice
                     key={item.emotionId}
