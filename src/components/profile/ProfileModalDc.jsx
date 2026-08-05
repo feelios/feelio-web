@@ -9,7 +9,7 @@ import { money, percent } from '../../utils/format.js';
 import { requestForToken } from '../../utils/firebase.js';
 import { usersAPI } from '../../api/users.js';
 // 1. 사용자 설정 및 회원 탈퇴 관련 쿼리/뮤테이션 (위쪽 브랜치 변경 사항)
-import { useUpdateSettingsMutation, useWithdrawMutation } from '../../hooks/queries/useUsers.js';
+import { useUpdateSettingsMutation, useWithdrawMutation, useUpdateMeMutation } from '../../hooks/queries/useUsers.js';
 
 // 2. 목표 관리 컴포넌트 및 쿼리/뮤테이션 (main 브랜치 변경 사항)
 import GoalForm from './GoalForm.jsx';
@@ -359,6 +359,7 @@ export default function ProfileModalDc({ state, actions, onClose, initialView = 
   // 1. 회원 탈퇴 및 설정 변경 관련 (위쪽 기능 유지)
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const updateSettingsMutation = useUpdateSettingsMutation();
+  const updateMeMutation = useUpdateMeMutation();
   const withdrawMutation = useWithdrawMutation();
 
   // 2. 목표 데이터 가져오기 및 뮤테이션 (main의 발전된 구조 채택)
@@ -468,9 +469,20 @@ export default function ProfileModalDc({ state, actions, onClose, initialView = 
     }
   }
 
-  function saveProfile() {
-    actions.updateUser({ nickname });
-    setView('profile');
+  async function saveProfile() {
+    if (!nickname.trim() || nickname.length > 8) {
+      actions.showToast('닉네임은 1~8자로 입력해 주세요');
+      return;
+    }
+
+    try {
+      await updateMeMutation.mutateAsync({ nickname });
+      actions.updateUser({ nickname });
+      actions.showToast('프로필이 수정되었어요');
+      setView('profile');
+    } catch (e) {
+      actions.showToast('프로필 수정에 실패했어요. 다시 시도해 주세요.');
+    }
   }
 
   function saveAndBack() {
@@ -607,10 +619,10 @@ export default function ProfileModalDc({ state, actions, onClose, initialView = 
             <div css={{ fontSize: 12.5, color: 'var(--sub)', marginTop: 6 }}>{profileImageUrl ? '연동된 프로필 사진이에요' : '프로필 사진이 없어요'}</div>
           </div>
           <FieldLabel>닉네임</FieldLabel>
-          <Field value={nickname} onChange={event => setNickname(event.target.value)} />
+          <Field value={nickname} onChange={event => setNickname(event.target.value)} disabled={updateMeMutation.isPending} />
           <FieldLabel>이메일</FieldLabel>
           <Field value={email} disabled />
-          <PrimaryButton type="button" onClick={saveProfile}>저장</PrimaryButton>
+          <PrimaryButton type="button" onClick={saveProfile} disabled={updateMeMutation.isPending}>저장</PrimaryButton>
         </Screen>
       )}
 
