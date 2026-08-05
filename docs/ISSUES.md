@@ -86,15 +86,13 @@
 | [ ] | - | F13-5 | AI 분석 대시보드 UI 골격 및 위험도 렌더링 | feat/ai-dashboard-skeleton | - | Component | - | 신규 | API 연동 및 응답의 소비위험도(Red/Yellow/Green) 기반 컨테이너 색상/아이콘 동적 렌더링 구현 (AI 데이터는 Mock 처리) |
 | [ ] | - | F13-6 | 팩트 리포트 & 맞춤 챌린지 실데이터 바인딩 | feat/ai-dashboard-fact-challenge | - | Component | - | 신규 | 팩트 폭격기 텍스트 렌더링 및 맞춤 챌린지 칩(Chip) UI에 실제 AI 응답 데이터 바인딩 |
 | [ ] | - | F13-7 | 감정소비 분석 실데이터 바인딩 및 예외 처리 | feat/ai-dashboard-emotion | - | Component | - | 신규 | 3단계 감정 분석 텍스트 바인딩 적용 및 AI 응답 지연/에러 시 화면 깨짐 방지용 Fallback(빈 박스/로딩) 처리 |
-| [x] | - | A1-1 | 감정소비 분석 AI 프롬프트 간소화 (Light Empathy) | main | - | 백엔드 | - | 완료 | 백엔드 GptInsightCardGenerator.java 프롬프트를 50자 이내의 가벼운 공감 톤으로 대폭 축소 및 푸시 완료 |
+
 | [ ] | - | F14-1 | 모바일 및 데스크탑 AI 분석 카드 텍스트 깨짐 현상 수정 | `fix/ai-analysis-text-overflow` | - | Component | - | 신규 | 모바일 긴 글 줄바꿈 보정 및 웹 환경 카드 멘트 짤림 현상 수정 |
 | [ ] | - | F14-2 | 홈 화면 말랑이 빈 상태(물음표) 렌더링 로직 개선 | `feat/home-mallang-logic` | - | Component | - | 신규 | 전체 거래내역이 없을 때만 물음표 노출, 이번 달 감정 부재 시 저번 달 대표 감정으로 폴백(Fallback) |
 | [ ] | - | F14-3 | 감정 리스트 하드코딩 전환 (API 최적화) | `refactor/hardcode-emotions-categories` | - | api·Component | - | 신규 | 지출/수입 등록용 불변 감정 데이터를 프론트 단에 하드코딩하여 API 불필요한 로딩 제거 |
 | [ ] | - | F14-4 | 캘린더 날짜 선택 시 감정 색상 연동 및 그림자 효과 추가 | `feat/calendar-emotion-color` | - | Component | - | 신규 | 달력에 선택된 감정 색상을 적용하고, 미선택 시에는 그림자 효과(Stroke & Shadow)만 렌더링 |
 | [ ] | - | F14-5 | 캘린더 날짜 및 시간 뷰(모드) 선택 UI 분리 | `feat/calendar-mode-split` | - | Component | - | 신규 | 날짜 클릭 시 캘린더(날짜 뷰)만 띄우고, 시간 클릭 시 휠(시간 뷰)만 별도로 노출 |
-| [ ] | - | A2-1 | AI 팩트 리포트 프롬프트 조정 (강력한 경고 톤) | `feat/ai-fact-report-prompt` | - | 백엔드 | - | 신규 | 팩트 리포트를 생성하는 AI 프롬프트를 수정하여 지출 위험에 대해 강력하고 직관적인 어조로 변경 |
-| [ ] | - | A2-2 | 홈 화면 말랑이 코멘트용 AI 생성 API 구현 | `feat/home-mallang-ai-api` | - | 백엔드 | - | 신규 | 홈 말랑이 코멘트용 프롬프트를 추가하여 칭찬/경고 수치 및 독려 멘트를 생성 반환 |
-| [ ] | - | A2-3 | 거래내역 생성 및 수정 시 시간(Time) 바인딩 버그 수정 | `fix/transaction-time-binding` | - | 백엔드 | - | 신규 | 거래내역 생성/수정 시 createdAt/updatedAt 중 올바른 시간이 반영되고 정확히 반환되는지 점검 및 수정 |
+
 | [ ] | - | F15-1 | 모바일 AI 대시보드 아코디언(접기) 적용 | `feat/ai-dashboard-mobile-accordion` | - | Component | - | 신규 | 모바일 화면에서 클릭 전 카드 제목만 보이고 누르면 상세 내용이 펼쳐지도록 UX 수정 |
 | [ ] | - | F15-2 | 웹 환경 AI 감정소비 분석 카드 텍스트 짤림/깨짐 수정 | `fix/ai-emotion-card-text-overflow` | - | Component | - | 신규 | 웹(데스크탑) 환경에서 글자 내용이 많을 때 AI 감정 카드의 멘트가 영역 밖으로 넘치거나 깨지는 CSS 이슈 해결 |
 | [ ] | - | F15-3 | 목표 예산 현황 카드 내 감정 말랑이 UI 재배치 | `feat/budget-status-emotion-ui` | - | Component | - | 신규 | 예산 카테고리 아래 뜨던 텍스트를 옆으로 이동시키고 말랑이 이미지(아이콘) 렌더링 |
@@ -103,7 +101,7 @@
 | [ ] | - | F15-6 | 나의 소비 코어 탭 클릭 시 레이아웃 흔들림 고정 | `fix/consumption-core-layout-shift` | - | Component | - | 신규 | 소비 코어 카드에서 내부 탭 버튼들을 누를 때마다 버튼들의 위치가 흔들리는 CSS 레이아웃 버그 고정 |
 | [ ] | - | F15-7 | 거래내역 상세/수정 모달 시간 바인딩 점검 | `fix/transaction-time-frontend-binding` | - | Component | - | 신규 | 백엔드(A2-3)의 올바른 시간 데이터를 상세 모달과 수정 달력에 정확하게 파싱 및 연결 방어 |
 | [ ] | - | F15-8 | 로그아웃 수행 시 활성화된 모달 닫기 처리 | `fix/logout-modal-close` | - | Component | - | 신규 | 로그아웃하여 라우팅이 변경될 때 띄워져 있던 팝업/모달 강제 닫기 처리하여 잔상 버그 방지 |
-| [ ] | - | A3-1 | 회원 탈퇴 API(Delete User) 오류 원인 분석 및 수정 | `fix/account-deletion-backend` | - | 백엔드 | - | 신규 | 계정 탈퇴 시 정상적으로 처리되지 않는 원인을 파악하여 데이터가 안전하게 삭제되도록 API 수정 |
+
 | [ ] | - | F16-1 | 데스크탑 웹 사이드바 상단 로고 이미지 교체 | `feat/sidebar-logo-image` | - | Component | - | 신규 | 제공된 로고 에셋을 추가하고, 웹 사이드바 상단 이미지를 해당 로고로 교체 |
 | [ ] | - | F16-2 | 회원 탈퇴 프론트엔드 연동 오류 확인 및 초기화 | `fix/account-deletion-frontend` | - | Component | - | 신규 | 회원 탈퇴 API 연동 오류 수정 및 탈퇴 시 로컬 스토리지/전역 상태 완벽 초기화 |
 
