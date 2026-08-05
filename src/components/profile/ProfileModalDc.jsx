@@ -9,7 +9,7 @@ import { money, percent } from '../../utils/format.js';
 import { requestForToken } from '../../utils/firebase.js';
 import { usersAPI } from '../../api/users.js';
 // 1. 사용자 설정 및 회원 탈퇴 관련 쿼리/뮤테이션 (위쪽 브랜치 변경 사항)
-import { useUpdateSettingsMutation, useWithdrawMutation } from '../../hooks/queries/useUsers.js';
+import { useUpdateSettingsMutation, useWithdrawMutation, useUpdateMeMutation } from '../../hooks/queries/useUsers.js';
 
 // 2. 목표 관리 컴포넌트 및 쿼리/뮤테이션 (main 브랜치 변경 사항)
 import GoalForm from './GoalForm.jsx';
@@ -100,7 +100,8 @@ const Close = styled.button`
 `;
 
 const GoalBanner = styled.div`
-  background: linear-gradient(105deg,#83C9B026,#76A7E81a);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
   border-radius: 18px;
   padding: 16px 18px;
   margin-bottom: 20px;
@@ -179,14 +180,19 @@ const BackHeader = styled.div`
   }
 `;
 
+// 텍스트만 있는 버튼. 배경·테두리·그림자 없음.
+// && 로 클래스를 두 번 걸어야 BackHeader 의 'button { ... }' 자손 규칙에 끌려가지 않는다.
 const PillButton = styled.button`
-  ${glassPrimary}
-  color: var(--on-ink);
-  border-radius: 999px;
-  padding: 9px 16px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
+  && {
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 6px 2px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
 `;
 
 const FieldLabel = styled.label`
@@ -238,8 +244,8 @@ const GoalCard = styled.div`
   box-shadow: 0 8px 24px rgba(60, 50, 35, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.35);
   transition: border-color .2s ease, background .2s ease;
   ${({ achieved }) => achieved && `
-    border-color: rgba(62, 149, 120, 0.55);
-    background: linear-gradient(135deg, rgba(131, 201, 176, 0.22), rgba(131, 201, 176, 0.06));
+    border-color: color-mix(in srgb, var(--ink) 26%, transparent);
+    background: color-mix(in srgb, var(--ink) 7%, transparent);
   `}
   ${({ expired }) => expired && `
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
@@ -344,8 +350,8 @@ function Back({ title, children }) {
   );
 }
 
-export default function ProfileModalDc({ state, actions, onClose }) {
-  const [view, setView] = useState('profile');
+export default function ProfileModalDc({ state, actions, onClose, initialView = 'profile' }) {
+  const [view, setView] = useState(initialView);
   const [nickname, setNickname] = useState(cleanName(state.user.nickname));
   const [editingGoalId, setEditingGoalId] = useState(null);
   const [goalForm, setGoalForm] = useState({ name: '', target: '', current: '', period: '', isMain: false });
@@ -353,6 +359,7 @@ export default function ProfileModalDc({ state, actions, onClose }) {
   // 1. 회원 탈퇴 및 설정 변경 관련 (위쪽 기능 유지)
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const updateSettingsMutation = useUpdateSettingsMutation();
+  const updateMeMutation = useUpdateMeMutation();
   const withdrawMutation = useWithdrawMutation();
 
   // 2. 목표 데이터 가져오기 및 뮤테이션 (main의 발전된 구조 채택)
@@ -462,9 +469,20 @@ export default function ProfileModalDc({ state, actions, onClose }) {
     }
   }
 
-  function saveProfile() {
-    actions.updateUser({ nickname });
-    setView('profile');
+  async function saveProfile() {
+    if (!nickname.trim() || nickname.length > 8) {
+      actions.showToast('닉네임은 1~8자로 입력해 주세요');
+      return;
+    }
+
+    try {
+      await updateMeMutation.mutateAsync({ nickname });
+      actions.updateUser({ nickname });
+      actions.showToast('프로필이 수정되었어요');
+      setView('profile');
+    } catch (e) {
+      actions.showToast('프로필 수정에 실패했어요. 다시 시도해 주세요.');
+    }
   }
 
   function saveAndBack() {
@@ -601,10 +619,10 @@ export default function ProfileModalDc({ state, actions, onClose }) {
             <div css={{ fontSize: 12.5, color: 'var(--sub)', marginTop: 6 }}>{profileImageUrl ? '연동된 프로필 사진이에요' : '프로필 사진이 없어요'}</div>
           </div>
           <FieldLabel>닉네임</FieldLabel>
-          <Field value={nickname} onChange={event => setNickname(event.target.value)} />
+          <Field value={nickname} onChange={event => setNickname(event.target.value)} disabled={updateMeMutation.isPending} />
           <FieldLabel>이메일</FieldLabel>
           <Field value={email} disabled />
-          <PrimaryButton type="button" onClick={saveProfile}>저장</PrimaryButton>
+          <PrimaryButton type="button" onClick={saveProfile} disabled={updateMeMutation.isPending}>저장</PrimaryButton>
         </Screen>
       )}
 
@@ -634,18 +652,33 @@ export default function ProfileModalDc({ state, actions, onClose }) {
                   <div>
                     <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                       <span css={{ fontSize: 15, fontWeight: 700, color: expired ? 'var(--sub)' : undefined }}>{item.name}</span>
-                      {item.isMain && <span css={{ fontSize: 10.5, fontWeight: 700, color: '#3E9578', background: '#83C9B033', padding: '2px 8px', borderRadius: 99 }}>대표</span>}
-                      {achieved && <span css={{ fontSize: 10.5, fontWeight: 800, color: '#fff', background: '#3E9578', padding: '2px 9px', borderRadius: 99 }}>✓ 달성</span>}
+                      {item.isMain && <span css={{ fontSize: 10.5, fontWeight: 700, color: 'var(--ink)', background: 'color-mix(in srgb, var(--ink) 12%, transparent)', padding: '2px 8px', borderRadius: 99 }}>대표</span>}
                       {expired && <span css={{ fontSize: 10.5, fontWeight: 700, color: 'var(--sub)', background: 'var(--line)', padding: '2px 9px', borderRadius: 99 }}>지난 목표</span>}
                     </div>
-                    <div css={{ height: 8, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
-                      <div css={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: 99, background: expired ? 'var(--sub)' : achieved ? 'linear-gradient(90deg,#83C9B0,#3E9578)' : 'linear-gradient(90deg,#FF9F6E,#F28AB7)' }} />
+                    {/* 다 모으면 진행바를 그리지 않는다. 더 채울 게 없어 바가 정보를 안 담는다 */}
+                    {!achieved && (
+                      <div css={{ height: 8, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
+                        <div css={{
+                          width: `${Math.min(100, pct)}%`,
+                          height: '100%',
+                          borderRadius: 99,
+                          background: expired ? 'var(--sub)' : 'color-mix(in srgb, var(--ink) 34%, transparent)'
+                        }} />
+                      </div>
+                    )}
+                    {/* 다 모으면 모은 금액이 주인공이 되고 목표 금액은 뒤로 물러난다 */}
+                    <div css={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, fontSize: 12.5, color: 'var(--sub)', marginTop: 8 }}>
+                      {achieved ? (
+                        <span css={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <b css={{ color: 'var(--text)', fontSize: 14, fontWeight: 900, letterSpacing: '-.02em' }}>{money(item.currentAmount)}</b>
+                          <span css={{ marginLeft: 5 }}>다 모음</span>
+                        </span>
+                      ) : (
+                        <span>{money(item.currentAmount)} / {money(item.targetAmount)}</span>
+                      )}
+                      <span css={{ flex: '0 0 auto', color: achieved ? 'var(--text)' : 'var(--sub)', fontWeight: achieved ? 900 : 700 }}>{Math.min(100, pct)}%</span>
                     </div>
-                    <div css={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--sub)', marginTop: 7 }}>
-                      <span>{money(item.currentAmount)} / {money(item.targetAmount)}</span>
-                      <span css={{ color: achieved ? '#3E9578' : 'var(--sub)', fontWeight: achieved ? 800 : 700 }}>{pct}%</span>
-                    </div>
-                    {item.dueDate && <div css={{ fontSize: 12, color: 'var(--sub)', marginTop: 6, fontWeight: 700 }}>마감 날짜: {item.dueDate}</div>}
+                    {item.dueDate && <div css={{ fontSize: 12, color: 'var(--sub)', marginTop: 5, fontWeight: 700 }}>마감 날짜: {item.dueDate}</div>}
                   </div>
                   <div css={{ display: 'flex', gap: 8, marginTop: 12 }}>
                     <SmallAction type="button" onClick={() => {
