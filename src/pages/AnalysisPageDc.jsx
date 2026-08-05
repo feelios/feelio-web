@@ -106,9 +106,13 @@ const RISK_LEVELS = {
 const CHALLENGE_LABEL = 'AI 맞춤 챌린지';
 
 // 위험도 값이 없으면 null → 신호등 세 칸 모두 꺼진 상태로 둔다. 임의로 한 칸을 켜지 않는다.
+// 서버(AiQuickInsightAssembler)는 등급을 위험도 항목의 value에 한글로 담아 보낸다.
+// '예산 미설정'은 등급이 아니라 판정 불가라 매핑하지 않는다 → 세 칸 모두 꺼짐.
+const RISK_WORDS = { 위험: 'RED', 주의: 'YELLOW', 안전: 'GREEN' };
+
 function resolveRisk(raw) {
-  const key = String(raw ?? '').trim().toUpperCase();
-  return RISK_LEVELS[key] ?? null;
+  const text = String(raw ?? '').trim();
+  return RISK_LEVELS[text.toUpperCase()] ?? RISK_LEVELS[RISK_WORDS[text]] ?? null;
 }
 
 const Duo = styled.div`
@@ -149,9 +153,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const monthly = trendData?.monthlyData ?? [];
 
   // 소비 위험도: 서버 riskLevel → 위험도 항목의 level 순으로 본다. 둘 다 없으면 null (F13-5)
-  const risk = resolveRisk(
-    insightsData?.riskLevel ?? insightsData?.aiQuickInsights?.find(item => item.type === 'risk')?.level
-  );
+  const riskItem = insightsData?.aiQuickInsights?.find(item => item.type === 'risk');
+  const risk = resolveRisk(insightsData?.riskLevel ?? riskItem?.level ?? riskItem?.value);
 
   const aiQuickInsights = (insightsData?.aiQuickInsights?.length > 0 ? insightsData.aiQuickInsights : [
     { label: '위험 루트', value: '-', note: '-', color: 'var(--sub)', type: 'default' },
