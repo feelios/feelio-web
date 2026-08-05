@@ -92,6 +92,17 @@
 | [ ] | - | F14-3 | 감정 리스트 하드코딩 전환 (API 최적화) | `refactor/hardcode-emotions-categories` | - | api·Component | - | 신규 | 지출/수입 등록용 불변 감정 데이터를 프론트 단에 하드코딩하여 API 불필요한 로딩 제거 |
 | [ ] | - | F14-4 | 캘린더 날짜 선택 시 감정 색상 연동 및 그림자 효과 추가 | `feat/calendar-emotion-color` | - | Component | - | 신규 | 달력에 선택된 감정 색상을 적용하고, 미선택 시에는 그림자 효과(Stroke & Shadow)만 렌더링 |
 | [ ] | - | F14-5 | 캘린더 날짜 및 시간 뷰(모드) 선택 UI 분리 | `feat/calendar-mode-split` | - | Component | - | 신규 | 날짜 클릭 시 캘린더(날짜 뷰)만 띄우고, 시간 클릭 시 휠(시간 뷰)만 별도로 노출 |
+| [ ] | - | A2-1 | AI 팩트 리포트 프롬프트 조정 (강력한 경고 톤) | `feat/ai-fact-report-prompt` | - | 백엔드 | - | 신규 | 팩트 리포트를 생성하는 AI 프롬프트를 수정하여 지출 위험에 대해 강력하고 직관적인 어조로 변경 |
+| [ ] | - | A2-2 | 홈 화면 말랑이 코멘트용 AI 생성 API 구현 | `feat/home-mallang-ai-api` | - | 백엔드 | - | 신규 | 홈 말랑이 코멘트용 프롬프트를 추가하여 칭찬/경고 수치 및 독려 멘트를 생성 반환 |
+| [ ] | - | A2-3 | 거래내역 생성 및 수정 시 시간(Time) 바인딩 버그 수정 | `fix/transaction-time-binding` | - | 백엔드 | - | 신규 | 거래내역 생성/수정 시 createdAt/updatedAt 중 올바른 시간이 반영되고 정확히 반환되는지 점검 및 수정 |
+| [ ] | - | F15-1 | 모바일 AI 대시보드 아코디언(접기) 적용 | `feat/ai-dashboard-mobile-accordion` | - | Component | - | 신규 | 모바일 화면에서 클릭 전 카드 제목만 보이고 누르면 상세 내용이 펼쳐지도록 UX 수정 |
+| [ ] | - | F15-2 | 웹 환경 AI 감정소비 분석 카드 텍스트 짤림/깨짐 수정 | `fix/ai-emotion-card-text-overflow` | - | Component | - | 신규 | 웹(데스크탑) 환경에서 글자 내용이 많을 때 AI 감정 카드의 멘트가 영역 밖으로 넘치거나 깨지는 CSS 이슈 해결 |
+| [ ] | - | F15-3 | 목표 예산 현황 카드 내 감정 말랑이 UI 재배치 | `feat/budget-status-emotion-ui` | - | Component | - | 신규 | 예산 카테고리 아래 뜨던 텍스트를 옆으로 이동시키고 말랑이 이미지(아이콘) 렌더링 |
+| [ ] | - | F15-4 | 홈 화면 말랑이 코멘트 AI 연동 및 부재 고정 문구 | `feat/home-mallang-ai-binding` | - | Component | - | 신규 | AI API 연동하여 3줄 멘트 바인딩 및 데이터 부재 상태 하드코딩 고정 문구 노출 |
+| [ ] | - | F15-5 | 목표 100% 달성 시 홈/모달 완료 디자인 수정 | `feat/goal-complete-design` | - | Component | - | 신규 | 목표 완수(100%) 시 홈 목표 카드와 설정 모달 내부의 시각적 완료 디자인(UI/UX) 개선 |
+| [ ] | - | F15-6 | 나의 소비 코어 탭 클릭 시 레이아웃 흔들림 고정 | `fix/consumption-core-layout-shift` | - | Component | - | 신규 | 소비 코어 카드에서 내부 탭 버튼들을 누를 때마다 버튼들의 위치가 흔들리는 CSS 레이아웃 버그 고정 |
+| [ ] | - | F15-7 | 거래내역 상세/수정 모달 시간 바인딩 점검 | `fix/transaction-time-frontend-binding` | - | Component | - | 신규 | 백엔드(A2-3)의 올바른 시간 데이터를 상세 모달과 수정 달력에 정확하게 파싱 및 연결 방어 |
+| [ ] | - | F15-8 | 로그아웃 수행 시 활성화된 모달 닫기 처리 | `fix/logout-modal-close` | - | Component | - | 신규 | 로그아웃하여 라우팅이 변경될 때 띄워져 있던 팝업/모달 강제 닫기 처리하여 잔상 버그 방지 |
 
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.
