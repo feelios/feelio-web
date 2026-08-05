@@ -2,11 +2,11 @@
 import { useMemo, useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
-import { getEmotion } from '../data/emotions.js';
 import { money, signedMoney } from '../utils/format.js';
 import { useDebounce } from '../hooks/useDebounce.js';
 import { useTransactionsQuery, useBulkDeleteTransactionsMutation, useUpdateTransactionMutation } from '../hooks/queries/useTransactions.js';
-import { useMetadata } from '../hooks/queries/useMetadata.js';
+import { useCategoriesQuery } from '../hooks/queries/useCategories.js';
+import { EMOTIONS, getEmotion } from '../constants/metadata.js';
 import { TransactionListSkeleton } from '../components/common/Skeleton.jsx';
 import SelectDc from '../components/common/SelectDc.jsx';
 
@@ -322,9 +322,13 @@ function monthTitle(year, month) {
 }
 
 export default function TransactionsPageDesign({ onSelect, globalDate, setGlobalDate }) {
-  const { data: metaData } = useMetadata();
-  const categories = metaData?.categories || [];
-  const emotions = metaData?.emotions || [];
+  const { data: expenseCat } = useCategoriesQuery('EXPENSE');
+  const { data: incomeCat } = useCategoriesQuery('INCOME');
+  
+  const categories = useMemo(() => {
+    return [...(expenseCat?.categories || []), ...(incomeCat?.categories || [])];
+  }, [expenseCat, incomeCat]);
+  const emotions = EMOTIONS;
 
   const [view, setView] = useState('일별');
   const [query, setQuery] = useState('');
