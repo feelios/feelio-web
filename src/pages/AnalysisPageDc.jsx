@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
+import { Skeleton } from '../components/common/Skeleton.jsx';
+import { ChallengeFlag } from '../components/analysis/ChallengeFlag.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
 import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
@@ -88,9 +90,30 @@ const RiskSignal = styled.span`
 
   i.active {
     opacity: 1;
-    box-shadow: 0 0 16px rgba(232, 117, 115, .74), 0 0 0 3px rgba(232, 117, 115, .16);
+    box-shadow: 0 0 16px ${({ glow = '#E87573' }) => glow}bd, 0 0 0 3px ${({ glow = '#E87573' }) => glow}29;
   }
 `;
+
+// 소비 위험도 3단계. 색은 감정 팔레트와 같은 값을 쓴다(평온·뿌듯함·화남).
+const RISK_LEVELS = {
+  GREEN: { lamp: 'green', color: '#83C9B0', value: '안전', note: '여유 있어' },
+  YELLOW: { lamp: 'yellow', color: '#F2C766', value: '주의', note: '조금 빨라' },
+  RED: { lamp: 'red', color: '#E87573', value: '위험', note: '많이 썼어' }
+};
+
+// 챌린지 칸은 위험 루트와 type이 같아('default') label로 가른다.
+// 서버(AiQuickInsightAssembler)가 이 label 4종을 고정으로 맞춰 보낸다.
+const CHALLENGE_LABEL = 'AI 맞춤 챌린지';
+
+// 위험도 값이 없으면 null → 신호등 세 칸 모두 꺼진 상태로 둔다. 임의로 한 칸을 켜지 않는다.
+// 서버(AiQuickInsightAssembler)는 등급을 위험도 항목의 value에 한글로 담아 보낸다.
+// '예산 미설정'은 등급이 아니라 판정 불가라 매핑하지 않는다 → 세 칸 모두 꺼짐.
+const RISK_WORDS = { 위험: 'RED', 주의: 'YELLOW', 안전: 'GREEN' };
+
+function resolveRisk(raw) {
+  const text = String(raw ?? '').trim();
+  return RISK_LEVELS[text.toUpperCase()] ?? RISK_LEVELS[RISK_WORDS[text]] ?? null;
+}
 
 const Duo = styled.div`
   display: grid;
@@ -118,9 +141,10 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const [flippedCards, setFlippedCards] = useState({});
   const [activeChartTab, setActiveChartTab] = useState('emotion');
   const [patternFlipped, setPatternFlipped] = useState(false);
+  const [expandedInsight, setExpandedInsight] = useState(null);
 
   const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
-  const { data: insightsData } = useAiInsightsQuery();
+  const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery();
   const { data: trendData } = useMonthlyTrendQuery();
   // 예산 현황은 전역 스토어(BudgetSync가 동기화)를 구독한다 (#145)
   const serverBudgetItems = useBudgetStore((s) => s.budgetItems);
@@ -128,13 +152,24 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
 
   const monthly = trendData?.monthlyData ?? [];
 
-  const aiQuickInsights = insightsData?.aiQuickInsights?.length > 0 ? insightsData.aiQuickInsights : [
+  // 소비 위험도: 서버 riskLevel → 위험도 항목의 level 순으로 본다. 둘 다 없으면 null (F13-5)
+  const riskItem = insightsData?.aiQuickInsights?.find(item => item.type === 'risk');
+  const risk = resolveRisk(insightsData?.riskLevel ?? riskItem?.level ?? riskItem?.value);
+
+  const aiQuickInsights = (insightsData?.aiQuickInsights?.length > 0 ? insightsData.aiQuickInsights : [
     { label: '위험 루트', value: '-', note: '-', color: 'var(--sub)', type: 'default' },
     { label: '팩트 리포트', value: '-', note: '-', color: '#E87573', type: 'fact' },
-    { label: '소비 위험도', value: '-', note: '-', color: '#E87573', type: 'risk' },
+    { label: '소비 위험도', type: 'risk' },
     { label: 'AI 맞춤 챌린지', value: '-', note: '-', color: 'var(--sub)', type: 'default' }
-  ];
-  
+  ]).map(item => item.type === 'risk'
+    ? {
+      ...item,
+      color: risk?.color ?? 'var(--sub)',
+      value: item.value ?? risk?.value ?? '-',
+      note: item.note ?? risk?.note ?? '-'
+    }
+    : item);
+
   const emotionCardsData = insightsData?.emotionCards ?? [];
   const evidence = patternData?.evidence ?? [];
   const pattern = patternData?.pattern ?? null;
@@ -261,14 +296,33 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   return (
     <Page>
       <InsightRail>
-        {aiQuickInsights.map(item => (
-          <InsightItem key={item.label}>
+        {aiQuickInsights.map(item => {
+          const isExpanded = expandedInsight === item.label;
+          return (
+          <InsightItem 
+            key={item.label}
+            onClick={() => {
+              if (window.innerWidth <= 820) {
+                setExpandedInsight(isExpanded ? null : item.label);
+              }
+            }}
+            css={{
+              cursor: 'pointer',
+              alignItems: isExpanded ? 'flex-start' : 'center',
+              paddingTop: isExpanded ? 12 : 6,
+              paddingBottom: isExpanded ? 12 : 6,
+              transition: 'all 0.2s ease',
+              '@media (min-width: 821px)': { cursor: 'default', alignItems: 'center', paddingTop: 6, paddingBottom: 6 }
+            }}
+          >
             {item.type === 'risk' ? (
-              <RiskSignal aria-hidden="true">
-                <i className="green" />
-                <i className="yellow" />
-                <i className="red active" />
+              <RiskSignal glow={risk?.color} role="img" aria-label={`소비 위험도 ${risk?.value ?? '측정중'}`} css={{ marginTop: isExpanded ? 2 : 0, '@media (min-width: 821px)': { marginTop: 0 } }}>
+                {['green', 'yellow', 'red'].map(lamp => (
+                  <i key={lamp} className={lamp === risk?.lamp ? `${lamp} active` : lamp} />
+                ))}
               </RiskSignal>
+            ) : item.label === CHALLENGE_LABEL ? (
+              <ChallengeFlag expanded={isExpanded} />
             ) : (
               <span css={{
                 width: item.type === 'fact' ? 10 : 8,
@@ -276,27 +330,54 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                 borderRadius: 99,
                 background: item.color,
                 opacity: item.type === 'fact' ? 1 : (isDark ? 0.86 : 0.72),
-                boxShadow: item.type === 'fact' ? '0 0 0 4px rgba(232,117,115,.12)' : `0 10px 22px -14px ${item.color}`
+                boxShadow: item.type === 'fact' ? '0 0 0 4px rgba(232,117,115,.12)' : `0 10px 22px -14px ${item.color}`,
+                marginTop: isExpanded ? 2 : 0,
+                '@media (min-width: 821px)': { marginTop: 0 }
               }} />
             )}
             <div css={{ minWidth: 0 }}>
-              <div css={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-                <span css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap' }}>{item.label}</span>
-                <span css={{ color: item.type === 'fact' ? '#E87573' : item.color, fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap' }}>{item.note}</span>
+              <div css={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, width: '100%' }}>
+                <span css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', flexShrink: 0 }}>{item.label}</span>
+                {isInsightsLoading
+                  ? <Skeleton w="44px" h={11} radius={5} />
+                  : <span css={{ 
+                      color: item.type === 'fact' ? '#E87573' : item.color, 
+                      fontSize: 11, 
+                      fontWeight: 900, 
+                      whiteSpace: isExpanded ? 'normal' : 'nowrap',
+                      overflow: isExpanded ? 'visible' : 'hidden',
+                      textOverflow: isExpanded ? 'clip' : 'ellipsis',
+                      textAlign: 'right',
+                      wordBreak: isExpanded ? 'keep-all' : 'normal',
+                      minWidth: 0,
+                      display: 'none',
+                      '@media (min-width: 821px)': { display: 'inline' }
+                    }}>{item.note}</span>}
               </div>
+              {isInsightsLoading ? (
+                <Skeleton w="82%" h={item.type === 'fact' ? 17 : 16} radius={6} css={{ marginTop: 4 }} />
+              ) : (
               <div css={{
                 marginTop: 3,
                 color: item.type === 'fact' ? '#E87573' : 'var(--text)',
                 fontSize: item.type === 'fact' ? 14 : 13,
                 fontWeight: item.type === 'fact' ? 950 : 900,
-                lineHeight: 1.25,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
+                lineHeight: 1.35,
+                overflow: isExpanded ? 'visible' : 'hidden',
+                textOverflow: isExpanded ? 'clip' : 'ellipsis',
+                whiteSpace: isExpanded ? 'normal' : 'nowrap',
+                wordBreak: isExpanded ? 'keep-all' : 'normal',
+                overflowWrap: isExpanded ? 'anywhere' : 'normal',
+                '@media (min-width: 821px)': {
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }
               }}>{item.value}</div>
+              )}
             </div>
           </InsightItem>
-        ))}
+        )})}
       </InsightRail>
       <Duo>
         <Card>
@@ -572,8 +653,18 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                          justifyContent: 'flex-start'
                        }
                      }}>
-                       <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', fontWeight: 900, marginBottom: 'clamp(6px, 2vw, 10px)', color: 'var(--text)', wordBreak: 'keep-all', lineHeight: 1.35 }}>{insight.title}</div>
-                       <div css={{ fontSize: 'clamp(12px, 3.2vw, 14px)', color: 'var(--text)', opacity: 0.9, lineHeight: 1.5, wordBreak: 'keep-all' }}>{insight.desc}</div>
+                       {isInsightsLoading ? (
+                         <div css={{ display: 'grid', gap: 7 }} aria-hidden="true">
+                           <Skeleton w="72%" h={15} radius={6} />
+                           <Skeleton w="100%" h={13} radius={6} />
+                           <Skeleton w="88%" h={13} radius={6} />
+                         </div>
+                       ) : (
+                         <>
+                           <div css={{ fontSize: 'clamp(13px, 3.5vw, 15px)', fontWeight: 900, marginBottom: 'clamp(6px, 2vw, 10px)', color: 'var(--text)', wordBreak: 'keep-all', overflowWrap: 'anywhere', lineHeight: 1.35 }}>{insight.title}</div>
+                           <div css={{ fontSize: 'clamp(12px, 3.2vw, 14px)', color: 'var(--text)', opacity: 0.9, lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>{insight.desc}</div>
+                         </>
+                       )}
                      </div>
                    </div>
                  </div>

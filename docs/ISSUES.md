@@ -1,4 +1,4 @@
-## 프론트엔드 작업 핵심 원칙 (Core Directive)
+﻿## 프론트엔드 작업 핵심 원칙 (Core Directive)
 **"현재 웹의 형태와 디자인(UI/UX)은 절대 훼손하지 않는다."**
 모든 프론트엔드 작업은 기존 뷰(View) 템플릿과 스타일링을 100% 유지한 상태에서 **API 통신, 데이터 바인딩, 비즈니스 로직(오류 수정) 연결**에만 국한됩니다. 에이전트가 임의로 화면 디자인이나 레이아웃을 수정하는 것을 엄격히 금지합니다.
 
@@ -65,28 +65,45 @@
 | [ ] | #123 | F9-5 | 평행우주 REC 목표 선택 및 행성 동적 변경 | `feat/universe-rec-target-select` | - | Component | `['universe']` | 신규 | REC 버튼 클릭 시 화면 하단에 목표 리스트 노출 → 목표 선택 시 시뮬레이션 행성(조금 줄여본다면) 결과값 동적 변경 |
 | [x] | - | F10-1 | 거래내역 다중 삭제 UI | `feat/transaction-bulk-delete-ui` | - | api·Component | `['tx','list']` | 완료 | 체크박스 다중 선택 UI 및 삭제 API 연동 |
 | [x] | - | F10-2 | 패턴 분석 연동 및 UI | `feat/recurring-pattern-ui` | §analysis/pattern | api·Component | `['analysis', 'pattern']` | 완료 | 결정론 집계 방향 확정(조합·횟수·근거=GROUP BY, 문구만 서버 생성/AI). `GET /analysis/pattern` 계약 문서화 + `analysisAPI.getPattern`·`usePatternQuery`·AnalysisPageDc 바인딩 완료(evidence 객체 shape). 백엔드 엔드포인트 구현 대기 |
-| [ ] | - | F11-1 | 목표 글래스모피즘 및 만료 상태 스타일 | `feat/goal-design-update` | - | Component | - | 신규 | 목표 폼 투명도 5% 적용 및 과거 목표 흑백(Grayscale) 처리 |
-| [ ] | - | F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 보류 | 날짜 선택기(DatePickerDc) 글래스 시도(5%/모달+스크림)했으나 방향 미확정 → 현재 **불투명 원복**. 월/요일 한글화(2026년 N월 · 월 화 수 목 금 토 일)만 반영. ※모바일에서 시간 패널이 화면 밖으로 넘치는 레이아웃 버그 별도 발견 |
-| [ ] | - | F11-3 | 활성 목표(isMain) 홈·평행우주 연동 | `feat/goal-main-sync` | - | Component | `['goals']` | 신규 | isMain=true 인 활성 목표 데이터를 실시간 구독하여 홈/우주에 렌더링 반영 |
+| [x] | - | F11-1 | 목표 글래스모피즘 및 만료 상태 스타일 | `feat/goal-design-update` | - | Component | - | 신규 | 목표 폼 투명도 5% 적용 및 과거 목표 흑백(Grayscale) 처리 |
+| [x] | - | F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 보류 | 날짜 선택기(DatePickerDc) 글래스 시도(5%/모달+스크림)했으나 방향 미확정 → 현재 **불투명 원복**. 월/요일 한글화(2026년 N월 · 월 화 수 목 금 토 일)만 반영. ※모바일에서 시간 패널이 화면 밖으로 넘치는 레이아웃 버그 별도 발견 |
+| [x] | - | F11-3 | 활성 목표(isMain) 홈·평행우주 연동 | `feat/goal-main-sync` | - | Component | `['goals']` | 신규 | isMain=true 인 활성 목표 데이터를 실시간 구독하여 홈/우주에 렌더링 반영 |
 | [x] | - | F12-1 | 거래내역 다중 선택 CSS 및 체크마크 시인성 개선 | feat/tx-list-ux-improvements | - | Page·Component | - | 완료 | 다중 선택 모서리 겹침 디자인(Radius) 문제 해결, 라이트 모드 체크마크 시인성 개선 |
-| [ ] | - | F12-2 | 카테고리 순서 변경 인디케이터 렌더링 | feat/category-dnd-indicator | - | Component | - | 신규 | 카테고리 드래그 시 마우스 방향에 세로 선 렌더링 |
-| [ ] | - | F12-3 | 평행우주 시나리오 상호작용 및 목표 연동 | feat/universe-scenario-interaction | - | api·Page·Component | ['universe'] | 신규 | 시나리오 요소 버튼화 및 하단 목표 클릭 시 행성 시뮬레이션 동적 반영 |
-| [ ] | - | F12-4 | 예산 데이터 글로벌 상태화 및 대시보드 연동 | feat/global-budget-sync | - | Store·Page·Component | - | 신규 | 홈 말랑이와 전역 예산 상태 연동 및 리스트 상위 5개 필터링 렌더링 |
-| [ ] | - | F12-5 | 온보딩 '나만의 목표' 커스텀 입력 기능 구현 | feat/onboarding-custom-goal-input | - | Component | - | 신규 | 나만의 목표 클릭 시 Input 필드 전환 및 바인딩 |
-| [ ] | - | F12-6 | 온보딩 '기타' 탭 선택 시 레이아웃 여백 버그 수정 | fix/onboarding-date-gap | - | Component | - | 신규 | 폼 컨테이너 팽창 시 상단 컨텐츠와의 간격(gap/margin) 유지 |
-| [ ] | - | F12-7 | 거래내역 수정 정산금 합치기(Merge) UI 및 토글 삭제 | feat/transaction-edit-merge | - | Component·api | ['tx'] | 신규 | 더치페이 미정산 리스트 및 수입/지출 토글 기능 완전 삭제. 수정 모달 내에 정산받은 금액 입력(Merge) UI 신설 및 차감 API 연동 |
-| [ ] | - | F12-8 | 거래내역 월별 필터 및 연월 선택기 UI 개선 | feat/tx-list-month-nav | - | Page·Component | - | 신규 | 월별 필터 1~12월 노출, 연월 선택기 추가 |
-| [ ] | - | F12-9 | 거래내역 필터 내 월/일 개별 선택 기능 | feat/tx-list-month-day-filter | - | Page·Component | - | 신규 | 필터에서 월과 일을 각각 선택하는 UI 구현. (⚠️ 주의: 작업 전 반드시 담당 팀원에게 디자인 시안을 문의 후 작업할 것) |
-| [ ] | - | F12-10 | 대표 목표 설정 UX 변경 및 금액 입력창 고도화 | feat/goal-main-toggle | - | Component | ['goals'] | 신규 | 목표 카드 더블클릭 UX 제거 및 폼 내 토글 추가. 목표 금액 입력 시 3자리 콤마(,) 포맷팅 적용 및 기본 숫자 스피너(위아래 버튼) 제거 |
-| [ ] | - | F12-11 | 평행우주 REC 애니메이션 원복 | fix/universe-rec-animation | - | Component | - | 신규 | 평행우주 화면의 REC 요소 애니메이션을 원래 상태로 되돌리기 |
-| [ ] | - | F13-1 | 결제 퀵태그 FCM 웹 푸시 구현 | feat/fcm-web-push | - | Component·SW | - | 신규 | firebase-messaging-sw.js에서 data-only 알림 처리 및 /quick-tag 딥링크 연결 |
-| [ ] | - | F13-2 | 거래내역 수정 차감(Merge) UI/State 완전 삭제 | feat/transaction-edit-remove-merge | - | Component | - | 신규 | 거래내역 수정 모달 내 정산받은 금액(차감) 입력 UI 및 관련 상태값 전면 삭제 |
-| [ ] | - | F13-3 | 모바일 AI 분석 카드 세로 정렬 및 플립 반응형 | feat/ai-analysis-mobile-layout | - | Component | - | 신규 | 모바일 뷰에서 내부 3개 카드를 가로폭에 꽉 차게 세로 정렬하고, 플립(Flip) 뒷면의 AI 멘트 길이에 맞춰 글자 크기 조율 및 박스 넘침 방지 처리 |
-| [ ] | - | F13-4 | 모바일 테마 토글 DB 동기화 버그 수정 | fix/mobile-theme-sync | - | Component | - | 신규 | 모바일 환경에서 테마(다크/라이트) 변경 시 DB 저장 API 호출이 누락되어 새로고침 시 초기화되는 버그 수정 |
-| [ ] | - | F13-5 | AI 분석 대시보드 UI 골격 및 위험도 렌더링 | feat/ai-dashboard-skeleton | - | Component | - | 신규 | API 연동 및 응답의 소비위험도(Red/Yellow/Green) 기반 컨테이너 색상/아이콘 동적 렌더링 구현 (AI 데이터는 Mock 처리) |
+| [x] | - | F12-2 | 카테고리 순서 변경 인디케이터 렌더링 | feat/category-dnd-indicator | - | Component | - | 신규 | 카테고리 드래그 시 마우스 방향에 세로 선 렌더링 |
+| [x] | - | F12-3 | 평행우주 시나리오 상호작용 및 목표 연동 | feat/universe-scenario-interaction | - | api·Page·Component | ['universe'] | 신규 | 시나리오 요소 버튼화 및 하단 목표 클릭 시 행성 시뮬레이션 동적 반영 |
+| [x] | - | F12-4 | 예산 데이터 글로벌 상태화 및 대시보드 연동 | feat/global-budget-sync | - | Store·Page·Component | - | 신규 | 홈 말랑이와 전역 예산 상태 연동 및 리스트 상위 5개 필터링 렌더링 |
+| [x] | - | F12-5 | 온보딩 '나만의 목표' 커스텀 입력 기능 구현 | feat/onboarding-custom-goal-input | - | Component | - | 신규 | 나만의 목표 클릭 시 Input 필드 전환 및 바인딩 |
+| [x] | - | F12-6 | 온보딩 '기타' 탭 선택 시 레이아웃 여백 버그 수정 | fix/onboarding-date-gap | - | Component | - | 신규 | 폼 컨테이너 팽창 시 상단 컨텐츠와의 간격(gap/margin) 유지 |
+| [x] | - | F12-7 | 거래내역 수정 정산금 합치기(Merge) UI 및 토글 삭제 | feat/transaction-edit-merge | - | Component·api | ['tx'] | 신규 | 더치페이 미정산 리스트 및 수입/지출 토글 기능 완전 삭제. 수정 모달 내에 정산받은 금액 입력(Merge) UI 신설 및 차감 API 연동 |
+| [x] | - | F12-8 | 거래내역 월별 필터 및 연월 선택기 UI 개선 | feat/tx-list-month-nav | - | Page·Component | - | 신규 | 월별 필터 1~12월 노출, 연월 선택기 추가 |
+| [x] | - | F12-9 | 거래내역 필터 내 월/일 개별 선택 기능 | feat/tx-list-month-day-filter | - | Page·Component | - | 신규 | 필터에서 월과 일을 각각 선택하는 UI 구현. (⚠️ 주의: 작업 전 반드시 담당 팀원에게 디자인 시안을 문의 후 작업할 것) |
+| [x] | - | F12-10 | 대표 목표 설정 UX 변경 및 금액 입력창 고도화 | feat/goal-main-toggle | - | Component | ['goals'] | 신규 | 목표 카드 더블클릭 UX 제거 및 폼 내 토글 추가. 목표 금액 입력 시 3자리 콤마(,) 포맷팅 적용 및 기본 숫자 스피너(위아래 버튼) 제거 |
+| [x] | - | F12-11 | 평행우주 REC 애니메이션 원복 | fix/universe-rec-animation | - | Component | - | 신규 | 평행우주 화면의 REC 요소 애니메이션을 원래 상태로 되돌리기 |
+| [x] | - | F13-1 | 결제 퀵태그 FCM 웹 푸시 구현 | feat/fcm-web-push | - | Component·SW | - | 신규 | firebase-messaging-sw.js에서 data-only 알림 처리 및 /quick-tag 딥링크 연결 |
+| [x] | - | F13-2 | 거래내역 수정 차감(Merge) UI/State 완전 삭제 | feat/transaction-edit-remove-merge | - | Component | - | 신규 | 거래내역 수정 모달 내 정산받은 금액(차감) 입력 UI 및 관련 상태값 전면 삭제 |
+| [x] | - | F13-3 | 모바일 AI 분석 카드 세로 정렬 및 플립 반응형 | feat/ai-analysis-mobile-layout | - | Component | - | 신규 | 모바일 뷰에서 내부 3개 카드를 가로폭에 꽉 차게 세로 정렬하고, 플립(Flip) 뒷면의 AI 멘트 길이에 맞춰 글자 크기 조율 및 박스 넘침 방지 처리 |
+| [x] | - | F13-4 | 모바일 테마 토글 DB 동기화 버그 수정 | fix/mobile-theme-sync | - | Component | - | 신규 | 모바일 환경에서 테마(다크/라이트) 변경 시 DB 저장 API 호출이 누락되어 새로고침 시 초기화되는 버그 수정 |
+| [x] | - | F13-5 | AI 분석 대시보드 UI 골격 및 위험도 렌더링 | feat/ai-dashboard-skeleton | - | Component | - | 신규 | API 연동 및 응답의 소비위험도(Red/Yellow/Green) 기반 컨테이너 색상/아이콘 동적 렌더링 구현 (AI 데이터는 Mock 처리) |
 | [ ] | - | F13-6 | 팩트 리포트 & 맞춤 챌린지 실데이터 바인딩 | feat/ai-dashboard-fact-challenge | - | Component | - | 신규 | 팩트 폭격기 텍스트 렌더링 및 맞춤 챌린지 칩(Chip) UI에 실제 AI 응답 데이터 바인딩 |
 | [ ] | - | F13-7 | 감정소비 분석 실데이터 바인딩 및 예외 처리 | feat/ai-dashboard-emotion | - | Component | - | 신규 | 3단계 감정 분석 텍스트 바인딩 적용 및 AI 응답 지연/에러 시 화면 깨짐 방지용 Fallback(빈 박스/로딩) 처리 |
-| [x] | - | A1-1 | 감정소비 분석 AI 프롬프트 간소화 (Light Empathy) | main | - | 백엔드 | - | 완료 | 백엔드 GptInsightCardGenerator.java 프롬프트를 50자 이내의 가벼운 공감 톤으로 대폭 축소 및 푸시 완료 |
+
+| [ ] | - | F14-1 | 모바일 및 데스크탑 AI 분석 카드 텍스트 깨짐 현상 수정 | `fix/ai-analysis-text-overflow` | - | Component | - | 신규 | 모바일 긴 글 줄바꿈 보정 및 웹 환경 카드 멘트 짤림 현상 수정 |
+| [ ] | - | F14-2 | 홈 화면 말랑이 빈 상태(물음표) 렌더링 로직 개선 | `feat/home-mallang-logic` | - | Component | - | 신규 | 전체 거래내역이 없을 때만 물음표 노출, 이번 달 감정 부재 시 저번 달 대표 감정으로 폴백(Fallback) |
+| [ ] | - | F14-3 | 감정 리스트 하드코딩 전환 (API 최적화) | `refactor/hardcode-emotions-categories` | - | api·Component | - | 신규 | 지출/수입 등록용 불변 감정 데이터를 프론트 단에 하드코딩하여 API 불필요한 로딩 제거 |
+| [ ] | - | F14-4 | 캘린더 날짜 선택 시 감정 색상 연동 및 그림자 효과 추가 | `feat/calendar-emotion-color` | - | Component | - | 신규 | 달력에 선택된 감정 색상을 적용하고, 미선택 시에는 그림자 효과(Stroke & Shadow)만 렌더링 |
+| [ ] | - | F14-5 | 캘린더 날짜 및 시간 뷰(모드) 선택 UI 분리 | `feat/calendar-mode-split` | - | Component | - | 신규 | 날짜 클릭 시 캘린더(날짜 뷰)만 띄우고, 시간 클릭 시 휠(시간 뷰)만 별도로 노출 |
+
+| [ ] | - | F15-1 | 모바일 AI 대시보드 아코디언(접기) 적용 | `feat/ai-dashboard-mobile-accordion` | - | Component | - | 신규 | 모바일 화면에서 클릭 전 카드 제목만 보이고 누르면 상세 내용이 펼쳐지도록 UX 수정 |
+| [ ] | - | F15-2 | 웹 환경 AI 감정소비 분석 카드 텍스트 짤림/깨짐 수정 | `fix/ai-emotion-card-text-overflow` | - | Component | - | 신규 | 웹(데스크탑) 환경에서 글자 내용이 많을 때 AI 감정 카드의 멘트가 영역 밖으로 넘치거나 깨지는 CSS 이슈 해결 |
+| [ ] | - | F15-3 | 목표 예산 현황 카드 내 감정 말랑이 UI 재배치 | `feat/budget-status-emotion-ui` | - | Component | - | 신규 | 예산 카테고리 아래 뜨던 텍스트를 옆으로 이동시키고 말랑이 이미지(아이콘) 렌더링 |
+| [ ] | - | F15-4 | 홈 화면 말랑이 코멘트 AI 연동 및 부재 고정 문구 | `feat/home-mallang-ai-binding` | - | Component | - | 신규 | AI API 연동하여 3줄 멘트 바인딩 및 데이터 부재 상태 하드코딩 고정 문구 노출 |
+| [ ] | - | F15-5 | 목표 100% 달성 시 홈/모달 완료 디자인 수정 | `feat/goal-complete-design` | - | Component | - | 신규 | 목표 완수(100%) 시 홈 목표 카드와 설정 모달 내부의 시각적 완료 디자인(UI/UX) 개선 |
+| [ ] | - | F15-6 | 나의 소비 코어 탭 클릭 시 레이아웃 흔들림 고정 | `fix/consumption-core-layout-shift` | - | Component | - | 신규 | 소비 코어 카드에서 내부 탭 버튼들을 누를 때마다 버튼들의 위치가 흔들리는 CSS 레이아웃 버그 고정 |
+| [ ] | - | F15-7 | 거래내역 상세/수정 모달 시간 바인딩 점검 | `fix/transaction-time-frontend-binding` | - | Component | - | 신규 | 백엔드(A2-3)의 올바른 시간 데이터를 상세 모달과 수정 달력에 정확하게 파싱 및 연결 방어 |
+| [ ] | - | F15-8 | 로그아웃 수행 시 활성화된 모달 닫기 처리 | `fix/logout-modal-close` | - | Component | - | 신규 | 로그아웃하여 라우팅이 변경될 때 띄워져 있던 팝업/모달 강제 닫기 처리하여 잔상 버그 방지 |
+
+| [ ] | - | F16-1 | 데스크탑 웹 사이드바 상단 로고 이미지 교체 | `feat/sidebar-logo-image` | - | Component | - | 신규 | 제공된 로고 에셋을 추가하고, 웹 사이드바 상단 이미지를 해당 로고로 교체 |
+| [ ] | - | F16-2 | 회원 탈퇴 프론트엔드 연동 오류 확인 및 초기화 | `fix/account-deletion-frontend` | - | Component | - | 신규 | 회원 탈퇴 API 연동 오류 수정 및 탈퇴 시 로컬 스토리지/전역 상태 완벽 초기화 |
 
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.

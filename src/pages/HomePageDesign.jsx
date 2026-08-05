@@ -14,12 +14,17 @@ import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 
 const Grid = styled.div`
   width: 100%;
-  min-height: 100%;
+  height: 100%;
   margin: 0;
   display: grid;
   grid-template-columns: clamp(620px, 52vw, 840px) minmax(0, 1fr);
   gap: 100px;
   align-items: stretch;
+  overflow: hidden;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   @media (max-width: 1180px) {
     grid-template-columns: clamp(540px, 50vw, 740px) minmax(0, 1fr);
@@ -137,7 +142,7 @@ const Right = styled.div`
 const Calendar = styled(GlassCard)`
   width: 100%;
   max-width: none;
-  padding: ${({ expanded }) => expanded ? '18px 20px 22px' : '22px'};
+  padding: ${({ expanded }) => expanded ? 'clamp(14px, 2vh, 18px) 20px clamp(16px, 2.5vh, 22px)' : 'clamp(16px, 2.5vh, 22px)'};
   cursor: pointer;
   transition: all 0.3s ease;
 
@@ -204,6 +209,9 @@ const PebbleGrid = styled.div`
 const Pebble = styled.button`
   position: relative;
   aspect-ratio: 1;
+  width: 100%;
+  max-width: clamp(28px, 6.2vh, 52px);
+  margin: 0 auto;
   min-width: 0;
   border-radius: 43%;
   display: flex;
