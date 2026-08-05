@@ -4,7 +4,8 @@ import { createPortal } from "react-dom";
 import styled from "@emotion/styled";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const ACCENT_COLOR = "#C8CDD8";
+// 말랑이를 아직 안 고른 상태의 강조색. 감정을 고르면 그 감정 색으로 덮인다.
+const ACCENT_COLOR = "var(--ink)";
 const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
@@ -161,8 +162,8 @@ const DateCell = styled.button`
   ${({ isSelected, isToday }) => {
     if (isSelected) {
       return `
-        color: var(--text);
-        background-color: color-mix(in srgb, var(--accent) 40%, transparent);
+        color: var(--accent-fg, var(--text));
+        background-color: color-mix(in srgb, var(--accent) var(--accent-fill, 40%), transparent);
         box-shadow: 1px 1px #dbdbdb;
       `;
     }
@@ -219,7 +220,7 @@ const TimePill = styled.button`
   cursor: pointer;
 
   ${({ active }) => active ? `
-    color: var(--text);
+    color: var(--accent-fg, var(--text));
     background-color: var(--accent);
   ` : `
     background-color: var(--line);
@@ -244,7 +245,7 @@ const PeriodBtn = styled.button`
   cursor: pointer;
 
   ${({ active }) => active ? `
-    color: var(--text);
+    color: var(--accent-fg, var(--text));
     background-color: var(--accent);
   ` : `
     color: var(--sub);
@@ -370,7 +371,7 @@ const InlineTimeSlot = styled.button`
   scroll-snap-align: center;
   border: 1px solid ${({ active }) => active ? 'transparent' : 'var(--line)'};
   background: ${({ active }) => active ? 'var(--accent)' : 'transparent'};
-  color: ${({ active }) => active ? 'var(--text)' : 'var(--text)'};
+  color: ${({ active }) => active ? 'var(--accent-fg, var(--text))' : 'var(--text)'};
   font-size: 13px;
   font-weight: 700;
   font-family: inherit;
@@ -624,7 +625,10 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
         placement={placement}
         overlay={overlay}
         style={{
+          // 감정 색은 연하게 깔고, 말랑이를 안 골랐을 땐 잉크색을 꽉 채운다(그 위 글자는 반전).
           "--accent": emotionColor || ACCENT_COLOR,
+          "--accent-fg": emotionColor ? 'var(--text)' : 'var(--on-ink)',
+          "--accent-fill": emotionColor ? '40%' : '100%',
           ...(overlay && anchorStyle ? {
             left: anchorStyle.left,
             top: 'auto',
