@@ -103,6 +103,9 @@
 | [ ] | - | F15-6 | 나의 소비 코어 탭 클릭 시 레이아웃 흔들림 고정 | `fix/consumption-core-layout-shift` | - | Component | - | 신규 | 소비 코어 카드에서 내부 탭 버튼들을 누를 때마다 버튼들의 위치가 흔들리는 CSS 레이아웃 버그 고정 |
 | [ ] | - | F15-7 | 거래내역 상세/수정 모달 시간 바인딩 점검 | `fix/transaction-time-frontend-binding` | - | Component | - | 신규 | 백엔드(A2-3)의 올바른 시간 데이터를 상세 모달과 수정 달력에 정확하게 파싱 및 연결 방어 |
 | [ ] | - | F15-8 | 로그아웃 수행 시 활성화된 모달 닫기 처리 | `fix/logout-modal-close` | - | Component | - | 신규 | 로그아웃하여 라우팅이 변경될 때 띄워져 있던 팝업/모달 강제 닫기 처리하여 잔상 버그 방지 |
+| [ ] | - | A3-1 | 회원 탈퇴 API(Delete User) 오류 원인 분석 및 수정 | `fix/account-deletion-backend` | - | 백엔드 | - | 신규 | 계정 탈퇴 시 정상적으로 처리되지 않는 원인을 파악하여 데이터가 안전하게 삭제되도록 API 수정 |
+| [ ] | - | F16-1 | 데스크탑 웹 사이드바 상단 로고 이미지 교체 | `feat/sidebar-logo-image` | - | Component | - | 신규 | 제공된 로고 에셋을 추가하고, 웹 사이드바 상단 이미지를 해당 로고로 교체 |
+| [ ] | - | F16-2 | 회원 탈퇴 프론트엔드 연동 오류 확인 및 초기화 | `fix/account-deletion-frontend` | - | Component | - | 신규 | 회원 탈퇴 API 연동 오류 수정 및 탈퇴 시 로컬 스토리지/전역 상태 완벽 초기화 |
 
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.
