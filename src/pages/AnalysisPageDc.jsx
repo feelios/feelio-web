@@ -6,7 +6,7 @@ import { Skeleton } from '../components/common/Skeleton.jsx';
 import { ChallengeFlag } from '../components/analysis/ChallengeFlag.jsx';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
-import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
+import { useMonthlyAnalysisQuery, useAiReportQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
 
 const Page = styled.div`
@@ -150,6 +150,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
 
   const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery();
+  const { data: reportData } = useAiReportQuery();
   const { data: trendData } = useMonthlyTrendQuery();
   // 예산 현황은 전역 스토어(BudgetSync가 동기화)를 구독한다 (#145)
   const serverBudgetItems = useBudgetStore((s) => s.budgetItems);
@@ -157,7 +158,6 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
 
   const monthly = trendData?.monthlyData ?? [];
 
-  // 소비 위험도: 서버 riskLevel → 위험도 항목의 level 순으로 본다. 둘 다 없으면 null (F13-5)
   const riskItem = insightsData?.aiQuickInsights?.find(item => item.type === 'risk');
   const risk = resolveRisk(insightsData?.riskLevel ?? riskItem?.level ?? riskItem?.value);
 
@@ -166,14 +166,31 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
     { label: '팩트 리포트', value: '-', note: '-', color: '#E87573', type: 'fact' },
     { label: '소비 위험도', type: 'risk' },
     { label: 'AI 맞춤 챌린지', value: '-', note: '-', color: 'var(--sub)', type: 'default' }
-  ]).map(item => item.type === 'risk'
-    ? {
-      ...item,
-      color: risk?.color ?? 'var(--sub)',
-      value: item.value ?? risk?.value ?? '-',
-      note: item.note ?? risk?.note ?? '-'
+  ]).map(item => {
+    if (item.type === 'risk') {
+      return {
+        ...item,
+        color: risk?.color ?? 'var(--sub)',
+        value: item.value ?? risk?.value ?? '-',
+        note: item.note ?? risk?.note ?? '-'
+      };
     }
-    : item);
+    if (item.type === 'fact' && reportData?.ai?.fact) {
+      return {
+        ...item,
+        value: reportData.ai.fact
+      };
+    }
+    // 챌린지는 위험 루트와 type이 같아 label로 가른다(CHALLENGE_LABEL 주석 참고).
+    // ai-report의 ChallengeService 문구를 우선 쓰고, 없으면 ai-insights 값을 그대로 둔다 (F13-8).
+    if (item.label === CHALLENGE_LABEL && reportData?.ai?.challenge) {
+      return {
+        ...item,
+        value: reportData.ai.challenge
+      };
+    }
+    return item;
+  });
 
   const emotionCardsData = insightsData?.emotionCards ?? [];
   const rawEvidence = patternData?.evidence ?? [];
