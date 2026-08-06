@@ -109,6 +109,8 @@
 | [ ] | #247 | F16-1 | 프론트엔드: 패턴 내역 번호 노출 UI 구현 및 위험루트 클릭 시 스크롤 이동 | feat/pattern-transaction-id-ui | - | Component | - | 신규 | 모바일 뒷면/웹 카드 옆 내역 번호 노출 및 위험 루트 클릭 시 스크롤 이동 |
 | [ ] | #248 | F16-2 | 풀스택: AI 감정 분석 카드 앞-뒷면 감정 불일치 방지 및 시각적 구분 | feat/emotion-card-consistency | - | api·Component | - | 신규 | AI 프롬프트 수정 및 카드 뒷면에 분석 대상 감정 뱃지 추가 |
 | [ ] | #255 | F16-4 | 홈 화면 팩트 리포트(말랑이 코멘트) 카드 텍스트 잘림 현상 수정 및 UI 재구성 | fix/fact-report-card-text-overflow | - | Component | - | 신규 | 긴 AI 코멘트 텍스트가 말줄임표(...)로 잘리는 현상 수정. 텍스트 래핑 허용 및 가변 높이 적용하여 카드 레이아웃 재구성 |
+| [ ] | #259 | F16-5 | API-CONTRACT에 `GET /api/analysis/ai-report` 항목 추가 | `docs/contract-ai-report` | §9 | docs | - | 신규 | 프론트가 이미 쓰는 엔드포인트(F13-8)인데 웹 계약서에 없어 응답 구조를 백엔드 레포에서 찾아야 한다. `ai.emotion`이 감정 카드 3장과 구조가 다른 점도 함께 명시 |
+| [ ] | #260 | F16-6 | ProfileModalDc lint 오류로 `npm run lint` 실패 | `fix/profile-modal-lint` | - | Component | - | 신규 | `ProfileModalDc.jsx:483` no-unused-vars가 main에 있어, 이 브랜치를 딴 모든 작업자가 자기 변경과 무관한 lint 실패를 본다. 한 줄 수정 |
 
 
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
