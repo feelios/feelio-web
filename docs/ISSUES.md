@@ -53,18 +53,12 @@
 | [ ] | - | F8-6 | 거래 감정 Select 오류 수정 및 UI 확대 | `fix/transaction-emotion-select` | - | Component | - | 신규 | 감정 초기값 바인딩 오류 해결 및 카테고리/감정 Select 컴포넌트 터치 영역(패딩) 확대 (F8-2 연계) |
 | [ ] | - | F8-7 | 캘린더 미래 날짜 선택 제한(Disabled) | `fix/calendar-future-disable` | - | Component | - | 신규 | 지출/수입 기록 캘린더 및 거래 수정 모달 내 캘린더에서 오늘 기준 '미래 날짜'는 클릭 불가능하도록(disabled) 방어 처리 |
 | [x] | #121 | F8-8 | 거래 수정 캘린더 레이아웃 및 분 단위 추가 | `fix/transaction-edit-calendar` | - | Component | - | 완료 | 거래 수정 모달 내 캘린더 짤림 현상(CSS) 해결 및 기존 시간 선택 시 분(minute) 단위 설정 추가 |
-<<<<<<< Updated upstream
 | [ ] | #125 | F8-10 | 온보딩 '나만의 목표' 직접 입력 UI | `feat/onboarding-custom-goal` | - | Component | - | 신규 | 온보딩(2/6)에서 '나만의 목표' 클릭 시 텍스트 Input으로 전환되어 사용자가 직접 목표명을 작성하도록 구현 |
 | [ ] | #126 | F8-11 | 홈 화면 UI 버그 종합 수정(말랑이/달력) | `fix/home-ui-bugs` | - | Component | - | 신규 | 홈 말랑이 위로 스와이프 시 렌더링 버그 수정, 캘린더 우측 끝 짤림(레이아웃) 수정, 캘린더 선택 날짜(7월 1일 고정)를 오늘 날짜로 동적 수정 |
 | [ ] | - | F8-12 | 온보딩 완료 요청의 totalAsset 누락 수정 | `fix/onboarding-completion-request` | §4·§7 | Page·Hook·api·docs | `['users','me']` | 신규 | 온보딩 완료 요청에 `{totalAsset}` 전달 → 신규·재가입 사용자 `onboardingDone:true` 반영 및 홈 진입 → API 계약 문서 동기화, lint·build 통과 |
 | [ ] | - | F8-13 | 온보딩 목표 생성 요청의 마감일 누락 수정 | `fix/onboarding-goal-due-date` | §7 | Page·Component·docs | `['goals']`·`['universe']` | 신규 | 온보딩 기간을 `YYYY-MM-DD` 형식의 `dueDate`로 변환해 목표 생성 요청에 전달 → 기타 선택 시 공통 `SegmentDatePicker` 재사용 → 과거 날짜 제출 방지 및 API 계약 문서 동기화 |
 | [x] | - | F8-14 | 전역 하드코딩 색상 테마 스크립트 전환 | `fix/hardcoded-colors` | - | Page·Component | - | 완료 | 전역에 남은/하드코딩된 HEX 컬러를 var(--bg-1), var(--text) 등 CSS 테마 변수로 치환 |
 | [ ] | - | F8-15 | 모바일 공통 레이아웃 하단 공백 및 콘텐츠 잘림 수정 | `fix/mobile-bottom-layout-gap` | - | Component·Page | - | 신규 | `AppLayoutDc`의 하단 예약 공간과 고정 `BottomNav`의 실제 점유 영역을 일치시켜 전 페이지의 불필요한 하단 공백 제거 → 마지막 콘텐츠의 내비게이션 겹침 방지 및 safe-area 보장 → 평행우주 모바일 컨테이너의 하단 모서리 잘림 수정 → 820px 이하 브라우저와 실제 모바일 환경 검증 |
-=======
-| [ ] | #122 | F8-9 | 거래 수정 폼 '수입/지출' 타입 변경 추가 | `feat/transaction-edit-type` | - | Component | - | 신규 | 거래 수정 모달 내부에 '수입/지출'을 변경할 수 있는 Select(혹은 탭) 추가 및 수정 API 연동 |
-| [ ] | #125 | F8-10 | 온보딩 '나만의 목표' 직접 입력 UI | `feat/onboarding-custom-goal` | - | Component | - | 신규 | 온보딩(2/6)에서 '나만의 목표' 클릭 시 텍스트 Input으로 전환되어 사용자가 직접 목표명을 작성하도록 구현 |
-| [ ] | #126 | F8-11 | 홈 화면 UI 버그 종합 수정(말랑이/달력) | `fix/home-ui-bugs` | - | Component | - | 신규 | 홈 말랑이 위로 스와이프 시 렌더링 버그 수정, 캘린더 우측 끝 짤림(레이아웃) 수정, 캘린더 선택 날짜(7월 1일 고정)를 오늘 날짜로 동적 수정 |
->>>>>>> Stashed changes
 | [ ] | - | F9-1 | 소비 코어 감정 8종 노출 | `feat/core-emotion-display` | - | Component | - | 신규 | 데이터 0건인 감정도 누락 없이 8개 렌더링 처리 |
 | [ ] | - | F9-2 | 감정 분석 퍼센트 로직 변경 | `feat/analysis-percentage-logic` | - | Utils·Component | - | 신규 | 분석 퍼센트를 금액 기준에서 횟수 기준으로 변경 |
 | [ ] | - | F9-3 | 지출 추이 카드 클릭 이동 | `feat/monthly-trend-navigation` | - | Component | - | 신규 | 월별 바/포인트 클릭 시 해당 달 상세 뷰로 이동 |
@@ -72,7 +66,6 @@
 | [ ] | #123 | F9-5 | 평행우주 REC 목표 선택 및 행성 동적 변경 | `feat/universe-rec-target-select` | - | Component | `['universe']` | 신규 | REC 버튼 클릭 시 화면 하단에 목표 리스트 노출 → 목표 선택 시 시뮬레이션 행성(조금 줄여본다면) 결과값 동적 변경 |
 | [x] | - | F10-1 | 거래내역 다중 삭제 UI | `feat/transaction-bulk-delete-ui` | - | api·Component | `['tx','list']` | 완료 | 체크박스 다중 선택 UI 및 삭제 API 연동 |
 | [x] | - | F10-2 | 패턴 분석 연동 및 UI | `feat/recurring-pattern-ui` | §analysis/pattern | api·Component | `['analysis', 'pattern']` | 완료 | 결정론 집계 방향 확정(조합·횟수·근거=GROUP BY, 문구만 서버 생성/AI). `GET /analysis/pattern` 계약 문서화 + `analysisAPI.getPattern`·`usePatternQuery`·AnalysisPageDc 바인딩 완료(evidence 객체 shape). 백엔드 엔드포인트 구현 대기 |
-<<<<<<< Updated upstream
 | [x] | - | F11-1 | 목표 글래스모피즘 및 만료 상태 스타일 | `feat/goal-design-update` | - | Component | - | 신규 | 목표 폼 투명도 5% 적용 및 과거 목표 흑백(Grayscale) 처리 |
 | [x] | - | F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 보류 | 날짜 선택기(DatePickerDc) 글래스 시도(5%/모달+스크림)했으나 방향 미확정 → 현재 **불투명 원복**. 월/요일 한글화(2026년 N월 · 월 화 수 목 금 토 일)만 반영. ※모바일에서 시간 패널이 화면 밖으로 넘치는 레이아웃 버그 별도 발견 |
 | [x] | - | F11-3 | 활성 목표(isMain) 홈·평행우주 연동 | `feat/goal-main-sync` | - | Component | `['goals']` | 신규 | isMain=true 인 활성 목표 데이터를 실시간 구독하여 홈/우주에 렌더링 반영 |
@@ -115,12 +108,7 @@
 | [ ] | #243 | F15-5 | 프로필 닉네임 변경 API 연동 | fix/profile-nickname-sync | - | Component | - | 버그 | 프로필 수정 시 로컬 상태만 변경되고 API 통신이 누락되어 서버에 반영되지 않는 문제 해결 |
 | [ ] | #247 | F16-1 | 프론트엔드: 패턴 내역 번호 노출 UI 구현 및 위험루트 클릭 시 스크롤 이동 | feat/pattern-transaction-id-ui | - | Component | - | 신규 | 모바일 뒷면/웹 카드 옆 내역 번호 노출 및 위험 루트 클릭 시 스크롤 이동 |
 | [ ] | #248 | F16-2 | 풀스택: AI 감정 분석 카드 앞-뒷면 감정 불일치 방지 및 시각적 구분 | feat/emotion-card-consistency | - | api·Component | - | 신규 | AI 프롬프트 수정 및 카드 뒷면에 분석 대상 감정 뱃지 추가 |
-=======
-| [ ] | - | F11-1 | 목표 글래스모피즘 및 만료 상태 스타일 | `feat/goal-design-update` | - | Component | - | 신규 | 목표 폼 투명도 5% 적용 및 과거 목표 흑백(Grayscale) 처리 |
-| [ ] | - | F11-2 | 메인 달력 투명도(Glassmorphism) 적용 | `feat/calendar-glassmorphism` | - | Component | - | 보류 | 날짜 선택기(DatePickerDc) 글래스 시도(5%/모달+스크림)했으나 방향 미확정 → 현재 **불투명 원복**. 월/요일 한글화(2026년 N월 · 월 화 수 목 금 토 일)만 반영. ※모바일에서 시간 패널이 화면 밖으로 넘치는 레이아웃 버그 별도 발견 |
-| [ ] | - | F11-3 | 활성 목표(isMain) 홈·평행우주 연동 | `feat/goal-main-sync` | - | Component | `['goals']` | 신규 | isMain=true 인 활성 목표 데이터를 실시간 구독하여 홈/우주에 렌더링 반영 |
-| [ ] | - | F11-4 | 더치페이 미정산 내역 관리 모달 연동 | `feat/dutch-pay-modal` | - | Component·api | `['tx', 'dutch-pay']` | 신규 | 더치페이 미정산 리스트 조회 API 연동 모달 팝업 구현 및 체크 시 정산 완료(수입 자동 생성) API 통신, 캐시 무효화 |
->>>>>>> Stashed changes
+| [ ] | #255 | F16-4 | 홈 화면 팩트 리포트(말랑이 코멘트) 카드 텍스트 잘림 현상 수정 및 UI 재구성 | fix/fact-report-card-text-overflow | - | Component | - | 신규 | 긴 AI 코멘트 텍스트가 말줄임표(...)로 잘리는 현상 수정. 텍스트 래핑 허용 및 가변 높이 적용하여 카드 레이아웃 재구성 |
 
 
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
