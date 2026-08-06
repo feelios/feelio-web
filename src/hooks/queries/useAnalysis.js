@@ -18,6 +18,14 @@ export const useAiInsightsQuery = () => {
   });
 };
 
+export const useAiReportQuery = () => {
+  return useQuery({
+    queryKey: ['aiReport'],
+    queryFn: () => analysisAPI.getAiReport(),
+    staleTime: 1000 * 60 * 5, // 5분
+  });
+};
+
 export const useMonthlyTrendQuery = () => {
   return useQuery({
     queryKey: ['analysis', 'trend'],
