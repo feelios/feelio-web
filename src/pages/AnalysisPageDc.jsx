@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { Skeleton } from '../components/common/Skeleton.jsx';
@@ -241,15 +241,28 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
     }
   };
 
+  const emotionCardsMap = useMemo(() => {
+    const map = {};
+    for (const card of emotionCardsData) {
+      if (card.emotion) {
+        map[card.emotion] = card;
+      }
+    }
+    return map;
+  }, [emotionCardsData]);
+
   // 감정소비 카드: 앞면(감정·비율·금액·색)은 §9 byEmotion 상위 3건, 뒷면 문구만 정적 카피(emotionCardsData).
-  const emotionCards = emotionSegments.slice(0, 3).map((item, index) => ({
-    emotion: item.name,
-    percent: item.percent,
-    amount: item.amount,
-    color: item.color,
-    title: emotionCardsData[index]?.title ?? '',
-    desc: emotionCardsData[index]?.desc ?? ''
-  }));
+  const emotionCards = emotionSegments.slice(0, 3).map((item) => {
+    const matchingData = emotionCardsMap[item.name] || {};
+    return {
+      emotion: item.name,
+      percent: item.percent,
+      amount: item.amount,
+      color: item.color,
+      title: matchingData.title ?? '',
+      desc: matchingData.desc ?? ''
+    };
+  });
   const activeChart = chartConfig[activeChartTab];
   const budgetItems = serverBudgetItems
     .map(data => {
