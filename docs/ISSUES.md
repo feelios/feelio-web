@@ -103,7 +103,6 @@
 | [ ] | - | F15-7 | 거래내역 상세/수정 모달 시간 바인딩 점검 | `fix/transaction-time-frontend-binding` | - | Component | - | 신규 | 백엔드(A2-3)의 올바른 시간 데이터를 상세 모달과 수정 달력에 정확하게 파싱 및 연결 방어 |
 | [ ] | - | F15-8 | 로그아웃 수행 시 활성화된 모달 닫기 처리 | `fix/logout-modal-close` | - | Component | - | 신규 | 로그아웃하여 라우팅이 변경될 때 띄워져 있던 팝업/모달 강제 닫기 처리하여 잔상 버그 방지 |
 
-| [ ] | - | F16-1 | 데스크탑 웹 사이드바 상단 로고 이미지 교체 | `feat/sidebar-logo-image` | - | Component | - | 신규 | 제공된 로고 에셋을 추가하고, 웹 사이드바 상단 이미지를 해당 로고로 교체 |
 | [ ] | - | F16-2 | 회원 탈퇴 프론트엔드 연동 오류 확인 및 초기화 | `fix/account-deletion-frontend` | - | Component | - | 신규 | 회원 탈퇴 API 연동 오류 수정 및 탈퇴 시 로컬 스토리지/전역 상태 완벽 초기화 |
 | [ ] | #243 | F15-5 | 프로필 닉네임 변경 API 연동 | ix/profile-nickname-sync | - | Component | - | 버그 | 프로필 수정 시 로컬 상태만 변경되고 API 통신이 누락되어 서버에 반영되지 않는 문제 해결 |
 | [ ] | #246 | F16-1 | 백엔드: 패턴 분석 데이터 확장 및 AI 위험루트 프롬프트 연계 | eat/pattern-ai-integration | - | api | - | 신규 | 패턴 응답에 내역 번호 추가 및 AI 위험루트에 패턴 분석 주 |
