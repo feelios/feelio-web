@@ -6,7 +6,8 @@ import { money, signedMoney } from '../utils/format.js';
 import { useDebounce } from '../hooks/useDebounce.js';
 import { useTransactionsQuery, useBulkDeleteTransactionsMutation, useUpdateTransactionMutation } from '../hooks/queries/useTransactions.js';
 import { useCategoriesQuery } from '../hooks/queries/useCategories.js';
-import { EMOTIONS, getEmotion } from '../constants/metadata.js';
+import { mergeEmotions, getEmotion } from '../constants/metadata.js';
+import { useMetadata } from '../hooks/queries/useMetadata.js';
 import { TransactionListSkeleton } from '../components/common/Skeleton.jsx';
 import SelectDc from '../components/common/SelectDc.jsx';
 
@@ -328,7 +329,9 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
   const categories = useMemo(() => {
     return [...(expenseCat?.categories || []), ...(incomeCat?.categories || [])];
   }, [expenseCat, incomeCat]);
-  const emotions = EMOTIONS;
+  // 필터 값으로 emotionId 를 서버에 보내므로 목록도 서버 기준이어야 한다 (#266).
+  const { data: metaData } = useMetadata();
+  const emotions = useMemo(() => mergeEmotions(metaData?.emotions), [metaData]);
 
   const [view, setView] = useState('일별');
   const [query, setQuery] = useState('');
