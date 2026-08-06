@@ -176,7 +176,17 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
     : item);
 
   const emotionCardsData = insightsData?.emotionCards ?? [];
-  const evidence = patternData?.evidence ?? [];
+  const rawEvidence = patternData?.evidence ?? [];
+  const evidence = rawEvidence.map(ev => {
+    const dateObj = new Date(ev.occurredAt);
+    const dateStr = `${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
+    return {
+      date: dateStr,
+      category: ev.category?.name ?? '기타',
+      emotion: ev.emotion?.name ?? '평온',
+      amount: ev.amount
+    };
+  });
   const pattern = patternData?.pattern ?? null;
   const hasPattern = pattern != null && pattern.count > 0;
 
