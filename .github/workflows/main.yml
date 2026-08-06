@@ -26,9 +26,10 @@ jobs:
               echo "EOF" >> $GITHUB_ENV
               echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME_KMJ }}" >> $GITHUB_ENV
               echo "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD_KMJ }}" >> $GITHUB_ENV
-              # 백엔드와 시크릿 이름이 같다면 웹 전용 환경변수(VITE_API_BASE_URL 등)가 잘 들어있는지 확인!
+              # APPLICATION_SECRET 은 웹 전용(.env with VITE_API_BASE_URL)이며,
+              # 백엔드의 같은 이름 시크릿(application-secret.yaml)과 내용이 완전히 다르다.
+              # ENV 시크릿은 백엔드 런타임 전용이라 웹에서 쓰지 않는다.
               echo "APPLICATION_SECRET=${{ secrets.APPLICATION_SECRET_KMJ }}" >> $GITHUB_ENV
-              echo "ENV=${{ secrets.ENV_KMJ }}" >> $GITHUB_ENV
 
             elif [ "$BRANCH_NAME" = "deploy-kec" ]; then
               # ... (나머지 브랜치 환경변수는 기존과 동일하게 유지)
@@ -40,7 +41,6 @@ jobs:
               echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME_KEC }}" >> $GITHUB_ENV
               echo "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD_KEC }}" >> $GITHUB_ENV
               echo "APPLICATION_SECRET=${{ secrets.APPLICATION_SECRET_KEC }}" >> $GITHUB_ENV
-              echo "ENV=${{ secrets.ENV_KEC }}" >> $GITHUB_ENV
 
             elif [ "$BRANCH_NAME" = "deploy-npr" ]; then
               # ... (나머지 브랜치 환경변수는 기존과 동일하게 유지)
@@ -52,7 +52,6 @@ jobs:
               echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME_NPR }}" >> $GITHUB_ENV
               echo "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD_NPR }}" >> $GITHUB_ENV
               echo "APPLICATION_SECRET=${{ secrets.APPLICATION_SECRET_NPR }}" >> $GITHUB_ENV
-              echo "ENV=${{ secrets.ENV_NPR }}" >> $GITHUB_ENV
             fi
             
       - name: Setup SSH Key
@@ -92,8 +91,13 @@ jobs:
           key: ${{env.GCP_VM_SSHKEY}}
           script: |
             cd /home/${{env.GCP_VM_USERNAME}}
-            sudo echo ${{env.ENV}} | base64 --decode > ./.env
-            
+
+            # 여기서 .env 를 쓰지 않는다.
+            # 웹 컨테이너는 nginx 정적 서빙이라 런타임 환경변수를 읽지 않는다.
+            # VITE_API_BASE_URL 은 위 빌드 스텝에서 이미 번들에 박혔다.
+            # 반면 /home/<user>/.env 는 백엔드(api) 워크플로가 쓰는 파일이라,
+            # 여기서 덮어쓰면 같은 VM 의 백엔드 설정(DB·JWT·OAuth 시크릿)이 날아간다.
+
             # 3. 서버에서 실행할 파일 이름을 web-docker-compose.yaml로 맞춥니다.
             # (만약 지난번에 docker-compose.yml로 이름을 통일하셨다면 docker-compose.yml로 적어주세요!)
             sudo docker compose -f web-docker-compose.yaml pull
