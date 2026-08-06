@@ -104,10 +104,9 @@
 | [ ] | - | F15-8 | 로그아웃 수행 시 활성화된 모달 닫기 처리 | `fix/logout-modal-close` | - | Component | - | 신규 | 로그아웃하여 라우팅이 변경될 때 띄워져 있던 팝업/모달 강제 닫기 처리하여 잔상 버그 방지 |
 
 | [ ] | - | F16-2 | 회원 탈퇴 프론트엔드 연동 오류 확인 및 초기화 | `fix/account-deletion-frontend` | - | Component | - | 신규 | 회원 탈퇴 API 연동 오류 수정 및 탈퇴 시 로컬 스토리지/전역 상태 완벽 초기화 |
-| [ ] | #243 | F15-5 | 프로필 닉네임 변경 API 연동 | ix/profile-nickname-sync | - | Component | - | 버그 | 프로필 수정 시 로컬 상태만 변경되고 API 통신이 누락되어 서버에 반영되지 않는 문제 해결 |
-| [ ] | #246 | F16-1 | 백엔드: 패턴 분석 데이터 확장 및 AI 위험루트 프롬프트 연계 | eat/pattern-ai-integration | - | api | - | 신규 | 패턴 응답에 내역 번호 추가 및 AI 위험루트에 패턴 분석 주 |
-| [ ] | #247 | F16-2 | 프론트엔드: 패턴 내역 번호 노출 UI 구현 및 위험루트 클릭 시 스크롤 이동 | eat/pattern-transaction-id-ui | - | Component | - | 신규 | 모바일 뒷면/웹 카드 옆 내역 번호 노출 및 위험 루트 클릭 시 스크롤 이동 |
-| [ ] | #248 | F16-3 | 풀스택: AI 감정 분석 카드 앞-뒷면 감정 불일치 방지 및 시각적 구분 | eat/emotion-card-consistency | - | api·Component | - | 신규 | AI 프롬프트 수정 및 카드 뒷면에 분석 대상 감정 뱃지 추가 |
+| [ ] | #243 | F15-5 | 프로필 닉네임 변경 API 연동 | fix/profile-nickname-sync | - | Component | - | 버그 | 프로필 수정 시 로컬 상태만 변경되고 API 통신이 누락되어 서버에 반영되지 않는 문제 해결 |
+| [ ] | #247 | F16-1 | 프론트엔드: 패턴 내역 번호 노출 UI 구현 및 위험루트 클릭 시 스크롤 이동 | feat/pattern-transaction-id-ui | - | Component | - | 신규 | 모바일 뒷면/웹 카드 옆 내역 번호 노출 및 위험 루트 클릭 시 스크롤 이동 |
+| [ ] | #248 | F16-2 | 풀스택: AI 감정 분석 카드 앞-뒷면 감정 불일치 방지 및 시각적 구분 | feat/emotion-card-consistency | - | api·Component | - | 신규 | AI 프롬프트 수정 및 카드 뒷면에 분석 대상 감정 뱃지 추가 |
 
 
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
