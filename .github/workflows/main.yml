@@ -70,7 +70,7 @@ jobs:
       - name: React Web Build and Docker image build and push
         run: |
           # 1. 프론트엔드는 src/main/resources 가 아니라 최상단에 .env 로 생성합니다.
-          echo "${{env.APPLICATION_SECRET}}" | base64 --decode > .env
+          echo "${{env.ENV}}" | base64 --decode > .env
           
           if [ -z "${{env.DOCKER_USERNAME}}" ]; then
             echo "Error: DOCKER_USERNAME is empty. Secrets might not be loaded properly."
