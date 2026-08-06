@@ -4,7 +4,8 @@ import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
-import { EMOTIONS, getEmotion } from '../constants/metadata.js';
+import { mergeEmotions, getEmotion } from '../constants/metadata.js';
+import { useMetadata } from '../hooks/queries/useMetadata.js';
 import { useCreateTransactionMutation } from '../hooks/queries/useTransactions.js';
 import {
   useCategoriesQuery,
@@ -272,7 +273,10 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
     if (prefill?.goalId != null) onConsumePrefill?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // Removed useMetadata
+  // 감정 목록은 서버가 기준이다. emotionId 를 프론트가 만들면 DB 와 어긋나 저장이 깨진다 (#266).
+  const { data: metaData } = useMetadata();
+  const emotions = mergeEmotions(metaData?.emotions);
+
   const { data: goalsData } = useGoalsQuery();
   const goals = goalsData?.goals || [];
 
@@ -381,7 +385,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
       return;
     }
 
-    const matchedEmotion = EMOTIONS.find(e => e.name === form.emotion);
+    const matchedEmotion = emotions.find(e => e.name === form.emotion);
     if (!matchedEmotion) {
       actions.showToast('감정 정보를 확인할 수 없습니다.');
       return;
@@ -457,7 +461,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
               {form.emotion && <span css={{ color: selected.color }}> · {form.emotion}</span>}
             </div>
             <BlobGrid>
-              {EMOTIONS.map(emotionItem => {
+              {emotions.map(emotionItem => {
                 const name = emotionItem.name;
                 const active = form.emotion === name;
                 return (

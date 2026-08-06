@@ -6,7 +6,8 @@ import { EmotionBlob } from '../common/EmotionBlob.jsx';
 import { money, signedMoney } from '../../utils/format.js';
 import { useTransactionDetailQuery, useUpdateTransactionMutation, useDeleteTransactionMutation } from '../../hooks/queries/useTransactions.js';
 import { useCategoriesQuery } from '../../hooks/queries/useCategories.js';
-import { EMOTIONS } from '../../constants/metadata.js';
+import { mergeEmotions } from '../../constants/metadata.js';
+import { useMetadata } from '../../hooks/queries/useMetadata.js';
 import DatePickerDc from '../common/DatePickerDc.jsx';
 
 const Wrap = styled.div`
@@ -287,7 +288,9 @@ function dateLabel(value) {
 }
 
 export default function TransactionDetailModal({ transaction: initialTxn, onClose }) {
-  // Removed useMetadata
+  // 수정 시 emotionId 를 그대로 서버에 보내므로 목록도 서버 기준이어야 한다 (#266).
+  const { data: metaData } = useMetadata();
+  const emotions = mergeEmotions(metaData?.emotions);
 
   const { data: transaction } = useTransactionDetailQuery(initialTxn.transactionId, initialTxn);
   const updateTx = useUpdateTransactionMutation();
@@ -449,7 +452,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
           <div css={{ marginBottom: isMobile ? 4 : 16 }}>
             <div css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 900 }}>감정</div>
             <EmotionGrid>
-              {EMOTIONS.map(item => {
+              {emotions.map(item => {
                 return (
                   <EmotionChoice
                     key={item.emotionId}
@@ -481,7 +484,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
                   onClose={() => setIsDatePickerOpen(false)}
                   overlay
                   anchorRef={dateFieldRef}
-                  emotionColor={form.emotionId ? (EMOTIONS.find(e => e.emotionId === Number(form.emotionId))?.color) : null}
+                  emotionColor={form.emotionId ? (emotions.find(e => e.emotionId === Number(form.emotionId))?.color) : null}
                 />
             )}
           </Field>
