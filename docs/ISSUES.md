@@ -1,4 +1,4 @@
-﻿## 프론트엔드 작업 핵심 원칙 (Core Directive)
+## 프론트엔드 작업 핵심 원칙 (Core Directive)
 **"현재 웹의 형태와 디자인(UI/UX)은 절대 훼손하지 않는다."**
 모든 프론트엔드 작업은 기존 뷰(View) 템플릿과 스타일링을 100% 유지한 상태에서 **API 통신, 데이터 바인딩, 비즈니스 로직(오류 수정) 연결**에만 국한됩니다. 에이전트가 임의로 화면 디자인이나 레이아웃을 수정하는 것을 엄격히 금지합니다.
 
@@ -87,6 +87,7 @@
 | [x] | - | F13-5 | AI 분석 대시보드 UI 골격 및 위험도 렌더링 | feat/ai-dashboard-skeleton | - | Component | - | 신규 | API 연동 및 응답의 소비위험도(Red/Yellow/Green) 기반 컨테이너 색상/아이콘 동적 렌더링 구현 (AI 데이터는 Mock 처리) |
 | [ ] | - | F13-6 | 팩트 리포트 & 맞춤 챌린지 실데이터 바인딩 | feat/ai-dashboard-fact-challenge | - | Component | - | 신규 | 팩트 폭격기 텍스트 렌더링 및 맞춤 챌린지 칩(Chip) UI에 실제 AI 응답 데이터 바인딩 |
 | [ ] | - | F13-7 | 감정소비 분석 실데이터 바인딩 및 예외 처리 | feat/ai-dashboard-emotion | - | Component | - | 신규 | 3단계 감정 분석 텍스트 바인딩 적용 및 AI 응답 지연/에러 시 화면 깨짐 방지용 Fallback(빈 박스/로딩) 처리 |
+| [ ] | - | F13-8 | AI 분석 리포트 실제 엔드포인트 연동 (A8-2 연계) | `feat/bind-ai-report-api` | - | Hook·Page | `['aiReport']` | 신규 | 기존 목업용 `useAiInsightsQuery`를 실제 AI가 연동된 `useAiReportQuery`(`/api/analysis/ai-report`)로 교체 및 응답 DTO를 F13-6에서 분리한 컴포넌트들에 매핑 |
 
 | [ ] | - | F14-1 | 모바일 및 데스크탑 AI 분석 카드 텍스트 깨짐 현상 수정 | `fix/ai-analysis-text-overflow` | - | Component | - | 신규 | 모바일 긴 글 줄바꿈 보정 및 웹 환경 카드 멘트 짤림 현상 수정 |
 | [ ] | - | F14-2 | 홈 화면 말랑이 빈 상태(물음표) 렌더링 로직 개선 | `feat/home-mallang-logic` | - | Component | - | 신규 | 전체 거래내역이 없을 때만 물음표 노출, 이번 달 감정 부재 시 저번 달 대표 감정으로 폴백(Fallback) |
@@ -104,10 +105,10 @@
 | [ ] | - | F15-8 | 로그아웃 수행 시 활성화된 모달 닫기 처리 | `fix/logout-modal-close` | - | Component | - | 신규 | 로그아웃하여 라우팅이 변경될 때 띄워져 있던 팝업/모달 강제 닫기 처리하여 잔상 버그 방지 |
 
 | [ ] | - | F16-2 | 회원 탈퇴 프론트엔드 연동 오류 확인 및 초기화 | `fix/account-deletion-frontend` | - | Component | - | 신규 | 회원 탈퇴 API 연동 오류 수정 및 탈퇴 시 로컬 스토리지/전역 상태 완벽 초기화 |
-| [ ] | #243 | F15-5 | 프로필 닉네임 변경 API 연동 | ix/profile-nickname-sync | - | Component | - | 버그 | 프로필 수정 시 로컬 상태만 변경되고 API 통신이 누락되어 서버에 반영되지 않는 문제 해결 |
-| [ ] | #246 | F16-1 | 백엔드: 패턴 분석 데이터 확장 및 AI 위험루트 프롬프트 연계 | eat/pattern-ai-integration | - | api | - | 신규 | 패턴 응답에 내역 번호 추가 및 AI 위험루트에 패턴 분석 주 |
-| [ ] | #247 | F16-2 | 프론트엔드: 패턴 내역 번호 노출 UI 구현 및 위험루트 클릭 시 스크롤 이동 | eat/pattern-transaction-id-ui | - | Component | - | 신규 | 모바일 뒷면/웹 카드 옆 내역 번호 노출 및 위험 루트 클릭 시 스크롤 이동 |
-| [ ] | #248 | F16-3 | 풀스택: AI 감정 분석 카드 앞-뒷면 감정 불일치 방지 및 시각적 구분 | eat/emotion-card-consistency | - | api·Component | - | 신규 | AI 프롬프트 수정 및 카드 뒷면에 분석 대상 감정 뱃지 추가 |
+| [ ] | #243 | F15-5 | 프로필 닉네임 변경 API 연동 | fix/profile-nickname-sync | - | Component | - | 버그 | 프로필 수정 시 로컬 상태만 변경되고 API 통신이 누락되어 서버에 반영되지 않는 문제 해결 |
+| [ ] | #247 | F16-1 | 프론트엔드: 패턴 내역 번호 노출 UI 구현 및 위험루트 클릭 시 스크롤 이동 | feat/pattern-transaction-id-ui | - | Component | - | 신규 | 모바일 뒷면/웹 카드 옆 내역 번호 노출 및 위험 루트 클릭 시 스크롤 이동 |
+| [ ] | #248 | F16-2 | 풀스택: AI 감정 분석 카드 앞-뒷면 감정 불일치 방지 및 시각적 구분 | feat/emotion-card-consistency | - | api·Component | - | 신규 | AI 프롬프트 수정 및 카드 뒷면에 분석 대상 감정 뱃지 추가 |
+| [ ] | #255 | F16-4 | 홈 화면 팩트 리포트(말랑이 코멘트) 카드 텍스트 잘림 현상 수정 및 UI 재구성 | fix/fact-report-card-text-overflow | - | Component | - | 신규 | 긴 AI 코멘트 텍스트가 말줄임표(...)로 잘리는 현상 수정. 텍스트 래핑 허용 및 가변 높이 적용하여 카드 레이아웃 재구성 |
 
 
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).

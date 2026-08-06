@@ -1,12 +1,12 @@
 /** @jsxImportSource @emotion/react */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { Skeleton } from '../components/common/Skeleton.jsx';
 import { ChallengeFlag } from '../components/analysis/ChallengeFlag.jsx';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
-import { useMonthlyAnalysisQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
+import { useMonthlyAnalysisQuery, useAiReportQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
 
 const Page = styled.div`
@@ -150,6 +150,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
 
   const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery();
+  const { data: reportData } = useAiReportQuery();
   const { data: trendData } = useMonthlyTrendQuery();
   // 예산 현황은 전역 스토어(BudgetSync가 동기화)를 구독한다 (#145)
   const serverBudgetItems = useBudgetStore((s) => s.budgetItems);
@@ -157,7 +158,6 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
 
   const monthly = trendData?.monthlyData ?? [];
 
-  // 소비 위험도: 서버 riskLevel → 위험도 항목의 level 순으로 본다. 둘 다 없으면 null (F13-5)
   const riskItem = insightsData?.aiQuickInsights?.find(item => item.type === 'risk');
   const risk = resolveRisk(insightsData?.riskLevel ?? riskItem?.level ?? riskItem?.value);
 
@@ -166,17 +166,44 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
     { label: '팩트 리포트', value: '-', note: '-', color: '#E87573', type: 'fact' },
     { label: '소비 위험도', type: 'risk' },
     { label: 'AI 맞춤 챌린지', value: '-', note: '-', color: 'var(--sub)', type: 'default' }
-  ]).map(item => item.type === 'risk'
-    ? {
-      ...item,
-      color: risk?.color ?? 'var(--sub)',
-      value: item.value ?? risk?.value ?? '-',
-      note: item.note ?? risk?.note ?? '-'
+  ]).map(item => {
+    if (item.type === 'risk') {
+      return {
+        ...item,
+        color: risk?.color ?? 'var(--sub)',
+        value: item.value ?? risk?.value ?? '-',
+        note: item.note ?? risk?.note ?? '-'
+      };
     }
-    : item);
+    if (item.type === 'fact' && reportData?.ai?.fact) {
+      return {
+        ...item,
+        value: reportData.ai.fact
+      };
+    }
+    // 챌린지는 위험 루트와 type이 같아 label로 가른다(CHALLENGE_LABEL 주석 참고).
+    // ai-report의 ChallengeService 문구를 우선 쓰고, 없으면 ai-insights 값을 그대로 둔다 (F13-8).
+    if (item.label === CHALLENGE_LABEL && reportData?.ai?.challenge) {
+      return {
+        ...item,
+        value: reportData.ai.challenge
+      };
+    }
+    return item;
+  });
 
   const emotionCardsData = insightsData?.emotionCards ?? [];
-  const evidence = patternData?.evidence ?? [];
+  const rawEvidence = patternData?.evidence ?? [];
+  const evidence = rawEvidence.map(ev => {
+    const dateObj = new Date(ev.occurredAt);
+    const dateStr = `${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
+    return {
+      date: dateStr,
+      category: ev.category?.name ?? '기타',
+      emotion: ev.emotion?.name ?? '평온',
+      amount: ev.amount
+    };
+  });
   const pattern = patternData?.pattern ?? null;
   const hasPattern = pattern != null && pattern.count > 0;
 
@@ -231,15 +258,28 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
     }
   };
 
+  const emotionCardsMap = useMemo(() => {
+    const map = {};
+    for (const card of emotionCardsData) {
+      if (card.emotion) {
+        map[card.emotion] = card;
+      }
+    }
+    return map;
+  }, [emotionCardsData]);
+
   // 감정소비 카드: 앞면(감정·비율·금액·색)은 §9 byEmotion 상위 3건, 뒷면 문구만 정적 카피(emotionCardsData).
-  const emotionCards = emotionSegments.slice(0, 3).map((item, index) => ({
-    emotion: item.name,
-    percent: item.percent,
-    amount: item.amount,
-    color: item.color,
-    title: emotionCardsData[index]?.title ?? '',
-    desc: emotionCardsData[index]?.desc ?? ''
-  }));
+  const emotionCards = emotionSegments.slice(0, 3).map((item) => {
+    const matchingData = emotionCardsMap[item.name] || {};
+    return {
+      emotion: item.name,
+      percent: item.percent,
+      amount: item.amount,
+      color: item.color,
+      title: matchingData.title ?? '',
+      desc: matchingData.desc ?? ''
+    };
+  });
   const activeChart = chartConfig[activeChartTab];
   const budgetItems = serverBudgetItems
     .map(data => {

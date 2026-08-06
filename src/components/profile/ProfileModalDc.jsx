@@ -455,6 +455,27 @@ export default function ProfileModalDc({ state, actions, onClose, initialView = 
     }
   }
 
+  async function toggleMainGoal(item) {
+    if (item.isMain) return;
+
+    try {
+      await toggleMainGoalMutation.mutateAsync({
+        goalId: item.goalId,
+        data: {
+          name: item.name,
+          targetAmount: item.targetAmount,
+          initialAmount: item.initialAmount || 0,
+          startDate: item.startDate,
+          dueDate: item.dueDate,
+          isMain: true,
+        },
+      });
+      actions.showToast('대표 목표로 변경되었어요');
+    } catch {
+      actions.showToast('대표 목표 설정에 실패했어요. 다시 시도해 주세요.');
+    }
+  }
+
   async function deleteGoal(goalId) {
     if (goals.length <= 1) {
       actions.showToast('최소 하나의 목표는 남겨두어야 합니다.');
