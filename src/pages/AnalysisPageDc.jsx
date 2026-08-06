@@ -181,6 +181,14 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
         value: reportData.ai.fact
       };
     }
+    // 챌린지는 위험 루트와 type이 같아 label로 가른다(CHALLENGE_LABEL 주석 참고).
+    // ai-report의 ChallengeService 문구를 우선 쓰고, 없으면 ai-insights 값을 그대로 둔다 (F13-8).
+    if (item.label === CHALLENGE_LABEL && reportData?.ai?.challenge) {
+      return {
+        ...item,
+        value: reportData.ai.challenge
+      };
+    }
     return item;
   });
 
