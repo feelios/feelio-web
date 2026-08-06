@@ -159,7 +159,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const monthly = trendData?.monthlyData ?? [];
 
   const riskItem = insightsData?.aiQuickInsights?.find(item => item.type === 'risk');
-  const risk = resolveRisk(insightsData?.riskLevel ?? riskItem?.level ?? riskItem?.value);
+  const risk = resolveRisk(riskItem?.level ?? riskItem?.value);
 
   const aiQuickInsights = (insightsData?.aiQuickInsights?.length > 0 ? insightsData.aiQuickInsights : [
     { label: '위험 루트', value: '-', note: '-', color: 'var(--sub)', type: 'default' },
@@ -229,12 +229,13 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
       name: emo.name,
       percent: emotionTotalCount ? Math.round((count / emotionTotalCount) * 100) : 0,
       amount: `${amount.toLocaleString()}원`,
-      color: emo.color
+      color: emo.color,
+      _amount: amount  // 정렬 전용 숫자값, 외부에 노출되지 않음
     };
   }).sort((a, b) => {
     if (b.percent !== a.percent) return b.percent - a.percent;
-    return b.amount - a.amount;
-  });
+    return b._amount - a._amount;
+  }).map(({ _amount, ...rest }) => rest);
   const timeSegments = buildSegments([...(analysis?.byTimeSlot ?? [])].sort(byAmountDesc));
 
   const chartConfig = {
