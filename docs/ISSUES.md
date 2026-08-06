@@ -58,6 +58,7 @@
 | [ ] | - | F8-12 | 온보딩 완료 요청의 totalAsset 누락 수정 | `fix/onboarding-completion-request` | §4·§7 | Page·Hook·api·docs | `['users','me']` | 신규 | 온보딩 완료 요청에 `{totalAsset}` 전달 → 신규·재가입 사용자 `onboardingDone:true` 반영 및 홈 진입 → API 계약 문서 동기화, lint·build 통과 |
 | [ ] | - | F8-13 | 온보딩 목표 생성 요청의 마감일 누락 수정 | `fix/onboarding-goal-due-date` | §7 | Page·Component·docs | `['goals']`·`['universe']` | 신규 | 온보딩 기간을 `YYYY-MM-DD` 형식의 `dueDate`로 변환해 목표 생성 요청에 전달 → 기타 선택 시 공통 `SegmentDatePicker` 재사용 → 과거 날짜 제출 방지 및 API 계약 문서 동기화 |
 | [x] | - | F8-14 | 전역 하드코딩 색상 테마 스크립트 전환 | `fix/hardcoded-colors` | - | Page·Component | - | 완료 | 전역에 남은/하드코딩된 HEX 컬러를 var(--bg-1), var(--text) 등 CSS 테마 변수로 치환 |
+| [ ] | - | F8-15 | 모바일 공통 레이아웃 하단 공백 및 콘텐츠 잘림 수정 | `fix/mobile-bottom-layout-gap` | - | Component·Page | - | 신규 | `AppLayoutDc`의 하단 예약 공간과 고정 `BottomNav`의 실제 점유 영역을 일치시켜 전 페이지의 불필요한 하단 공백 제거 → 마지막 콘텐츠의 내비게이션 겹침 방지 및 safe-area 보장 → 평행우주 모바일 컨테이너의 하단 모서리 잘림 수정 → 820px 이하 브라우저와 실제 모바일 환경 검증 |
 | [ ] | - | F9-1 | 소비 코어 감정 8종 노출 | `feat/core-emotion-display` | - | Component | - | 신규 | 데이터 0건인 감정도 누락 없이 8개 렌더링 처리 |
 | [ ] | - | F9-2 | 감정 분석 퍼센트 로직 변경 | `feat/analysis-percentage-logic` | - | Utils·Component | - | 신규 | 분석 퍼센트를 금액 기준에서 횟수 기준으로 변경 |
 | [ ] | - | F9-3 | 지출 추이 카드 클릭 이동 | `feat/monthly-trend-navigation` | - | Component | - | 신규 | 월별 바/포인트 클릭 시 해당 달 상세 뷰로 이동 |
@@ -103,8 +104,11 @@
 | [ ] | - | F15-7 | 거래내역 상세/수정 모달 시간 바인딩 점검 | `fix/transaction-time-frontend-binding` | - | Component | - | 신규 | 백엔드(A2-3)의 올바른 시간 데이터를 상세 모달과 수정 달력에 정확하게 파싱 및 연결 방어 |
 | [ ] | - | F15-8 | 로그아웃 수행 시 활성화된 모달 닫기 처리 | `fix/logout-modal-close` | - | Component | - | 신규 | 로그아웃하여 라우팅이 변경될 때 띄워져 있던 팝업/모달 강제 닫기 처리하여 잔상 버그 방지 |
 
-| [ ] | - | F16-1 | 데스크탑 웹 사이드바 상단 로고 이미지 교체 | `feat/sidebar-logo-image` | - | Component | - | 신규 | 제공된 로고 에셋을 추가하고, 웹 사이드바 상단 이미지를 해당 로고로 교체 |
 | [ ] | - | F16-2 | 회원 탈퇴 프론트엔드 연동 오류 확인 및 초기화 | `fix/account-deletion-frontend` | - | Component | - | 신규 | 회원 탈퇴 API 연동 오류 수정 및 탈퇴 시 로컬 스토리지/전역 상태 완벽 초기화 |
+| [ ] | #243 | F15-5 | 프로필 닉네임 변경 API 연동 | fix/profile-nickname-sync | - | Component | - | 버그 | 프로필 수정 시 로컬 상태만 변경되고 API 통신이 누락되어 서버에 반영되지 않는 문제 해결 |
+| [ ] | #247 | F16-1 | 프론트엔드: 패턴 내역 번호 노출 UI 구현 및 위험루트 클릭 시 스크롤 이동 | feat/pattern-transaction-id-ui | - | Component | - | 신규 | 모바일 뒷면/웹 카드 옆 내역 번호 노출 및 위험 루트 클릭 시 스크롤 이동 |
+| [ ] | #248 | F16-2 | 풀스택: AI 감정 분석 카드 앞-뒷면 감정 불일치 방지 및 시각적 구분 | feat/emotion-card-consistency | - | api·Component | - | 신규 | AI 프롬프트 수정 및 카드 뒷면에 분석 대상 감정 뱃지 추가 |
+
 
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).
 > **GitHub 등록 이슈(Open)**: #32(F4-4) · #33(F5-1) · #34(F5-2) · #36(F5-3) — 이 4개가 실제 남  은 등록 작업.

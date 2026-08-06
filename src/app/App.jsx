@@ -75,10 +75,18 @@ export default function App() {
 
   const [globalDate, setGlobalDate] = useState(() => new Date());
   const [profileOpen, setProfileOpen] = useState(false);
+  // 프로필 모달을 어느 화면으로 열지 (홈 목표 카드에서 목표 관리로 바로 들어오는 경로용)
+  const [profileView, setProfileView] = useState('profile');
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [recordPrefill, setRecordPrefill] = useState(null);
 
   // 목표 카드 '저금하기' → 저축·해당 목표 프리필된 기록 화면으로 (F7-9)
+  // 다 모은 목표 카드 '목표 관리로 가기' → 프로필 모달의 목표 관리 화면으로
+  const openGoals = () => {
+    setProfileView('goals');
+    setProfileOpen(true);
+  };
+
   const openRecordForGoal = (goalId) => {
     setRecordPrefill({ goalId });
     setRoute('record');
@@ -110,6 +118,20 @@ export default function App() {
     }
   }, [state.isLoggedIn]);
 
+  // 로그아웃·세션 만료로 인증이 풀리면 열려 있던 모달·팝업과 라우트를 되돌린다 (F15-8).
+  // 로그아웃 버튼이 프로필 모달 안에 있어 이걸 안 지우면 다시 로그인했을 때 그 모달이 다시 뜬다.
+  // effect가 아니라 렌더 중에 맞춰야 로그인 화면이 한 프레임도 옛 상태로 그려지지 않는다.
+  const [wasLoggedIn, setWasLoggedIn] = useState(state.isLoggedIn);
+  if (wasLoggedIn !== state.isLoggedIn) {
+    setWasLoggedIn(state.isLoggedIn);
+    if (!state.isLoggedIn) {
+      setProfileOpen(false);
+      setSelectedTxn(null);
+      setRecordPrefill(null);
+      setRoute('home');
+    }
+  }
+
   if (isInitializing) {
     return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
   }
@@ -120,7 +142,7 @@ export default function App() {
   const colors = getAurora(state.aurora).colors;
 
   const content = {
-    home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={globalDate} onSelectDate={setGlobalDate} onSaveToGoal={openRecordForGoal} />,
+    home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={globalDate} onSelectDate={setGlobalDate} onSaveToGoal={openRecordForGoal} onOpenGoals={openGoals} />,
     record: <RecordPageDc state={state} actions={actions} prefill={recordPrefill} onConsumePrefill={() => setRecordPrefill(null)} onSaved={(date) => {
       setGlobalDate(new Date(date));
     }} />,
@@ -175,8 +197,15 @@ export default function App() {
           </QueryErrorResetBoundary>
         </AppLayoutDc>
       )}
-      {profileOpen && <ProfileModalDc state={state} actions={actions} onClose={() => setProfileOpen(false)} />}
-      {selectedTxn && <TransactionDetailModal transaction={selectedTxn} actions={actions} onClose={() => setSelectedTxn(null)} />}
+      {state.isLoggedIn && profileOpen && (
+        <ProfileModalDc
+          state={state}
+          actions={actions}
+          initialView={profileView}
+          onClose={() => { setProfileOpen(false); setProfileView('profile'); }}
+        />
+      )}
+      {state.isLoggedIn && selectedTxn && <TransactionDetailModal transaction={selectedTxn} actions={actions} onClose={() => setSelectedTxn(null)} />}
       <Toast message={state.toast} onDone={actions.clearToast} />
       <NotificationToast 
         notification={state.toastNotification} 
