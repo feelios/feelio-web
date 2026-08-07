@@ -1,4 +1,4 @@
-/** @jsxImportSource @emotion/react */
+﻿/** @jsxImportSource @emotion/react */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import styled from '@emotion/styled';
 import { Global, css } from '@emotion/react';
@@ -110,12 +110,12 @@ export default function UniversePageDc() {
       current: {
         tag: "현재 우주",
         title: current.title,
-        metricLabel: focus ? `이번 달 ${focus.name} 소비` : "이번 달 지출",
+        metricLabel: focus ? `이번 달 ${focus.name} 소비` : "이번 달 소비",
         metric: `-${formatMoney(focus ? focus.monthlyAmount : current.monthlyExpense)}`,
         accent: focus ? focus.color : "#9E96EE",
-        narratives: [ current.narration ],
+        narratives: current.narrations || [ current.narration ],
         goalNote: currentNote,
-        emotionTag: focus ? focus.name : "감정",
+        emotionTag: focus ? focus.name : "일반",
         monthlySaving: current.monthlySaving,
         monthsToGoal: current.monthsToGoal,
         estimatedAchieveDate: current.estimatedAchieveDate
@@ -126,7 +126,7 @@ export default function UniversePageDc() {
         metricLabel: "매달 아낄 수 있는 금액",
         metric: `+${formatMoney(savedAmount)}`,
         accent: "#82E2C2",
-        narratives: [ reduced.narration ],
+        narratives: reduced.narrations || [ reduced.narration ],
         goalNote: reducedNote,
         emotionTag: "평온 · 뿌듯함",
         monthlySaving: reduced.monthlySaving,
