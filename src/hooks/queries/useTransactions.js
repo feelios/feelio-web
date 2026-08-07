@@ -25,6 +25,8 @@ export const useTransactionDetailQuery = (transactionId, initialData) => {
 const invalidateRelatedQueries = (queryClient) => {
   [
     ['tx', 'list'],
+    // 상세 캐시도 비워야 한다. 빠져 있으면 수정 후에도 모달이 옛 값을 그대로 보여준다 (#280).
+    ['tx', 'detail'],
     ['summary', 'calendar'],
     ['summary', 'emotions'],
     ['analysis'],

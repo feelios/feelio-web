@@ -405,7 +405,10 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
       situationIds: [],
       memo: form.memo || null,
       goalId: isGoalSaving ? form.goalId : undefined,
-      occurredAt: new Date(form.date).toISOString()
+      // 계약 §6 의 occurredAt 은 오프셋 없는 로컬 시각이다("2026-07-01T21:30:00").
+      // form.date 가 이미 로컬 벽시계 문자열이라 그대로 보낸다.
+      // toISOString() 을 태우면 UTC 로 바뀌어 KST 기준 9시간이 밀린다(자정 근처엔 날짜까지 넘어감).
+      occurredAt: form.date.length === 16 ? `${form.date}:00` : form.date
     };
 
     mutation.mutate(payload, {
@@ -450,7 +453,6 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
               />
               <span css={{ fontSize: 20, fontWeight: 900, color: 'var(--sub)' }}>원</span>
             </AmountBox>
-            <div css={{ fontSize: 11.5, color: 'var(--sub)' }}>시간 단위로 수정할 수 있어요</div>
           </div>
 
           <Divider />
