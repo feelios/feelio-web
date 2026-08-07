@@ -561,9 +561,9 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
                       </span>
                     </div>
                     
-                    <div css={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginBottom: 16, marginTop: 'auto' }}>
-                      <span css={{ fontSize: 18, color: '#fff', fontWeight: 900, marginRight: 5 }}>{money(card.goal.targetAmount)}원</span>
-                      모두 모았어요
+                    <div css={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16, marginTop: 'auto' }}>
+                      <span css={{ fontSize: 18, color: '#fff', fontWeight: 900 }}>✔️</span>
+                      <span css={{ fontSize: 16, color: '#fff', fontWeight: 800 }}>목표를 달성했어요!</span>
                     </div>
                     
                     <button
