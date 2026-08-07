@@ -178,7 +178,7 @@ const Button = styled.button`
   @media (max-width: 900px) {
     height: 46px;
     margin-top: 8px;
-    border-radius: 13px;
+    border-radius: 12px;
     font-size: 14px;
   }
 `;

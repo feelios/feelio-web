@@ -4,10 +4,11 @@ import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { Skeleton } from '../components/common/Skeleton.jsx';
 import { ChallengeFlag } from '../components/analysis/ChallengeFlag.jsx';
+import { RiskRouteIcon } from '../components/analysis/RiskRouteIcon.jsx';
+import { FactBomberIcon } from '../components/analysis/FactBomberIcon.jsx';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
-import { useMonthlyAnalysisQuery, useAiReportQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
-import { useBudgetStore } from '../stores/budgetStore.js';
+import { useMonthlyAnalysisQuery, useAiReportQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery, useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
 
 const Page = styled.div`
   width: 100%;
@@ -110,6 +111,9 @@ const NO_EMOTION = '보통';
 // 서버(AiQuickInsightAssembler)가 이 label 4종을 고정으로 맞춰 보낸다.
 const CHALLENGE_LABEL = 'AI 맞춤 챌린지';
 
+// 위험 루트도 type 이 'default' 라 챌린지와 마찬가지로 label 로 가른다.
+const RISK_ROUTE_LABEL = '위험 루트';
+
 // 위험도 값이 없으면 null → 신호등 세 칸 모두 꺼진 상태로 둔다. 임의로 한 칸을 켜지 않는다.
 // 서버(AiQuickInsightAssembler)는 등급을 위험도 항목의 value에 한글로 담아 보낸다.
 // '예산 미설정'은 등급이 아니라 판정 불가라 매핑하지 않는다 → 세 칸 모두 꺼짐.
@@ -149,11 +153,12 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const [expandedInsight, setExpandedInsight] = useState(null);
 
   const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
-  const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery();
-  const { data: reportData } = useAiReportQuery();
+  const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
+  const { data: reportData } = useAiReportQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: trendData } = useMonthlyTrendQuery();
-  // 예산 현황은 전역 스토어(BudgetSync가 동기화)를 구독한다 (#145)
-  const serverBudgetItems = useBudgetStore((s) => s.budgetItems);
+  // 전역 예산 상태 대신 선택된 달의 예산 현황을 동적으로 패칭한다 (#284)
+  const { data: budgetData } = useBudgetStatusQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
+  const serverBudgetItems = budgetData?.budgetItems ?? [];
   const { data: patternData } = usePatternQuery();
 
   const monthly = trendData?.monthlyData ?? [];
@@ -230,12 +235,17 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
       percent: emotionTotalCount ? Math.round((count / emotionTotalCount) * 100) : 0,
       amount: `${amount.toLocaleString()}원`,
       color: emo.color,
-      _amount: amount  // 정렬 전용 숫자값, 외부에 노출되지 않음
+      count,
+      amountValue: amount
     };
   }).sort((a, b) => {
-    if (b.percent !== a.percent) return b.percent - a.percent;
-    return b._amount - a._amount;
-  }).map(({ _amount, ...rest }) => rest);
+    // 정렬 기준은 "어떤 기분으로 자주 소비했나" — 건수가 1순위다.
+    // percent 로 비교하면 반올림 때문에 건수가 다른데도 동률이 되어(예: 300건 중 7건과 8건이 모두 2%)
+    // 금액으로 뒤집힌다. 3건짜리 감정이 1건짜리에게 밀리면 안 되므로 원시 건수로 비교한다.
+    // 금액은 건수가 같을 때만 본다 (#280).
+    if (b.count !== a.count) return b.count - a.count;
+    return b.amountValue - a.amountValue;
+  });
   const timeSegments = buildSegments([...(analysis?.byTimeSlot ?? [])].sort(byAmountDesc));
 
   const chartConfig = {
@@ -282,6 +292,16 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
     };
   });
   const activeChart = chartConfig[activeChartTab];
+
+  // 탭마다 목록 줄 수가 달라(감정 8줄 / 사용처·시간대 4줄) 전환할 때마다 카드 높이가 튄다.
+  // 가장 긴 탭에 맞춰 빈 줄로 자리를 잡아 높이를 고정한다. px 을 박지 않으므로
+  // 글자 크기나 항목 수가 바뀌어도 따라간다 (#280).
+  const segmentRowCount = Math.max(
+    chartConfig.emotion.segments.length,
+    chartConfig.category.segments.length,
+    chartConfig.time.segments.length
+  );
+  const segmentPlaceholders = Math.max(0, segmentRowCount - activeChart.segments.length);
   const budgetItems = serverBudgetItems
     .map(data => {
       const emo = getEmotion(data.emotion);
@@ -369,19 +389,18 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               </RiskSignal>
             ) : item.label === CHALLENGE_LABEL ? (
               <ChallengeFlag expanded={isExpanded} />
+            ) : item.type === 'fact' ? (
+              <FactBomberIcon expanded={isExpanded} color={item.color} />
             ) : (
-              <span css={{
-                width: item.type === 'fact' ? 10 : 8,
-                height: item.type === 'fact' ? 40 : 34,
-                borderRadius: 99,
-                background: item.color,
-                opacity: item.type === 'fact' ? 1 : (isDark ? 0.86 : 0.72),
-                boxShadow: item.type === 'fact' ? '0 0 0 4px rgba(232,117,115,.12)' : `0 10px 22px -14px ${item.color}`,
-                marginTop: isExpanded ? 2 : 0,
-                '@media (min-width: 821px)': { marginTop: 0 }
-              }} />
+              <RiskRouteIcon expanded={isExpanded} />
             )}
-            <div css={{ minWidth: 0 }}>
+            {/* 데스크톱은 [라벨+본문] 옆에 note 를 두고 세로 중앙에 맞춘다.
+                note 를 라벨 줄 안에 두면 baseline 에 묶여 위로 붙어 보인다 (#280). */}
+            <div css={{
+              minWidth: 0,
+              '@media (min-width: 821px)': { display: 'flex', alignItems: 'center', gap: 12 }
+            }}>
+              <div css={{ minWidth: 0, '@media (min-width: 821px)': { flex: 1, minWidth: 0 } }}>
               <div css={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, width: '100%' }}>
                 <span css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', flexShrink: 0 }}>{item.label}</span>
                 {isInsightsLoading
@@ -397,7 +416,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                       wordBreak: isExpanded ? 'keep-all' : 'normal',
                       minWidth: 0,
                       display: isExpanded ? 'inline' : 'none',
-                      '@media (min-width: 821px)': { display: 'inline' }
+                      // 데스크톱에서는 아래쪽 전용 note 가 대신 나온다(세로 중앙 정렬 때문).
+                      '@media (min-width: 821px)': { display: 'none' }
                     }}>{item.note}</span>}
                 {/* 접힘/펼침 표시 — 모바일에서만 (데스크톱은 늘 펼친 상태라 표시할 게 없다) */}
                 <svg
@@ -447,6 +467,25 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                   )}
                 </div>
               </div>
+              </div>
+
+              {/* 데스크톱 전용 note. 라벨 줄이 아니라 항목 전체를 기준으로 세로 중앙에 놓인다 (#280).
+                  - 팩트 리포트: 본문이 이미 금액을 말해줘 '이번 달 N원'이 중복이라 감춘다
+                  - 위험 루트(건수) · 소비 위험도(예산 소진율): 본문만으로 알 수 없는 수치라 키운다 */}
+              {!isInsightsLoading && item.type !== 'fact' && (
+                <span css={{
+                  display: 'none',
+                  '@media (min-width: 821px)': {
+                    display: 'block',
+                    flexShrink: 0,
+                    textAlign: 'right',
+                    whiteSpace: 'nowrap',
+                    color: item.color,
+                    fontSize: (item.type === 'risk' || item.label === RISK_ROUTE_LABEL) ? 13.5 : 11,
+                    fontWeight: (item.type === 'risk' || item.label === RISK_ROUTE_LABEL) ? 950 : 900
+                  }
+                }}>{item.note}</span>
+              )}
             </div>
           </InsightItem>
         )})}
@@ -597,6 +636,13 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                     <span css={{ color: isPrimary && activeChartTab === 'emotion' ? seg.color : 'var(--sub)', fontSize: isPrimary ? 14 : 12, fontWeight: 950 }}>{activeChartTab === 'category' ? seg.amount : `${seg.percent}%`}</span>
                   </div>;
                 })}
+                {Array.from({ length: segmentPlaceholders }, (_, index) => (
+                  <div key={`segment-placeholder-${index}`} aria-hidden="true" css={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 9, visibility: 'hidden' }}>
+                    <span css={{ width: 8, height: 8, borderRadius: '50%' }} />
+                    <span css={{ fontSize: 12, fontWeight: 850 }}>&nbsp;</span>
+                    <span css={{ fontSize: 12, fontWeight: 950 }}>&nbsp;</span>
+                  </div>
+                ))}
               </div>
               {renderTabs(false)}
             </div>
@@ -822,7 +868,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
 
               <div css={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto 1fr', gap: 10, alignItems: 'center', padding: '16px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
                 <span css={{ minWidth: 0, opacity: hasPattern ? 1 : 0.4 }}>
-                  <span css={{ display: 'block', color: hasPattern ? '#A68BEA' : 'var(--sub)', fontSize: 11, fontWeight: 950, marginBottom: 4 }}>감정</span>
+                  {/* 감정만 보라색이라 사용처·시간과 위계가 달라 보였다. 셋 다 같은 라벨 색으로 맞춘다 (#280). */}
+                  <span css={{ display: 'block', color: 'var(--sub)', fontSize: 11, fontWeight: 900, marginBottom: 4 }}>감정</span>
                   <b css={{ color: 'var(--text)', fontSize: 15 }}>{hasPattern ? pattern.emotion : '?'}</b>
                 </span>
                 <span css={{ color: 'var(--sub)', fontWeight: 900, opacity: hasPattern ? 1 : 0.4 }}>→</span>
@@ -858,14 +905,14 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               padding: 24,
               borderLeft: 'none',
               background: 'var(--card)',
-              borderRadius: 26,
+              borderRadius: 24,
               overflow: 'hidden'
             }
           }}>
             <div css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, padding: '0 0 12px', fontSize: 11, color: 'var(--sub)', fontWeight: 900, borderBottom: '1px solid var(--line)' }}>
               <span>날짜</span><span>내역</span><span>금액</span>
             </div>
-            <div css={{ overflowY: 'auto', flex: 1, paddingBottom: 16 }}>
+            <div css={{ overflowY: 'auto', flex: 1, paddingBottom: 16, maxHeight: 240, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
               {evidence.map((ev, idx) => {
                 const emo = getEmotion(ev.emotion);
                 return <div key={`${ev.date}-${idx}`} css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, alignItems: 'center', padding: '15px 0', borderBottom: '1px solid var(--line)' }}>

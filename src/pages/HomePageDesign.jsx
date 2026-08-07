@@ -95,7 +95,7 @@ const Ridge = styled(GlassCard)`
   min-height: 0;
   overflow: hidden;
   padding: ${({ expanded }) => expanded ? 'clamp(18px, 1.6vw, 22px) clamp(20px, 1.8vw, 26px) 0' : '22px'};
-  border-radius: 26px;
+  border-radius: 24px;
   cursor: pointer;
   transition: padding 0.3s ease;
 
@@ -326,7 +326,7 @@ const Bubble = styled.div`
   @media (max-width: 980px) {
     font-size: 11.5px;
     padding: 8px 13px;
-    border-radius: 17px;
+    border-radius: 18px;
   }
 `;
 
