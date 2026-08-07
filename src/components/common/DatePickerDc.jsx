@@ -58,11 +58,20 @@ const PopoverWrapper = styled.div`
   --date-card-w: 300px;
 
   /* overlay: 캘린더 카드 + 옆 시간 패널을 한 묶음으로 중앙 정렬 (패널이 flex 자식으로 붙음) */
-  ${({ overlay }) => overlay ? 'display: flex; align-items: flex-start; gap: 12px;' : ''}
+  ${({ overlay }) => overlay ? 'display: flex; align-items: flex-start; gap: var(--date-gap, 12px);' : ''}
 
-  /* 모바일: 옆 시간기둥 대신 카드 안 인라인 시간 → 단일 카드 팝오버, 폭만 화면에 맞춤 */
+  /*
+   * 모바일: 카드 + 간격 + 휠이 한 화면에 들어가야 한다.
+   * 예전엔 카드를 300px 로 두고 휠(150px)을 그대로 붙여 474px 이 되는 바람에
+   * 오른쪽이 잘렸다. 화면 폭에서 휠·간격·여백을 뺀 만큼을 카드에 준다 (#307).
+   */
   @media (max-width: 560px) {
-    --date-card-w: min(300px, calc(100vw - 56px));
+    /* 폭 조절은 아래 세 값으로 한다. 카드 폭은 나머지를 빼고 남는 만큼 자동으로 잡히므로
+       직접 건드리지 않는다. 좁히려면 --date-inset 을 키우면 된다. */
+    --date-inset: 64px;   /* 화면 좌우 여백 합 (양쪽 32px씩) */
+    --date-gap: 8px;      /* 카드와 휠 사이 */
+    --date-wheel-w: 84px; /* 시·분 휠 */
+    --date-card-w: min(300px, calc(100vw - var(--date-inset) - var(--date-gap) - var(--date-wheel-w)));
   }
 `;
 
@@ -82,6 +91,11 @@ const Card = styled.div`
   flex-direction: column;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+
+  @media (max-width: 560px) {
+    padding: 10px 11px;
+    border-radius: 22px;
+  }
 
   ${({ overlay }) => overlay ? `
     max-height: 92vh;
@@ -138,6 +152,11 @@ const DayLabel = styled.div`
   font-weight: 500;
   color: var(--sub);
   padding: 4px 0;
+
+  @media (max-width: 560px) {
+    font-size: 9px;
+    padding: 2px 0;
+  }
 `;
 
 const DateGrid = styled.div`
@@ -145,10 +164,20 @@ const DateGrid = styled.div`
   grid-template-columns: repeat(7, 1fr);
   gap: 5px;
   flex-shrink: 0;
+
+  @media (max-width: 560px) {
+    gap: 3px;
+  }
 `;
 
 const DateCell = styled.button`
   height: 32px;
+
+  @media (max-width: 560px) {
+    height: 27px;
+    font-size: 11.5px;
+    border-radius: 8px;
+  }
   display: flex;
   align-items: center;
   justify-content: center;
@@ -201,6 +230,12 @@ const DateCell = styled.button`
 const TimeRow = styled.div`
   margin-top: 12px;
   padding-top: 11px;
+
+  @media (max-width: 560px) {
+    margin-top: 8px;
+    padding-top: 8px;
+    gap: 6px;
+  }
   border-top: 1px solid var(--line);
   flex-shrink: 0;
   display: flex;
@@ -263,9 +298,10 @@ const TimeListPanel = styled.div`
     position: absolute;
     top: 0;
     bottom: 0;
-    left: calc(var(--date-card-w, 300px) + 12px); /* Card width + gap */
+    left: calc(var(--date-card-w, 300px) + var(--date-gap, 12px)); /* Card width + gap */
   `}
-  width: 150px;
+  width: var(--date-wheel-w, 150px);
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -509,15 +545,17 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
     String(Math.min(55, Math.round(initDate.getMinutes() / 5) * 5)).padStart(2, "0")
   );
   const [period, setPeriod] = useState(p);
-  const [timePanelOpen, setTimePanelOpen] = useState(initialTimePanelOpen || overlay);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 560);
+  // 모달로 열 때는 시간 휠을 함께 편다. 휠이 카드 옆에 붙어 높이가 늘지 않는다.
+  const [timePanelOpen, setTimePanelOpen] = useState(initialTimePanelOpen || overlay);
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth <= 560);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
-  // 모바일에서만 카드 안 인라인 시/분 선택 (데스크톱은 모달이어도 옆 시간 패널 사용)
-  const useInlineState = isMobile || useInline;
+  // 시간 선택은 모바일·데스크톱 모두 카드 옆 밴드 휠을 쓴다 (#307).
+  // 카드 안 인라인은 호출부가 명시적으로 요청할 때만 — 세로로 길어져 화면을 꽉 채운다.
+  const useInlineState = useInline;
 
   // overlay 휠 패널 높이를 달력 카드와 동일하게 (달력은 월에 따라 5~6줄로 높이가 달라짐)
   const cardRef = useRef(null);
@@ -531,28 +569,32 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
     return () => window.removeEventListener('resize', measure);
   }, [overlay, useInlineState, timePanelOpen, viewMonth, viewYear]);
 
-  // overlay + anchorRef: 트리거(날짜 필드) 바로 위에 좌측 정렬로 위치 (포털이라 모달에 안 잘림)
+  /**
+   * overlay + anchorRef: 트리거(날짜 필드) 바로 위에 좌측 정렬로 붙인다 (포털이라 모달에 안 잘림).
+   *
+   * 모바일에서는 앵커를 쓰지 않고 화면 중앙 고정(PopoverWrapper 의 기본값)에 맡긴다.
+   * 카드가 화면 높이의 대부분을 차지해서 필드 위에 붙이면 위쪽이 화면 밖으로 나가고,
+   * 모달 영역도 벗어난다. 좁은 화면에서 앵커는 얻는 게 없다 (#307).
+   */
   const [anchorStyle, setAnchorStyle] = useState(null);
   useLayoutEffect(() => {
-    if (!overlay || !anchorRef?.current) return;
+    if (!overlay || !anchorRef?.current || isMobile) {
+      setAnchorStyle(null);
+      return;
+    }
     const measure = () => {
       const el = anchorRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const GAP = 10, M = 12;
-      // 인라인(모바일)은 시/분이 카드 안에 들어가므로 카드 폭만 차지한다.
-      // 옆 휠 폭(474)까지 잡으면 좁은 화면에서 계산이 음수가 되고 오른쪽이 잘린다 (#304).
-      const assemblyW = useInlineState ? 300 : 474; // 카드(300) / 카드+gap+휠(150)+여유
-      const maxLeft = window.innerWidth - assemblyW - M;
-      // 화면이 조립보다 좁으면 왼쪽 여백에 붙인다. 음수가 되면 화면 밖으로 나간다.
-      const left = maxLeft < M ? M : Math.max(M, Math.min(rect.left, maxLeft));
+      const GAP = 10, M = 12, ASSEMBLY_W = 474; // 카드(300)+gap(12)+휠(150) + 여유
+      const left = Math.max(M, Math.min(rect.left, window.innerWidth - ASSEMBLY_W - M));
       const bottom = window.innerHeight - rect.top + GAP; // 필드 위쪽에 조립 하단을 붙임
       setAnchorStyle({ left, bottom });
     };
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [overlay, anchorRef, timePanelOpen, panelH, useInlineState]);
+  }, [overlay, anchorRef, timePanelOpen, panelH, isMobile]);
 
   // 인라인 시/분 스와이프: 열 때 현재 선택값이 가운데 오도록 스크롤
   const hourScrollRef = useRef(null);
