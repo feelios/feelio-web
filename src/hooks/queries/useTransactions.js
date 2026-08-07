@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { transactionsAPI } from '../../api/transactions.js';
+import useStore from '../../stores/useFeelioStore.js';
 
 // 1. 거래 내역 목록 조회 쿼리 훅
 export const useTransactionsQuery = (filters) => {
@@ -24,6 +25,8 @@ export const useTransactionDetailQuery = (transactionId, initialData) => {
 const invalidateRelatedQueries = (queryClient) => {
   [
     ['tx', 'list'],
+    // 상세 캐시도 비워야 한다. 빠져 있으면 수정 후에도 모달이 옛 값을 그대로 보여준다 (#280).
+    ['tx', 'detail'],
     ['summary', 'calendar'],
     ['summary', 'emotions'],
     ['analysis'],
@@ -32,6 +35,10 @@ const invalidateRelatedQueries = (queryClient) => {
   ].forEach(queryKey => {
     queryClient.invalidateQueries({ queryKey });
   });
+
+  // 총자산은 zustand state.user 에 있어 invalidateQueries 로는 갱신되지 않는다.
+  // 서버가 거래를 반영해 계산해 주는 값이므로 여기서 직접 다시 받아온다 (#272).
+  useStore.getState().actions.refreshUser();
 };
 
 // 3. 거래 내역 생성 뮤테이션 훅

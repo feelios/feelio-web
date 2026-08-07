@@ -61,6 +61,19 @@ const useStore = create(
             }));
           }
         },
+        // 거래가 바뀌면 총자산이 달라진다. 총자산은 서버가 계산해 주는 값(feelio-api #200)이라
+        // 다시 받아와야 홈 카드가 갱신된다. fetchMe 와 달리 실패해도 로그인 상태는 건드리지 않는다
+        // — 거래는 이미 저장됐는데 일시적인 조회 실패로 로그인 화면으로 튕기면 안 된다 (#272).
+        refreshUser: async () => {
+          try {
+            const user = await authAPI.getMe();
+            set((prev) => ({
+              state: { ...prev.state, user, onboardingDone: user.onboardingDone }
+            }));
+          } catch (error) {
+            console.error('Failed to refresh user after transaction change', error);
+          }
+        },
         completeOnboarding: async () => {
           try {
             const user = await authAPI.getMe();
