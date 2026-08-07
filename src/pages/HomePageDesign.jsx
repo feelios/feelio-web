@@ -776,24 +776,27 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   
   const selectedDayKey = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, '0')}-${String(selected.getDate()).padStart(2, '0')}`;
   
-  // 1. 선택한 날짜에 기록이 있는지?
+  // 1. 선택한 날짜에 감정이 있는지?
   const selectedDayEmotion = serverDays.find(d => {
     let dStr = d.date;
     if (Array.isArray(d.date)) dStr = `${d.date[0]}-${String(d.date[1]).padStart(2, '0')}-${String(d.date[2]).padStart(2, '0')}`;
     else if (typeof d.date === 'string') dStr = d.date.slice(0, 10);
     return dStr === selectedDayKey;
-  })?.dominantEmotion?.name;
+  })?.dominantEmotion;
   
   // 2. 이번 달에 기록이 있는지?
   const hasAnyEmotionsThisMonth = serverDays.length > 0;
   let topMonthEmotion = null;
   if (hasAnyEmotionsThisMonth) {
     const counts = serverDays.reduce((acc, d) => {
-      const name = d.dominantEmotion?.name;
-      if (name) acc[name] = (acc[name] || 0) + 1;
+      const emo = d.dominantEmotion;
+      if (emo?.name) {
+        if (!acc[emo.name]) acc[emo.name] = { count: 0, emotion: emo };
+        acc[emo.name].count++;
+      }
       return acc;
     }, {});
-    topMonthEmotion = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+    topMonthEmotion = Object.values(counts).sort((a, b) => b.count - a.count)[0]?.emotion;
   }
 
   // 3. 우선순위에 따라 렌더링할 감정 결정
