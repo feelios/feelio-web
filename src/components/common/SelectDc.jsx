@@ -21,7 +21,7 @@ const Trigger = styled.button`
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-radius: 13px;
+  border-radius: 12px;
   border: 1px solid ${({ isOpen }) => isOpen ? 'var(--accent)' : 'var(--line)'};
   background: var(--card);
   color: var(--text);

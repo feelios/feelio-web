@@ -309,7 +309,10 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
   // 선택된 타입 기준으로 카테고리 목록 조회 (타입 전환 시 자동 동기화)
   const { data: categoryData } = useCategoriesQuery(form.type);
   const categories = categoryData?.categories || [];
-  const [emotionPicked, setEmotionPicked] = useState(false);
+  // 수정 화면은 기존 감정이 이미 골라진 상태로 시작해야 한다.
+  // 여기서 false 로 두면 form.emotionId 에 값이 있어도 선택 표시가 안 떠서,
+  // 사용자가 감정을 고르지 않은 것처럼 보인다 (#280).
+  const [emotionPicked, setEmotionPicked] = useState(Boolean(initialTxn?.emotion?.emotionId));
 
   useEffect(() => {
     if (transaction && mode === 'detail') {
@@ -322,6 +325,7 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
         memo: transaction.memo || '',
         date: transaction.occurredAt ? transaction.occurredAt.slice(0, 16) : ''
       });
+      setEmotionPicked(Boolean(transaction.emotion?.emotionId));
     }
   }, [transaction, mode]);
 
@@ -380,7 +384,11 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
         categoryId: Number(form.categoryId),
         emotionId: Number(form.emotionId),
         memo: form.memo,
-        occurredAt: form.date ? new Date(form.date).toISOString() : transaction.occurredAt
+        // 계약 §6 의 occurredAt 은 오프셋 없는 로컬 시각이다. toISOString() 을 태우면
+        // UTC 로 바뀌어 저장할 때마다 9시간씩 밀린다(수정을 반복하면 계속 앞당겨짐).
+        occurredAt: form.date
+          ? (form.date.length === 16 ? `${form.date}:00` : form.date)
+          : transaction.occurredAt
       }
     });
     setMode('detail');

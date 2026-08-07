@@ -302,26 +302,6 @@ const Switch = styled.button`
   }
 `;
 
-const DataAction = styled.button`
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 18px;
-  ${glassGhost}
-  border-radius: 14px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  color: var(--text);
-  font-family: inherit;
-  font-weight: 700;
-
-  span:last-of-type {
-    font-size: 12.5px;
-    color: var(--sub);
-  }
-`;
-
 function cleanName(name) {
   if (!name || name.length > 8) return '서연';
   if (/[\uFFFD?]/.test(name) || name.includes('\uC496') || name.includes('\uBF30')) return '서연';
@@ -398,7 +378,6 @@ export default function ProfileModalDc({ state, actions, onClose, initialView = 
     ['goals', '목표 관리', `${goals.length}개`],
     ['noti', '알림 설정', ''],
     ['aurora', '화면 · 오로라', visibleAurora.name],
-    ['data', '데이터 관리', ''],
     ['account', '계정 관리', '']
   ];
 
@@ -455,27 +434,6 @@ export default function ProfileModalDc({ state, actions, onClose, initialView = 
     }
   }
 
-  async function toggleMainGoal(item) {
-    if (item.isMain) return;
-
-    try {
-      await toggleMainGoalMutation.mutateAsync({
-        goalId: item.goalId,
-        data: {
-          name: item.name,
-          targetAmount: item.targetAmount,
-          initialAmount: item.initialAmount || 0,
-          startDate: item.startDate,
-          dueDate: item.dueDate,
-          isMain: true,
-        },
-      });
-      actions.showToast('대표 목표로 변경되었어요');
-    } catch {
-      actions.showToast('대표 목표 설정에 실패했어요. 다시 시도해 주세요.');
-    }
-  }
-
   async function deleteGoal(goalId) {
     if (goals.length <= 1) {
       actions.showToast('최소 하나의 목표는 남겨두어야 합니다.');
@@ -501,13 +459,9 @@ export default function ProfileModalDc({ state, actions, onClose, initialView = 
       actions.updateUser({ nickname });
       actions.showToast('프로필이 수정되었어요');
       setView('profile');
-    } catch (e) {
+    } catch {
       actions.showToast('프로필 수정에 실패했어요. 다시 시도해 주세요.');
     }
-  }
-
-  function saveAndBack() {
-    setView('profile');
   }
 
   async function handleThemeToggle() {
@@ -771,14 +725,6 @@ export default function ProfileModalDc({ state, actions, onClose, initialView = 
               </button>
             ))}
           </div>
-        </Screen>
-      )}
-
-      {view === 'data' && (
-        <Screen>
-          <Back title="데이터 관리"><button type="button" onClick={() => setView('profile')}>‹</button></Back>
-          <DataAction type="button" onClick={saveAndBack}><span>데이터 백업</span><span>클라우드에 저장</span></DataAction>
-          <DataAction type="button" onClick={saveAndBack}><span>데이터 내보내기</span><span>CSV · Excel</span></DataAction>
         </Screen>
       )}
 
