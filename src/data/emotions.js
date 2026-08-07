@@ -14,7 +14,20 @@ export const emotions = [
 export const categories = ['식비', '카페', '교통', '쇼핑', '문화', '건강', '월급', '용돈'];
 export const situations = ['퇴근 후', '혼자 있을 때', '친구와', '보상', '습관', '이동 중', '아침', '밤'];
 
-export function getEmotion(name = '평온') {
+import { generateEmotionPalette } from '../utils/color.js';
+
+export function getEmotion(emotionParam) {
+  if (typeof emotionParam === 'object' && emotionParam !== null) {
+    if (emotionParam.color) {
+      return {
+        ...emotionParam,
+        ...generateEmotionPalette(emotionParam.color)
+      };
+    }
+    return getEmotion(emotionParam.name);
+  }
+  
+  const name = emotionParam || '평온';
   return emotionPalette[name] || emotionPalette.평온;
 }
 

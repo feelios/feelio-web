@@ -698,7 +698,7 @@ function getCalendarCells(daysData, visibleMonth) {
     } else if (typeof item.date === 'string') {
       dateStr = item.date.slice(0, 10);
     }
-    txMap.set(dateStr, item.dominantEmotion?.name);
+    txMap.set(dateStr, item.dominantEmotion);
   });
   
   const year = visibleMonth.getFullYear();
@@ -905,7 +905,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
               {showEmptyBlob ? '아직 감정을 기다리는 중' : selectedDayEmotion ? '선택한 날에 가장 오래 머문 마음' : '선택한 날에는 감정 기록이 없어요'}
             </div>
             <div css={{ fontSize: 24, color: !showEmptyBlob ? topMeta.color : (dark ? '#9B8CFF' : '#7C6BE0'), fontWeight: 900, letterSpacing: '-.02em', marginTop: 2 }}>
-              {!showEmptyBlob ? `${displayEmotion} 말랑이` : '감정 말랑이'}
+              {!showEmptyBlob ? `${displayEmotion.name} 말랑이` : '감정 말랑이'}
             </div>
           </div>
         </Stage>

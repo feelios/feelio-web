@@ -635,7 +635,7 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
           </div>
           <GlassCard padding={0}>
             {group.items.map(item => {
-              const emo = getEmotion(item.emotion?.name || '평온');
+              const emo = getEmotion(item.emotion);
               const checked = selectedIds.has(item.transactionId);
               return (
                 <Row

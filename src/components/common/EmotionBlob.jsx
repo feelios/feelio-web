@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { EmptyEmotionBlob } from './EmptyEmotionBlob.jsx';
 import { useFeelioStore } from '../../stores/useFeelioStore.js';
+import { getEmotion } from '../../constants/metadata.js';
+import { mixWithBlack } from '../../utils/color.js';
 
 const EMOTIONS = {
   신남: { core: '#FF9DC4', light: '#FFF0F6', accent: '#FFC49A', ink: '#B84B7C', face: 'excited' },
@@ -147,7 +149,17 @@ export function EmotionBlob({ emotion = '평온', size = 140, interactive = true
   const { state } = useFeelioStore();
   const emotionName = normalizeEmotion(emotion);
   
-  const meta = EMOTIONS[emotionName];
+  const apiEmotion = getEmotion(emotion);
+  const dbColor = apiEmotion.color;
+  const fallbackMeta = EMOTIONS[emotionName] || { face: 'neutral', ink: mixWithBlack(dbColor || '#97A2B6', 0.4) };
+  
+  const meta = {
+    ...fallbackMeta,
+    core: dbColor || fallbackMeta.core,
+    light: apiEmotion.light || fallbackMeta.light,
+    accent: apiEmotion.blob?.[0] || fallbackMeta.accent,
+    ink: dbColor ? mixWithBlack(dbColor, 0.4) : fallbackMeta.ink
+  };
   const idRef = useRef(`eb${uid++}`);
   const turbulenceRef = useRef(null);
   const squishTimer = useRef(null);

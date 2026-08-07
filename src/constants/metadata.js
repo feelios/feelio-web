@@ -42,7 +42,20 @@ export function mergeEmotions(serverEmotions) {
   });
 }
 
-/** 이름으로 시각 정의를 찾는다. ID 와 무관하게 색·모양만 쓸 때 사용한다. */
-export function getEmotion(name = '물음표') {
+import { generateEmotionPalette } from '../utils/color.js';
+
+/** 이름 혹은 메타데이터 객체를 전달하면 시각 정보를 덧붙여 반환한다. */
+export function getEmotion(emotionParam) {
+  if (typeof emotionParam === 'object' && emotionParam !== null) {
+    if (emotionParam.color) {
+      return {
+        ...emotionParam,
+        ...generateEmotionPalette(emotionParam.color)
+      };
+    }
+    return getEmotion(emotionParam.name);
+  }
+
+  const name = emotionParam || '평온';
   return EMOTION_VISUALS.find(e => e.name === name) || UNKNOWN_EMOTION;
 }

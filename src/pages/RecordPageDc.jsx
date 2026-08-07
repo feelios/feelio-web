@@ -305,7 +305,8 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  const selected = getEmotion(form.emotion || '스트레스');
+  const matchedEmotion = emotions.find(e => e.name === form.emotion);
+  const selected = getEmotion(matchedEmotion || form.emotion || '스트레스');
   const accent = form.emotion ? (selected.blob?.[1] || selected.color) : null;
   const canSave = (form.amount && form.emotion && form.category);
 
@@ -385,7 +386,6 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
       return;
     }
 
-    const matchedEmotion = emotions.find(e => e.name === form.emotion);
     if (!matchedEmotion) {
       actions.showToast('감정 정보를 확인할 수 없습니다.');
       return;
@@ -468,7 +468,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
                 const active = form.emotion === name;
                 return (
                   <BlobChoice key={emotionItem.emotionId} active={active} dim={form.emotion && !active} onClick={() => setField('emotion', active ? null : name)}>
-                    <EmotionBlob emotion={name} size={isMobile ? (active ? 74 : 60) : (active ? 122 : 92)} interactive={false} />
+                      <EmotionBlob emotion={emotionItem} size={isMobile ? (active ? 74 : 60) : (active ? 122 : 92)} interactive={false} />
                     <span css={{ fontSize: isMobile ? 12 : 14 }}>{name}</span>
                   </BlobChoice>
                 );
