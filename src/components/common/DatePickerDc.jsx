@@ -539,15 +539,20 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
       const el = anchorRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const GAP = 10, M = 12, ASSEMBLY_W = 474; // 카드(300)+gap(12)+휠(150) + 여유
-      const left = Math.max(M, Math.min(rect.left, window.innerWidth - ASSEMBLY_W - M));
+      const GAP = 10, M = 12;
+      // 인라인(모바일)은 시/분이 카드 안에 들어가므로 카드 폭만 차지한다.
+      // 옆 휠 폭(474)까지 잡으면 좁은 화면에서 계산이 음수가 되고 오른쪽이 잘린다 (#304).
+      const assemblyW = useInlineState ? 300 : 474; // 카드(300) / 카드+gap+휠(150)+여유
+      const maxLeft = window.innerWidth - assemblyW - M;
+      // 화면이 조립보다 좁으면 왼쪽 여백에 붙인다. 음수가 되면 화면 밖으로 나간다.
+      const left = maxLeft < M ? M : Math.max(M, Math.min(rect.left, maxLeft));
       const bottom = window.innerHeight - rect.top + GAP; // 필드 위쪽에 조립 하단을 붙임
       setAnchorStyle({ left, bottom });
     };
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [overlay, anchorRef, timePanelOpen, panelH]);
+  }, [overlay, anchorRef, timePanelOpen, panelH, useInlineState]);
 
   // 인라인 시/분 스와이프: 열 때 현재 선택값이 가운데 오도록 스크롤
   const hourScrollRef = useRef(null);
@@ -703,7 +708,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
           </PeriodGroup>
         </TimeRow>
 
-        {useInline && timePanelOpen && (
+        {useInlineState && timePanelOpen && (
           <InlineTimeWrap>
             <InlineTimeLabel>시</InlineTimeLabel>
             <InlineTimeScroll ref={hourScrollRef}>
@@ -735,7 +740,7 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
         )}
       </Card>
 
-      {!useInline && timePanelOpen && (
+      {!useInlineState && timePanelOpen && (
         <TimeListPanel overlay={overlay} style={overlay && panelH ? { height: panelH } : undefined}>
           <WheelHeadRow><span>시</span><span>분</span></WheelHeadRow>
           <WheelBody>
