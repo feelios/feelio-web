@@ -848,6 +848,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     } else {
       lastClickTimeRef.current[dateKey] = now;
       onSelectDate?.(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), day));
+      onRoute?.('record');
     }
   };
 
