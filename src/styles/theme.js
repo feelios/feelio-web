@@ -1,5 +1,5 @@
 export const emotionPalette = {
-  신남: { color: '#FF8A62', light: 'rgba(255,138,98,.20)', blob: ['#FFF0F6', '#FF9DC4', '#FFC49A'] },
+  신남: { color: '#FF8A62', light: 'rgba(255,138,98,.20)', blob: ['#FFF2E8', '#FFB89C', '#FFD2A6'] },
   설렘: { color: '#F28AB7', light: 'rgba(242,138,183,.20)', blob: ['#FBEEFA', '#E191DD', '#F3C6EF'] },
   뿌듯함: { color: '#F2C766', light: 'rgba(242,199,102,.24)', blob: ['#FFF6E6', '#FFC978', '#FFE3A0'] },
   스트레스: { color: '#A68BEA', light: 'rgba(166,139,234,.20)', blob: ['#ECEAFB', '#9E96EE', '#B4AAF2'] },
