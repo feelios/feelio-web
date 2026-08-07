@@ -747,18 +747,21 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        padding: '24px 20px', borderRadius: 16, 
                        border: `1px solid ${insight.color + '40'}`, 
                        background: 'var(--card)',
-                       display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 3,
+                       // 데스크톱은 카드 폭에 비해 왼쪽에 쏠려 있어 허전했다. 가운데로 모은다 (#310).
+                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                       textAlign: 'center',
                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-                       // 힌트는 absolute 로 얹는다. 모바일은 grid-template-areas 로 배치가
-                       // 고정돼 있어 자식을 흐름에 넣으면 칸이 어긋난다 (#310).
-                       // 앞면 자체가 inset:0 의 absolute 라 그것이 기준이 된다.
+                       // 힌트는 absolute 로 얹고, 아래 여백으로 자리를 비워 겹치지 않게 한다.
+                       // 모바일은 grid-template-areas 로 배치가 고정돼 있어 자식을 흐름에 넣으면
+                       // 칸이 어긋난다. 앞면 자체가 inset:0 의 absolute 라 그것이 기준이 된다.
+                       paddingBottom: 34,
                        overflow: 'hidden',
                        '@media (max-width: 820px)': { 
                          display: 'grid',
                          gridTemplateColumns: '1fr auto',
                          gridTemplateAreas: '"percent emotion" "percent amount"',
                          alignItems: 'center',
-                         padding: '16px 20px',
+                         padding: '16px 20px 30px',
                          gap: 2,
                          border: `1px solid ${insight.color + '60'}`,
                          background: `linear-gradient(135deg, var(--card) 40%, ${insight.color + '1A'})`
@@ -782,17 +785,19 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                          aria-hidden="true"
                          css={{
                            position: 'absolute',
-                           right: 12,
-                           bottom: 10,
+                           left: 0,
+                           right: 0,
+                           bottom: 12,
                            display: 'flex',
                            alignItems: 'center',
+                           justifyContent: 'center',
                            gap: 4,
                            color: 'var(--sub)',
                            fontSize: 10.5,
                            fontWeight: 800,
                            opacity: .75,
                            pointerEvents: 'none',
-                           '@media (max-width: 820px)': { right: 14, bottom: 6, fontSize: 10 }
+                           '@media (max-width: 820px)': { bottom: 9, fontSize: 10 }
                          }}
                        >
                          <RotateCw size={11} strokeWidth={2.6} />
