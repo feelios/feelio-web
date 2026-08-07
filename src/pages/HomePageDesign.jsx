@@ -11,6 +11,7 @@ import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/querie
 import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
+import { PartyPopper } from 'lucide-react';
 
 const Grid = styled.div`
   width: 100%;
@@ -95,7 +96,7 @@ const Ridge = styled(GlassCard)`
   min-height: 0;
   overflow: hidden;
   padding: ${({ expanded }) => expanded ? 'clamp(18px, 1.6vw, 22px) clamp(20px, 1.8vw, 26px) 0' : '22px'};
-  border-radius: 24px;
+  border-radius: 26px;
   cursor: pointer;
   transition: padding 0.3s ease;
 
@@ -326,7 +327,7 @@ const Bubble = styled.div`
   @media (max-width: 980px) {
     font-size: 11.5px;
     padding: 8px 13px;
-    border-radius: 18px;
+    border-radius: 17px;
   }
 `;
 
@@ -389,6 +390,8 @@ const DeckCard = styled(GlassCard)`
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
 `;
 
 const DeckDots = styled.div`
@@ -429,7 +432,16 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
   const doneGoals = goals.filter(g => (g.currentAmount || 0) >= g.targetAmount);
   const savingGoals = goals.filter(g => (g.currentAmount || 0) < g.targetAmount);
   const savingTotal = savingGoals.reduce((sum, g) => sum + (g.currentAmount || 0), 0);
-  const cards = [{ type: 'asset' }, ...goals.map((g) => ({ type: 'goal', goal: g }))];
+  
+  const sortedGoals = [...goals].sort((a, b) => {
+    const aDone = (a.currentAmount || 0) >= a.targetAmount;
+    const bDone = (b.currentAmount || 0) >= b.targetAmount;
+    if (aDone && !bDone) return 1;
+    if (!aDone && bDone) return -1;
+    return 0;
+  });
+  
+  const cards = [{ type: 'asset' }, ...sortedGoals.map((g) => ({ type: 'goal', goal: g }))];
 
   const handleScroll = () => {
     const el = trackRef.current;
@@ -526,93 +538,104 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
               const over = card.goal.currentAmount - card.goal.targetAmount;
               return (
               <DeckCard tappable onClick={() => { if (!dragRef.current.moved) onRoute('universe'); }}>
-                {isDone ? (
-                  <>
-                    <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                {isDone && (
+                  <div
+                    css={{
+                      position: 'absolute', inset: 0,
+                      background: 'rgba(26,27,33,0.85)',
+                      backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+                      display: 'flex', flexDirection: 'column',
+                      zIndex: 10,
+                      padding: '24px 20px',
+                      color: '#fff',
+                      textAlign: 'left'
+                    }}
+                  >
+                    <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'auto' }}>
                       <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.9"><circle cx="12" cy="12" r="4.5" fill="var(--ink)" /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
+                        <PartyPopper size={16} color="#fff" strokeWidth={2.5} />
                         <span css={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.goal.name}</span>
-                        {card.goal.isMain && <span css={{ flex: '0 0 auto', fontSize: 10, fontWeight: 800, color: 'var(--ink)', background: 'color-mix(in srgb, var(--ink) 12%, transparent)', padding: '2px 7px', borderRadius: 99 }}>대표</span>}
                       </div>
-                      <span css={{ color: 'var(--sub)', fontSize: 13, fontWeight: 700, flex: '0 0 auto', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: 6 }}>
+                      <span css={{ color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: 4, fontSize: 12.5, fontWeight: 900, flex: '0 0 auto' }}>
                         100%
                       </span>
                     </div>
                     
-                    <div css={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 14 }}>
-                      <b css={{ color: 'var(--text)', fontSize: 16, fontWeight: 900, letterSpacing: '-.02em' }}>
-                        {money(card.goal.currentAmount)}원
-                      </b>
-                      <span css={{ color: 'var(--sub)', fontSize: 13, fontWeight: 600 }}>모음</span>
+                    <div css={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginBottom: 16, marginTop: 'auto' }}>
+                      <span css={{ fontSize: 18, color: '#fff', fontWeight: 900, marginRight: 5 }}>{money(card.goal.targetAmount)}원</span>
+                      모두 모았어요
                     </div>
-
+                    
                     <button
                       type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onOpenGoals?.();
-                      }}
+                      onClick={(e) => { e.stopPropagation(); onOpenGoals?.(); }}
                       css={{
-                        marginTop: 20, borderRadius: 999, border: 0,
-                        background: 'var(--text)',
-                        color: 'var(--bg-1)',
-                        fontSize: 14, fontWeight: 800, padding: '14px 0', cursor: 'pointer', fontFamily: 'inherit', width: '100%',
-                        transition: 'transform 0.1s ease, opacity .15s ease',
-                        '&:active': { transform: 'scale(0.98)' },
+                        background: '#fff', color: '#111',
+                        border: 'none', borderRadius: 999,
+                        padding: '12px 20px', fontSize: 14, fontWeight: 800,
+                        cursor: 'pointer', width: '100%',
+                        fontFamily: 'inherit'
                       }}
                     >
                       목표 관리로 가기
                     </button>
-                  </>
-                ) : (
-                  <>
-                    <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.9"><circle cx="12" cy="12" r="4.5" fill="none" /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
-                        <span css={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.goal.name}</span>
-                        {card.goal.isMain && <span css={{ flex: '0 0 auto', fontSize: 10, fontWeight: 800, color: 'var(--ink)', background: 'color-mix(in srgb, var(--ink) 12%, transparent)', padding: '2px 7px', borderRadius: 99 }}>대표</span>}
-                      </div>
-                      <span css={{ color: 'var(--ink)', fontSize: 12.5, fontWeight: 900, flex: '0 0 auto' }}>
-                        {Math.min(100, pct)}%
-                      </span>
-                    </div>
-                    {/* 다 모으면 진행바를 그리지 않는다 */}
-                    <Bar value={Math.min(100, pct)}><span /></Bar>
-                    {/* 다 모으면 '남은 금액' 줄이 사라지고 목표 금액만 남는다.
-                        더 채울 게 없다는 걸 문구가 아니라 정보의 부재로 보여준다. */}
-                    <div css={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginTop: 10, color: 'var(--sub)', fontSize: 12 }}>
-                      <span>{money(card.goal.currentAmount)} / {money(card.goal.targetAmount)}</span>
-                      <span>{money(card.goal.targetAmount - card.goal.currentAmount)} 남음</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onSaveToGoal?.(card.goal.goalId);
-                      }}
-                      css={{
-                        marginTop: 12, borderRadius: 12, border: 0,
-                        // 유리: 살짝만 비치게 두고 뒤를 흐린다. 92%라 회색으로 안 뜬다.
-                        background: 'color-mix(in srgb, var(--ink) 92%, transparent)',
-                        backdropFilter: 'blur(20px) saturate(1.5)',
-                        WebkitBackdropFilter: 'blur(20px) saturate(1.5)',
-                        color: 'var(--on-ink)',
-                        boxShadow: [
-                          'inset 0 0 0 1px color-mix(in srgb, var(--on-ink) 15%, transparent)',
-                          'inset 0 1.5px 0 color-mix(in srgb, var(--on-ink) 38%, transparent)',
-                          'inset 0 -14px 22px -10px color-mix(in srgb, var(--ink) 85%, transparent)',
-                          '0 14px 28px -16px color-mix(in srgb, var(--ink) 80%, transparent)'
-                        ].join(', '),
-                        fontSize: 12.5, fontWeight: 800, padding: '10px 0', cursor: 'pointer', fontFamily: 'inherit', width: '100%',
-                        transition: 'background 0.15s ease, transform 0.1s ease, opacity .15s ease',
-                        '&:hover': { filter: 'brightness(1.12)' },
-                        '&:active': { transform: 'scale(0.98)' },
-                      }}
-                    >
-                      저금하기
-                    </button>
-                  </>
+                  </div>
                 )}
+                <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.9"><circle cx="12" cy="12" r="4.5" fill={isDone ? 'var(--ink)' : 'none'} /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
+                    <span css={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.goal.name}</span>
+                    {card.goal.isMain && <span css={{ flex: '0 0 auto', fontSize: 10, fontWeight: 800, color: 'var(--ink)', background: 'color-mix(in srgb, var(--ink) 12%, transparent)', padding: '2px 7px', borderRadius: 99 }}>대표</span>}
+                  </div>
+                  <span css={{ color: 'var(--ink)', fontSize: 12.5, fontWeight: 900, flex: '0 0 auto' }}>
+                    {Math.min(100, pct)}%
+                  </span>
+                </div>
+                {/* 다 모으면 진행바를 그리지 않는다 */}
+                {!isDone && <Bar value={Math.min(100, pct)}><span /></Bar>}
+                {/* 다 모으면 '남은 금액' 줄이 사라지고 목표 금액만 남는다.
+                    더 채울 게 없다는 걸 문구가 아니라 정보의 부재로 보여준다. */}
+                <div css={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginTop: 10, color: 'var(--sub)', fontSize: 12 }}>
+                  {isDone ? (
+                    <span css={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <b css={{ color: 'var(--text)', fontSize: 14, fontWeight: 900, letterSpacing: '-.02em' }}>{money(card.goal.currentAmount)}</b>
+                      <span css={{ marginLeft: 5 }}>다 모음</span>
+                    </span>
+                  ) : (
+                    <span>{money(card.goal.currentAmount)} / {money(card.goal.targetAmount)}</span>
+                  )}
+                  {isDone
+                    ? (over > 0 && <span css={{ flex: '0 0 auto' }}>+{money(over)}</span>)
+                    : <span>{money(card.goal.targetAmount - card.goal.currentAmount)} 남음</span>}
+                </div>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (isDone) onOpenGoals?.();
+                    else onSaveToGoal?.(card.goal.goalId);
+                  }}
+                  css={{
+                    marginTop: 12, borderRadius: 12, border: 0,
+                    // 유리: 살짝만 비치게 두고 뒤를 흐린다. 92%라 회색으로 안 뜬다.
+                    background: 'color-mix(in srgb, var(--ink) 92%, transparent)',
+                    backdropFilter: 'blur(20px) saturate(1.5)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(1.5)',
+                    color: 'var(--on-ink)',
+                    boxShadow: [
+                      'inset 0 0 0 1px color-mix(in srgb, var(--on-ink) 15%, transparent)',
+                      'inset 0 1.5px 0 color-mix(in srgb, var(--on-ink) 38%, transparent)',
+                      'inset 0 -14px 22px -10px color-mix(in srgb, var(--ink) 85%, transparent)',
+                      '0 14px 28px -16px color-mix(in srgb, var(--ink) 80%, transparent)'
+                    ].join(', '),
+                    fontSize: 12.5, fontWeight: 800, padding: '10px 0', cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+                    transition: 'background 0.15s ease, transform 0.1s ease, opacity .15s ease',
+                    '&:hover': { filter: 'brightness(1.12)' },
+                    '&:active': { transform: 'scale(0.98)' },
+                  }}
+                >
+                  {isDone ? '목표 관리로 가기' : '저금하기'}
+                </button>
               </DeckCard>
               );
             })()}
@@ -907,15 +930,10 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
       <Left>
         {isSummaryLoading ? <HomeSummarySkeleton /> : <>
         <Stage>
-          {/* 폭을 주지 않으면 내용 크기(shrink-to-fit)로 잡혀, 안쪽이 한쪽으로 넘칠 때
-              text-align: center 의 기준까지 같이 밀린다. 말랑이·문구가 오른쪽으로
-              치우치고 말풍선만 가운데 남던 원인이다 (#302). */}
-          <div css={{ width: '100%' }}>
+          <div>
             <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'center', '@media (max-width: 980px)': { flexDirection: 'column-reverse' } }}>
               <BlobHalo color={topMeta.color}>
-                {/* 모바일 폭을 BlobHalo(clamp(252px, 62vw, 336px))에 맞춘다.
-                    272px 로 고정하면 좁은 기기에서 헤일로보다 넓어 좌우로 넘친다 (#302). */}
-                <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 'clamp(252px, 62vw, 336px)' : 'clamp(320px, 28vw, 400px)', height: isMobile ? 280 : 'clamp(360px, 31vw, 372px)' }}>
+                <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 272 : 'clamp(320px, 28vw, 400px)', height: isMobile ? 280 : 'clamp(360px, 31vw, 372px)' }}>
                   {!showEmptyBlob
                     ? <EmotionBlob emotion={displayEmotion} size={isMobile ? 264 : 410} onDragChange={handleBlobDrag} />
                     : <EmptyEmotionBlob size={isMobile ? 264 : 410} dark={dark} />}
