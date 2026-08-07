@@ -67,7 +67,7 @@ const PopoverWrapper = styled.div`
    */
   @media (max-width: 560px) {
     --date-gap: 8px;
-    --date-wheel-w: 104px;
+    --date-wheel-w: 92px;
     --date-card-w: min(300px, calc(100vw - 24px - var(--date-gap) - var(--date-wheel-w)));
   }
 `;
@@ -88,6 +88,11 @@ const Card = styled.div`
   flex-direction: column;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+
+  @media (max-width: 560px) {
+    padding: 10px 11px;
+    border-radius: 22px;
+  }
 
   ${({ overlay }) => overlay ? `
     max-height: 92vh;
@@ -144,6 +149,11 @@ const DayLabel = styled.div`
   font-weight: 500;
   color: var(--sub);
   padding: 4px 0;
+
+  @media (max-width: 560px) {
+    font-size: 9px;
+    padding: 2px 0;
+  }
 `;
 
 const DateGrid = styled.div`
@@ -151,10 +161,20 @@ const DateGrid = styled.div`
   grid-template-columns: repeat(7, 1fr);
   gap: 5px;
   flex-shrink: 0;
+
+  @media (max-width: 560px) {
+    gap: 3px;
+  }
 `;
 
 const DateCell = styled.button`
   height: 32px;
+
+  @media (max-width: 560px) {
+    height: 27px;
+    font-size: 11.5px;
+    border-radius: 8px;
+  }
   display: flex;
   align-items: center;
   justify-content: center;
@@ -207,6 +227,12 @@ const DateCell = styled.button`
 const TimeRow = styled.div`
   margin-top: 12px;
   padding-top: 11px;
+
+  @media (max-width: 560px) {
+    margin-top: 8px;
+    padding-top: 8px;
+    gap: 6px;
+  }
   border-top: 1px solid var(--line);
   flex-shrink: 0;
   display: flex;
