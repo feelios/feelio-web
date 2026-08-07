@@ -785,26 +785,10 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                          }} />
                          {insight.emotion}
                        </span>
-                       {/*
-                         유리 느낌: 위가 밝고 아래로 짙어지는 그라데이션을 글자에 입히고,
-                         감정색 그림자로 살짝 띄운다. 앱의 글래스모피즘과 결을 맞춘 것 (#310).
-                         background-clip 을 못 쓰는 환경에서는 글자가 사라지므로
-                         color 를 먼저 두고 @supports 안에서만 덮는다.
-                       */}
                        <b css={{ 
                          fontFamily: 'var(--font-display)', fontSize: 'clamp(30px, 6.5vw, 46px)', color: insight.color,
                          lineHeight: 1, letterSpacing: '-.03em', margin: '10px 0 12px',
-                         filter: `drop-shadow(0 2px 5px ${insight.color}40)`,
-                         '@supports (-webkit-background-clip: text)': {
-                           backgroundImage: `linear-gradient(168deg,
-                             color-mix(in srgb, ${insight.color} 42%, #fff) 0%,
-                             ${insight.color} 52%,
-                             color-mix(in srgb, ${insight.color} 82%, #000) 100%)`,
-                           WebkitBackgroundClip: 'text',
-                           backgroundClip: 'text',
-                           WebkitTextFillColor: 'transparent'
-                         },
-                         '@media (max-width: 820px)': { gridArea: 'percent', fontSize: 'clamp(36px, 8vw, 44px)', margin: 0, letterSpacing: 0 }
+                         '@media (max-width: 820px)': { gridArea: 'percent', fontSize: 'clamp(36px, 8vw, 44px)', color: insight.color, margin: 0, letterSpacing: 0 }
                        }}>{insight.percent}%</b>
                        <span css={{ 
                          paddingTop: 11, borderTop: '1px solid var(--line)', width: 'min(120px, 70%)',
