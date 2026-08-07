@@ -36,10 +36,10 @@ export const useMonthlyTrendQuery = () => {
   });
 };
 
-export const useBudgetStatusQuery = () => {
+export const useBudgetStatusQuery = (year, month) => {
   return useQuery({
-    queryKey: ['analysis', 'budget'],
-    queryFn: () => analysisAPI.getBudgetStatus(),
+    queryKey: ['analysis', 'budget', year, month],
+    queryFn: () => analysisAPI.getBudgetStatus(year, month),
     staleTime: 1000 * 60 * 5, // 5분
   });
 };

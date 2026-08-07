@@ -17,8 +17,8 @@ export const analysisAPI = {
     const response = await client.get('/analysis/trend');
     return response.data.data;
   },
-  getBudgetStatus: async () => {
-    const response = await client.get('/analysis/budget');
+  getBudgetStatus: async (year, month) => {
+    const response = await client.get('/analysis/budget', { params: { year, month } });
     return response.data.data;
   },
   getPattern: async () => {
