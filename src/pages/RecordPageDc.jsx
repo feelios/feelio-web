@@ -37,7 +37,7 @@ const Grid = styled.div`
   gap: 18px;
   align-items: stretch;
 
-  @media (max-width: 920px) {
+  @media (max-width: 820px) {
     grid-template-columns: 1fr;
   }
 `;
@@ -48,7 +48,7 @@ const MainPanel = styled(GlassCard)`
   min-height: 610px;
   padding: clamp(22px, 3vw, 34px);
 
-  @media (max-width: 920px) {
+  @media (max-width: 820px) {
     min-height: auto;
   }
 `;
@@ -405,7 +405,10 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
       situationIds: [],
       memo: form.memo || null,
       goalId: isGoalSaving ? form.goalId : undefined,
-      occurredAt: new Date(form.date).toISOString()
+      // 계약 §6 의 occurredAt 은 오프셋 없는 로컬 시각이다("2026-07-01T21:30:00").
+      // form.date 가 이미 로컬 벽시계 문자열이라 그대로 보낸다.
+      // toISOString() 을 태우면 UTC 로 바뀌어 KST 기준 9시간이 밀린다(자정 근처엔 날짜까지 넘어감).
+      occurredAt: form.date.length === 16 ? `${form.date}:00` : form.date
     };
 
     mutation.mutate(payload, {
@@ -450,7 +453,6 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
               />
               <span css={{ fontSize: 20, fontWeight: 900, color: 'var(--sub)' }}>원</span>
             </AmountBox>
-            <div css={{ fontSize: 11.5, color: 'var(--sub)' }}>시간 단위로 수정할 수 있어요</div>
           </div>
 
           <Divider />
@@ -594,7 +596,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
               value={form.memo}
               onChange={event => setField('memo', event.target.value)}
               placeholder="한 줄 메모 - 그 순간, 왜 그 마음이었을까요?"
-              css={{ marginTop: 14, minHeight: 76, resize: 'none', width: '100%', boxSizing: 'border-box', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 13, padding: '12px 15px', color: 'var(--text)', outline: 0, fontFamily: 'inherit' }}
+              css={{ marginTop: 14, minHeight: 76, resize: 'none', width: '100%', boxSizing: 'border-box', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: '12px 15px', color: 'var(--text)', outline: 0, fontFamily: 'inherit' }}
             />
             <label ref={datePickerAnchorRef} css={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
               <div css={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.06)', padding: 4, borderRadius: 12 }}>

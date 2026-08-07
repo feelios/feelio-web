@@ -55,7 +55,7 @@ const NavButton = styled.button`
   align-items: center;
   gap: 11px;
   width: 100%;
-  border-radius: 15px;
+  border-radius: 14px;
   border: 1px solid ${({ active }) => active ? 'var(--card-border)' : 'transparent'};
   padding: 12px 14px;
   background: ${({ active }) => active ? 'var(--card)' : 'transparent'};
