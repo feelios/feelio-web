@@ -1,5 +1,7 @@
 export const emotionPalette = {
-  신남: { color: '#FF8A62', light: 'rgba(255,138,98,.20)', blob: ['#FFF0F6', '#FF9DC4', '#FFC49A'] },
+  // color 는 말랑이 몸 색(blob[1])과 같아야 한다. 신남만 주황으로 어긋나 있어서
+  // 칩·그래프·강조선은 주황인데 정작 말랑이는 분홍으로 보였다 (#291).
+  신남: { color: '#FF9DC4', light: 'rgba(255,157,196,.20)', blob: ['#FFF0F6', '#FF9DC4', '#FFC49A'] },
   설렘: { color: '#F28AB7', light: 'rgba(242,138,183,.20)', blob: ['#FBEEFA', '#E191DD', '#F3C6EF'] },
   뿌듯함: { color: '#F2C766', light: 'rgba(242,199,102,.24)', blob: ['#FFF6E6', '#FFC978', '#FFE3A0'] },
   스트레스: { color: '#A68BEA', light: 'rgba(166,139,234,.20)', blob: ['#ECEAFB', '#9E96EE', '#B4AAF2'] },
