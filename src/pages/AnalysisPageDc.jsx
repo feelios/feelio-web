@@ -774,8 +774,10 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        */}
                        <span css={{ 
                          display: 'flex', alignItems: 'center', gap: 5,
+                         // 퍼센트 위 왼쪽에 붙인다. 가운데 정렬 흐름에서 이것만 왼쪽으로 뺀다.
+                         alignSelf: 'flex-start',
                          fontSize: 12, color: 'var(--sub)', fontWeight: 700, letterSpacing: '.02em',
-                         '@media (max-width: 820px)': { gridArea: 'emotion', justifySelf: 'end', color: 'var(--text)', marginBottom: 2, fontSize: 18, fontWeight: 800, letterSpacing: 0 }
+                         '@media (max-width: 820px)': { gridArea: 'emotion', alignSelf: 'auto', justifySelf: 'end', color: 'var(--text)', marginBottom: 2, fontSize: 18, fontWeight: 800, letterSpacing: 0 }
                        }}>
                          <i css={{
                            width: 6, height: 6, borderRadius: '50%', background: insight.color, flex: '0 0 auto',
@@ -784,9 +786,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                          {insight.emotion}
                        </span>
                        <b css={{ 
-                         fontFamily: 'var(--font-display)', fontSize: 'clamp(30px, 6.5vw, 46px)', color: 'var(--text)',
+                         fontFamily: 'var(--font-display)', fontSize: 'clamp(30px, 6.5vw, 46px)', color: insight.color,
                          lineHeight: 1, letterSpacing: '-.03em', margin: '10px 0 12px',
-                         '@media (max-width: 820px)': { gridArea: 'percent', fontSize: 'clamp(36px, 8vw, 44px)', color: 'var(--text)', margin: 0, letterSpacing: 0 }
+                         '@media (max-width: 820px)': { gridArea: 'percent', fontSize: 'clamp(36px, 8vw, 44px)', color: insight.color, margin: 0, letterSpacing: 0 }
                        }}>{insight.percent}%</b>
                        <span css={{ 
                          paddingTop: 11, borderTop: '1px solid var(--line)', width: 'min(120px, 70%)',
