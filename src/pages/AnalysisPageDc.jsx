@@ -912,7 +912,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
             <div css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, padding: '0 0 12px', fontSize: 11, color: 'var(--sub)', fontWeight: 900, borderBottom: '1px solid var(--line)' }}>
               <span>날짜</span><span>내역</span><span>금액</span>
             </div>
-            <div css={{ overflowY: 'auto', flex: 1, paddingBottom: 16 }}>
+            <div css={{ overflowY: 'auto', flex: 1, paddingBottom: 16, maxHeight: 240, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
               {evidence.map((ev, idx) => {
                 const emo = getEmotion(ev.emotion);
                 return <div key={`${ev.date}-${idx}`} css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, alignItems: 'center', padding: '15px 0', borderBottom: '1px solid var(--line)' }}>
