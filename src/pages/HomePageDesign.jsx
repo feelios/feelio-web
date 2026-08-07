@@ -875,10 +875,15 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
       <Left>
         {isSummaryLoading ? <HomeSummarySkeleton /> : <>
         <Stage>
-          <div>
+          {/* 폭을 주지 않으면 내용 크기(shrink-to-fit)로 잡혀, 안쪽이 한쪽으로 넘칠 때
+              text-align: center 의 기준까지 같이 밀린다. 말랑이·문구가 오른쪽으로
+              치우치고 말풍선만 가운데 남던 원인이다 (#302). */}
+          <div css={{ width: '100%' }}>
             <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'center', '@media (max-width: 980px)': { flexDirection: 'column-reverse' } }}>
               <BlobHalo color={topMeta.color}>
-                <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 272 : 'clamp(320px, 28vw, 400px)', height: isMobile ? 280 : 'clamp(360px, 31vw, 372px)' }}>
+                {/* 모바일 폭을 BlobHalo(clamp(252px, 62vw, 336px))에 맞춘다.
+                    272px 로 고정하면 좁은 기기에서 헤일로보다 넓어 좌우로 넘친다 (#302). */}
+                <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 'clamp(252px, 62vw, 336px)' : 'clamp(320px, 28vw, 400px)', height: isMobile ? 280 : 'clamp(360px, 31vw, 372px)' }}>
                   {!showEmptyBlob
                     ? <EmotionBlob emotion={displayEmotion} size={isMobile ? 264 : 410} onDragChange={handleBlobDrag} />
                     : <EmptyEmotionBlob size={isMobile ? 264 : 410} dark={dark} />}
