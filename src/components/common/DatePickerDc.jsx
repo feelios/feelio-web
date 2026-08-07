@@ -509,8 +509,18 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
     String(Math.min(55, Math.round(initDate.getMinutes() / 5) * 5)).padStart(2, "0")
   );
   const [period, setPeriod] = useState(p);
-  const [timePanelOpen, setTimePanelOpen] = useState(initialTimePanelOpen || overlay);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 560);
+  /**
+   * 시간 패널을 열고 시작할지.
+   *
+   * 데스크톱은 휠이 카드 *옆*에 붙어 높이가 늘지 않으니 모달이면 열어둔다.
+   * 모바일은 시/분이 카드 *안*에 들어가므로 열어두면 카드가 화면을 꽉 채운다.
+   * 접고 시작해 달력만 보이게 하고, 시간 칩을 누르면 펼친다 (#307).
+   * 시간을 고르러 들어온 경우(initialTimePanelOpen)는 모바일에서도 열어야 한다.
+   */
+  const [timePanelOpen, setTimePanelOpen] = useState(
+    initialTimePanelOpen || (overlay && !(typeof window !== 'undefined' && window.innerWidth <= 560))
+  );
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth <= 560);
     window.addEventListener('resize', onResize);
