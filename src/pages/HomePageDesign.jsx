@@ -526,61 +526,93 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
               const over = card.goal.currentAmount - card.goal.targetAmount;
               return (
               <DeckCard tappable onClick={() => { if (!dragRef.current.moved) onRoute('universe'); }}>
-                <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.9"><circle cx="12" cy="12" r="4.5" fill={isDone ? 'var(--ink)' : 'none'} /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
-                    <span css={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.goal.name}</span>
-                    {card.goal.isMain && <span css={{ flex: '0 0 auto', fontSize: 10, fontWeight: 800, color: 'var(--ink)', background: 'color-mix(in srgb, var(--ink) 12%, transparent)', padding: '2px 7px', borderRadius: 99 }}>대표</span>}
-                  </div>
-                  <span css={{ color: 'var(--ink)', fontSize: 12.5, fontWeight: 900, flex: '0 0 auto' }}>
-                    {Math.min(100, pct)}%
-                  </span>
-                </div>
-                {/* 다 모으면 진행바를 그리지 않는다 */}
-                {!isDone && <Bar value={Math.min(100, pct)}><span /></Bar>}
-                {/* 다 모으면 '남은 금액' 줄이 사라지고 목표 금액만 남는다.
-                    더 채울 게 없다는 걸 문구가 아니라 정보의 부재로 보여준다. */}
-                <div css={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginTop: 10, color: 'var(--sub)', fontSize: 12 }}>
-                  {isDone ? (
-                    <span css={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <b css={{ color: 'var(--text)', fontSize: 14, fontWeight: 900, letterSpacing: '-.02em' }}>{money(card.goal.currentAmount)}</b>
-                      <span css={{ marginLeft: 5 }}>다 모음</span>
-                    </span>
-                  ) : (
-                    <span>{money(card.goal.currentAmount)} / {money(card.goal.targetAmount)}</span>
-                  )}
-                  {isDone
-                    ? (over > 0 && <span css={{ flex: '0 0 auto' }}>+{money(over)}</span>)
-                    : <span>{money(card.goal.targetAmount - card.goal.currentAmount)} 남음</span>}
-                </div>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    if (isDone) onOpenGoals?.();
-                    else onSaveToGoal?.(card.goal.goalId);
-                  }}
-                  css={{
-                    marginTop: 12, borderRadius: 12, border: 0,
-                    // 유리: 살짝만 비치게 두고 뒤를 흐린다. 92%라 회색으로 안 뜬다.
-                    background: 'color-mix(in srgb, var(--ink) 92%, transparent)',
-                    backdropFilter: 'blur(20px) saturate(1.5)',
-                    WebkitBackdropFilter: 'blur(20px) saturate(1.5)',
-                    color: 'var(--on-ink)',
-                    boxShadow: [
-                      'inset 0 0 0 1px color-mix(in srgb, var(--on-ink) 15%, transparent)',
-                      'inset 0 1.5px 0 color-mix(in srgb, var(--on-ink) 38%, transparent)',
-                      'inset 0 -14px 22px -10px color-mix(in srgb, var(--ink) 85%, transparent)',
-                      '0 14px 28px -16px color-mix(in srgb, var(--ink) 80%, transparent)'
-                    ].join(', '),
-                    fontSize: 12.5, fontWeight: 800, padding: '10px 0', cursor: 'pointer', fontFamily: 'inherit', width: '100%',
-                    transition: 'background 0.15s ease, transform 0.1s ease, opacity .15s ease',
-                    '&:hover': { filter: 'brightness(1.12)' },
-                    '&:active': { transform: 'scale(0.98)' },
-                  }}
-                >
-                  {isDone ? '목표 관리로 가기' : '저금하기'}
-                </button>
+                {isDone ? (
+                  <>
+                    <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.9"><circle cx="12" cy="12" r="4.5" fill="var(--ink)" /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
+                        <span css={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.goal.name}</span>
+                        {card.goal.isMain && <span css={{ flex: '0 0 auto', fontSize: 10, fontWeight: 800, color: 'var(--ink)', background: 'color-mix(in srgb, var(--ink) 12%, transparent)', padding: '2px 7px', borderRadius: 99 }}>대표</span>}
+                      </div>
+                      <span css={{ color: 'var(--sub)', fontSize: 13, fontWeight: 700, flex: '0 0 auto', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: 6 }}>
+                        100%
+                      </span>
+                    </div>
+                    
+                    <div css={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 14 }}>
+                      <b css={{ color: 'var(--text)', fontSize: 16, fontWeight: 900, letterSpacing: '-.02em' }}>
+                        {money(card.goal.currentAmount)}원
+                      </b>
+                      <span css={{ color: 'var(--sub)', fontSize: 13, fontWeight: 600 }}>모음</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenGoals?.();
+                      }}
+                      css={{
+                        marginTop: 20, borderRadius: 999, border: 0,
+                        background: 'var(--text)',
+                        color: 'var(--bg-1)',
+                        fontSize: 14, fontWeight: 800, padding: '14px 0', cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+                        transition: 'transform 0.1s ease, opacity .15s ease',
+                        '&:active': { transform: 'scale(0.98)' },
+                      }}
+                    >
+                      목표 관리로 가기
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.9"><circle cx="12" cy="12" r="4.5" fill="none" /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
+                        <span css={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.goal.name}</span>
+                        {card.goal.isMain && <span css={{ flex: '0 0 auto', fontSize: 10, fontWeight: 800, color: 'var(--ink)', background: 'color-mix(in srgb, var(--ink) 12%, transparent)', padding: '2px 7px', borderRadius: 99 }}>대표</span>}
+                      </div>
+                      <span css={{ color: 'var(--ink)', fontSize: 12.5, fontWeight: 900, flex: '0 0 auto' }}>
+                        {Math.min(100, pct)}%
+                      </span>
+                    </div>
+                    {/* 다 모으면 진행바를 그리지 않는다 */}
+                    <Bar value={Math.min(100, pct)}><span /></Bar>
+                    {/* 다 모으면 '남은 금액' 줄이 사라지고 목표 금액만 남는다.
+                        더 채울 게 없다는 걸 문구가 아니라 정보의 부재로 보여준다. */}
+                    <div css={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginTop: 10, color: 'var(--sub)', fontSize: 12 }}>
+                      <span>{money(card.goal.currentAmount)} / {money(card.goal.targetAmount)}</span>
+                      <span>{money(card.goal.targetAmount - card.goal.currentAmount)} 남음</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSaveToGoal?.(card.goal.goalId);
+                      }}
+                      css={{
+                        marginTop: 12, borderRadius: 12, border: 0,
+                        // 유리: 살짝만 비치게 두고 뒤를 흐린다. 92%라 회색으로 안 뜬다.
+                        background: 'color-mix(in srgb, var(--ink) 92%, transparent)',
+                        backdropFilter: 'blur(20px) saturate(1.5)',
+                        WebkitBackdropFilter: 'blur(20px) saturate(1.5)',
+                        color: 'var(--on-ink)',
+                        boxShadow: [
+                          'inset 0 0 0 1px color-mix(in srgb, var(--on-ink) 15%, transparent)',
+                          'inset 0 1.5px 0 color-mix(in srgb, var(--on-ink) 38%, transparent)',
+                          'inset 0 -14px 22px -10px color-mix(in srgb, var(--ink) 85%, transparent)',
+                          '0 14px 28px -16px color-mix(in srgb, var(--ink) 80%, transparent)'
+                        ].join(', '),
+                        fontSize: 12.5, fontWeight: 800, padding: '10px 0', cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+                        transition: 'background 0.15s ease, transform 0.1s ease, opacity .15s ease',
+                        '&:hover': { filter: 'brightness(1.12)' },
+                        '&:active': { transform: 'scale(0.98)' },
+                      }}
+                    >
+                      저금하기
+                    </button>
+                  </>
+                )}
               </DeckCard>
               );
             })()}
