@@ -746,11 +746,15 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        position: 'absolute', inset: 0, backfaceVisibility: 'hidden',
                        padding: '24px 20px', borderRadius: 16, 
                        border: `1px solid ${insight.color + '40'}`, 
-                       background: 'var(--card)',
+                       // 감정 카드인데 감정 색이 금액 글자와 테두리에만 있어 밋밋했다.
+                       // 배경에 옅게 깔고 위쪽에 액센트 선을 둬서 카드마다 결이 생기게 한다 (#310).
+                       // 모바일이 이미 쓰던 방식이라 둘의 결이 맞는다.
+                       background: `linear-gradient(160deg, var(--card) 42%, ${insight.color + '1F'})`,
+                       borderTop: `2.5px solid ${insight.color}`,
                        // 데스크톱은 카드 폭에 비해 왼쪽에 쏠려 있어 허전했다. 가운데로 모은다 (#310).
                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
                        textAlign: 'center',
-                       boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                       boxShadow: `0 6px 18px ${insight.color}14`,
                        // 힌트는 absolute 로 얹고, 아래 여백으로 자리를 비워 겹치지 않게 한다.
                        // 모바일은 grid-template-areas 로 배치가 고정돼 있어 자식을 흐름에 넣으면
                        // 칸이 어긋난다. 앞면 자체가 inset:0 의 absolute 라 그것이 기준이 된다.
@@ -764,11 +768,13 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                          padding: '16px 20px 30px',
                          gap: 2,
                          border: `1px solid ${insight.color + '60'}`,
+                         borderTop: `2.5px solid ${insight.color}`,
                          background: `linear-gradient(135deg, var(--card) 40%, ${insight.color + '1A'})`
                        }
                      }}>
+                       {/* 감정명이 회색이면 카드에서 겉돈다. 감정색을 입혀 위아래와 결을 맞춘다 (#310). */}
                        <span css={{ 
-                         fontSize: 'clamp(13px, 3vw, 16px)', color: 'var(--sub)', fontWeight: 800,
+                         fontSize: 'clamp(13px, 3vw, 16px)', color: insight.color, fontWeight: 800, letterSpacing: '-.01em',
                          '@media (max-width: 820px)': { gridArea: 'emotion', justifySelf: 'end', color: 'var(--text)', marginBottom: 2, fontSize: 18 }
                        }}>{insight.emotion}</span>
                        <b css={{ 
