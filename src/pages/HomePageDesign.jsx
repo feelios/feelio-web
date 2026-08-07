@@ -734,12 +734,20 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
   const lastClickTimeRef = useRef({});
   const [isRidgeExpanded, setIsRidgeExpanded] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 980);
+  const [viewportW, setViewportW] = useState(() => typeof window === 'undefined' ? 1280 : window.innerWidth);
+  const isMobile = viewportW <= 980;
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth <= 980);
+    const onResize = () => setViewportW(window.innerWidth);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+  /**
+   * 말랑이 크기. 담는 박스(BlobHalo, 모바일 clamp(252px, 62vw, 336px))보다 크면
+   * 좌우로 넘치는데, 상위에 overflow-x: hidden 이 걸려 있어 왼쪽만 잘린다.
+   * 그러면 말랑이가 오른쪽으로 밀린 것처럼 보인다 — 264px 고정이라 좁은 기기에서
+   * 늘 그 상태였다 (#302). 박스 안에 들어오도록 폭을 따라가게 한다.
+   */
+  const blobSize = isMobile ? Math.min(264, Math.max(200, Math.round(viewportW * 0.62) - 8)) : 410;
   // 데스크톱: 12초마다 3개가 물결처럼 / 모바일: 4.5초마다 말풍선 1개 순환
   const [budgetWave, setBudgetWave] = useState(0);
   useEffect(() => {
@@ -885,8 +893,8 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
                     272px 로 고정하면 좁은 기기에서 헤일로보다 넓어 좌우로 넘친다 (#302). */}
                 <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 'clamp(252px, 62vw, 336px)' : 'clamp(320px, 28vw, 400px)', height: isMobile ? 280 : 'clamp(360px, 31vw, 372px)' }}>
                   {!showEmptyBlob
-                    ? <EmotionBlob emotion={displayEmotion} size={isMobile ? 264 : 410} onDragChange={handleBlobDrag} />
-                    : <EmptyEmotionBlob size={isMobile ? 264 : 410} dark={dark} />}
+                    ? <EmotionBlob emotion={displayEmotion} size={blobSize} onDragChange={handleBlobDrag} />
+                    : <EmptyEmotionBlob size={blobSize} dark={dark} />}
                 </div>
               </BlobHalo>
               <BubbleStack css={{ transform: `translate(${blobDrag.dx * (isMobile ? 0.4 : 0.5)}px, ${blobDrag.dy * (isMobile ? 0.4 : 0.5)}px)`, transition: blobDrag.isDragging ? 'none' : 'transform .4s cubic-bezier(.34, 1.4, .64, 1)', '@media (max-width: 980px)': { marginBottom: showEmptyBlob ? 20 : -20 } }}>

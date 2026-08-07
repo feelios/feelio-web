@@ -58,11 +58,17 @@ const PopoverWrapper = styled.div`
   --date-card-w: 300px;
 
   /* overlay: 캘린더 카드 + 옆 시간 패널을 한 묶음으로 중앙 정렬 (패널이 flex 자식으로 붙음) */
-  ${({ overlay }) => overlay ? 'display: flex; align-items: flex-start; gap: 12px;' : ''}
+  ${({ overlay }) => overlay ? 'display: flex; align-items: flex-start; gap: var(--date-gap, 12px);' : ''}
 
-  /* 모바일: 옆 시간기둥 대신 카드 안 인라인 시간 → 단일 카드 팝오버, 폭만 화면에 맞춤 */
+  /*
+   * 모바일: 카드 + 간격 + 휠이 한 화면에 들어가야 한다.
+   * 예전엔 카드를 300px 로 두고 휠(150px)을 그대로 붙여 474px 이 되는 바람에
+   * 오른쪽이 잘렸다. 화면 폭에서 휠·간격·여백을 뺀 만큼을 카드에 준다 (#307).
+   */
   @media (max-width: 560px) {
-    --date-card-w: min(300px, calc(100vw - 56px));
+    --date-gap: 8px;
+    --date-wheel-w: 104px;
+    --date-card-w: min(300px, calc(100vw - 24px - var(--date-gap) - var(--date-wheel-w)));
   }
 `;
 
@@ -263,9 +269,10 @@ const TimeListPanel = styled.div`
     position: absolute;
     top: 0;
     bottom: 0;
-    left: calc(var(--date-card-w, 300px) + 12px); /* Card width + gap */
+    left: calc(var(--date-card-w, 300px) + var(--date-gap, 12px)); /* Card width + gap */
   `}
-  width: 150px;
+  width: var(--date-wheel-w, 150px);
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -510,24 +517,16 @@ export default function DatePickerDc({ value, onChange, onClose, scale = 1, plac
   );
   const [period, setPeriod] = useState(p);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 560);
-  /**
-   * 시간 패널을 열고 시작할지.
-   *
-   * 데스크톱은 휠이 카드 *옆*에 붙어 높이가 늘지 않으니 모달이면 열어둔다.
-   * 모바일은 시/분이 카드 *안*에 들어가므로 열어두면 카드가 화면을 꽉 채운다.
-   * 접고 시작해 달력만 보이게 하고, 시간 칩을 누르면 펼친다 (#307).
-   * 시간을 고르러 들어온 경우(initialTimePanelOpen)는 모바일에서도 열어야 한다.
-   */
-  const [timePanelOpen, setTimePanelOpen] = useState(
-    initialTimePanelOpen || (overlay && !(typeof window !== 'undefined' && window.innerWidth <= 560))
-  );
+  // 모달로 열 때는 시간 휠을 함께 편다. 휠이 카드 옆에 붙어 높이가 늘지 않는다.
+  const [timePanelOpen, setTimePanelOpen] = useState(initialTimePanelOpen || overlay);
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth <= 560);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
-  // 모바일에서만 카드 안 인라인 시/분 선택 (데스크톱은 모달이어도 옆 시간 패널 사용)
-  const useInlineState = isMobile || useInline;
+  // 시간 선택은 모바일·데스크톱 모두 카드 옆 밴드 휠을 쓴다 (#307).
+  // 카드 안 인라인은 호출부가 명시적으로 요청할 때만 — 세로로 길어져 화면을 꽉 채운다.
+  const useInlineState = useInline;
 
   // overlay 휠 패널 높이를 달력 카드와 동일하게 (달력은 월에 따라 5~6줄로 높이가 달라짐)
   const cardRef = useRef(null);
