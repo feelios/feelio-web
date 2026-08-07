@@ -1,12 +1,12 @@
 export const emotionPalette = {
-  신남: { color: '#FF8A62', light: 'rgba(255,138,98,.20)', blob: ['#FFF2E8', '#FFB89C', '#FFD2A6'] },
-  설렘: { color: '#FF66B2', light: 'rgba(255,102,178,.20)', blob: ['#FFE5F3', '#FF99CD', '#FFCBE6'] },
-  뿌듯함: { color: '#F2C766', light: 'rgba(242,199,102,.24)', blob: ['#FFF6E6', '#FFC978', '#FFE3A0'] },
-  스트레스: { color: '#8A6CFF', light: 'rgba(138,108,255,.20)', blob: ['#EFE9FF', '#B5A0FF', '#D8CCFF'] },
-  외로움: { color: '#76A7E8', light: 'rgba(118,167,232,.22)', blob: ['#EAF6FF', '#86C9FF', '#AEE2E6'] },
-  화남: { color: '#F25555', light: 'rgba(242,85,85,.20)', blob: ['#FDEAE5', '#F58888', '#F8B6B6'] },
-  평온: { color: '#2FBFA6', light: 'rgba(47,191,166,.22)', blob: ['#E3F7F3', '#71D4C2', '#B2EAE0'] },
-  무덤덤: { color: '#9AA0B4', light: 'rgba(154,160,180,.20)', blob: ['#EEF0F3', '#B8BECF', '#D8DBE3'] }
+  신남: { color: '#FFCEB8', light: 'rgba(255,206,184,.20)', blob: ['#FFEBF0', '#FF9FAD', '#FFC9D2'] },
+  설렘: { color: '#FFB8D9', light: 'rgba(255,184,217,.20)', blob: ['#FFE5F3', '#FF99CD', '#FFCBE6'] },
+  뿌듯함: { color: '#FCE4A8', light: 'rgba(252,228,168,.24)', blob: ['#FFF6E6', '#FFC978', '#FFE3A0'] },
+  스트레스: { color: '#D2C4FF', light: 'rgba(210,196,255,.20)', blob: ['#EFE9FF', '#B5A0FF', '#D8CCFF'] },
+  외로움: { color: '#BDD4F5', light: 'rgba(189,212,245,.22)', blob: ['#EAF6FF', '#86C9FF', '#AEE2E6'] },
+  화남: { color: '#F5A6A6', light: 'rgba(245,166,166,.20)', blob: ['#FDEAE5', '#F58888', '#F8B6B6'] },
+  평온: { color: '#A2E0D5', light: 'rgba(162,224,213,.22)', blob: ['#E3F7F3', '#71D4C2', '#B2EAE0'] },
+  무덤덤: { color: '#CED2DD', light: 'rgba(206,210,221,.20)', blob: ['#EEF0F3', '#B8BECF', '#D8DBE3'] }
 };
 
 export const theme = {
