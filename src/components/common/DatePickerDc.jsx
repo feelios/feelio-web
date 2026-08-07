@@ -66,9 +66,12 @@ const PopoverWrapper = styled.div`
    * 오른쪽이 잘렸다. 화면 폭에서 휠·간격·여백을 뺀 만큼을 카드에 준다 (#307).
    */
   @media (max-width: 560px) {
-    --date-gap: 8px;
-    --date-wheel-w: 92px;
-    --date-card-w: min(300px, calc(100vw - 24px - var(--date-gap) - var(--date-wheel-w)));
+    /* 폭 조절은 아래 세 값으로 한다. 카드 폭은 나머지를 빼고 남는 만큼 자동으로 잡히므로
+       직접 건드리지 않는다. 좁히려면 --date-inset 을 키우면 된다. */
+    --date-inset: 64px;   /* 화면 좌우 여백 합 (양쪽 32px씩) */
+    --date-gap: 8px;      /* 카드와 휠 사이 */
+    --date-wheel-w: 84px; /* 시·분 휠 */
+    --date-card-w: min(300px, calc(100vw - var(--date-inset) - var(--date-gap) - var(--date-wheel-w)));
   }
 `;
 
