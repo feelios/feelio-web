@@ -74,6 +74,8 @@ const Backdrop = styled.div`
 
 const Card = styled.div`
   width: var(--date-card-w, 300px);
+  /* 안쪽 내용이 커져도 카드가 화면을 넘지 않게 한다. 넘치면 잘려서 못 쓰게 된다 (#304). */
+  max-width: calc(100vw - 24px);
   background: color-mix(in srgb, var(--bg-1) 95%, transparent);
   border-radius: 28px;
   box-shadow: 10px 10px 20px #dbdbdb;
@@ -356,6 +358,10 @@ const InlineTimeScroll = styled.div`
   display: flex;
   gap: 6px;
   overflow-x: auto;
+  /* flex 자식은 기본이 min-width: auto 라 내용(12개 × 50px)만큼 넓어진다.
+     그러면 박스 자체가 카드를 넘어서 overflow-x 가 발동할 기회가 없다.
+     0 으로 낮춰야 카드 폭 안에서 가로 스크롤로 접힌다 (#304). */
+  min-width: 0;
   padding: 2px 2px 4px;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
