@@ -858,7 +858,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               padding: 24,
               borderLeft: 'none',
               background: 'var(--card)',
-              borderRadius: 26,
+              borderRadius: 24,
               overflow: 'hidden'
             }
           }}>
