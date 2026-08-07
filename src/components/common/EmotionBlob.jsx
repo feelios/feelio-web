@@ -3,14 +3,14 @@ import { EmptyEmotionBlob } from './EmptyEmotionBlob.jsx';
 import { useFeelioStore } from '../../stores/useFeelioStore.js';
 
 const EMOTIONS = {
-  신남: { core: '#FFB89C', light: '#FFF2E8', accent: '#FFD2A6', ink: '#B54E24', face: 'excited' },
-  설렘: { core: '#FF99CD', light: '#FFE5F3', accent: '#FFCBE6', ink: '#A82E78', face: 'flutter' },
-  뿌듯함: { core: '#F799CB', light: '#FDE6F1', accent: '#F9C4E0', ink: '#9C2A69', face: 'proud' },
-  스트레스: { core: '#B5A0FF', light: '#EFE9FF', accent: '#D8CCFF', ink: '#4A3599', face: 'stress' },
-  외로움: { core: '#FFAF9E', light: '#FFEBE8', accent: '#FFD1C9', ink: '#A83F2B', face: 'lonely' },
-  화남: { core: '#F58888', light: '#FDEAE5', accent: '#F8B6B6', ink: '#9E2121', face: 'angry' },
-  평온: { core: '#71D4C2', light: '#E3F7F3', accent: '#B2EAE0', ink: '#197A68', face: 'calm' },
-  무덤덤: { core: '#B8BECF', light: '#EEF0F3', accent: '#D8DBE3', ink: '#495066', face: 'numb' }
+  신남: { core: '#FF9DC4', light: '#FFF0F6', accent: '#FFC49A', ink: '#B84B7C', face: 'excited' },
+  설렘: { core: '#E191DD', light: '#FBEEFA', accent: '#F3C6EF', ink: '#8E3E86', face: 'flutter' },
+  뿌듯함: { core: '#FFC978', light: '#FFF6E6', accent: '#FFE3A0', ink: '#B5701E', face: 'proud' },
+  스트레스: { core: '#9E96EE', light: '#ECEAFB', accent: '#B4AAF2', ink: '#4A4299', face: 'stress' },
+  외로움: { core: '#86C9FF', light: '#EAF6FF', accent: '#AEE2E6', ink: '#2A6BA8', face: 'lonely' },
+  화남: { core: '#FF8F89', light: '#FFEEEC', accent: '#FFB27E', ink: '#B54641', face: 'angry' },
+  평온: { core: '#82E2C2', light: '#ECFBF4', accent: '#CBEEA0', ink: '#1E8562', face: 'calm' },
+  무덤덤: { core: '#C2C2CE', light: '#F0F0F4', accent: '#D0C8D8', ink: '#5F5F6E', face: 'numb' }
 };
 
 const ALIASES = {
