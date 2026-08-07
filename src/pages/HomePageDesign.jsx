@@ -844,11 +844,10 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     const lastClick = lastClickTimeRef.current[dateKey] || 0;
 
     if (dateKey === selectedDayKey || now - lastClick < 600) {
-      onRoute?.('transactions');
+      onRoute?.('record');
     } else {
       lastClickTimeRef.current[dateKey] = now;
       onSelectDate?.(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), day));
-      onRoute?.('record');
     }
   };
 
