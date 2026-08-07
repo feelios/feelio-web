@@ -10,19 +10,21 @@ export const useMonthlyAnalysisQuery = (year, month) => {
   });
 };
 
-export const useAiInsightsQuery = () => {
+export const useAiInsightsQuery = (year, month) => {
   return useQuery({
-    queryKey: ['aiInsights'],
-    queryFn: () => analysisAPI.getAiInsights(),
+    queryKey: ['aiInsights', year, month],
+    queryFn: () => analysisAPI.getAiInsights(year, month),
     staleTime: 1000 * 60 * 5, // 5분
+    enabled: !!year && !!month,
   });
 };
 
-export const useAiReportQuery = () => {
+export const useAiReportQuery = (year, month) => {
   return useQuery({
-    queryKey: ['aiReport'],
-    queryFn: () => analysisAPI.getAiReport(),
+    queryKey: ['aiReport', year, month],
+    queryFn: () => analysisAPI.getAiReport(year, month),
     staleTime: 1000 * 60 * 5, // 5분
+    enabled: !!year && !!month,
   });
 };
 

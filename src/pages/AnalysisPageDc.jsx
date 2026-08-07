@@ -154,8 +154,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const [expandedInsight, setExpandedInsight] = useState(null);
 
   const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
-  const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery();
-  const { data: reportData } = useAiReportQuery();
+  const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
+  const { data: reportData } = useAiReportQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: trendData } = useMonthlyTrendQuery();
   // 예산 현황은 전역 스토어(BudgetSync가 동기화)를 구독한다 (#145)
   const serverBudgetItems = useBudgetStore((s) => s.budgetItems);
