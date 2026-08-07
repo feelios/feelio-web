@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import styled from '@emotion/styled';
 import { theme } from '../../styles/theme.js';
-import { driftA, driftB } from '../../styles/animations.js';
 import { SidebarDesign } from './SidebarDesign.jsx';
 import { BottomNav } from './BottomNav.jsx';
-import { getAurora } from '../../data/aurorasDc.js';
+import { AuroraBackground } from './AuroraBackground.jsx';
 import { useUpdateSettingsMutation } from '../../hooks/queries/useUsers.js';
 
 const Shell = styled.div`
@@ -30,13 +29,6 @@ const Shell = styled.div`
   display: flex;
   justify-content: flex-start;
   background: linear-gradient(160deg, var(--bg-1), var(--bg-2));
-`;
-
-const Orb = styled.div`
-  position: absolute;
-  pointer-events: none;
-  border-radius: 50%;
-  opacity: ${({ mode }) => mode === 'dark' ? .5 : .42};
 `;
 
 const Veil = styled.div`
@@ -163,7 +155,6 @@ const MobileProfile = styled(IconButton)`
 `;
 
 export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, children }) {
-  const colors = getAurora(state.aurora).colors;
   const now = new Date();
   const liveDate = now.toLocaleDateString('ko-KR', {
     year: 'numeric',
@@ -171,21 +162,12 @@ export function AppLayoutDc({ route, title, state, actions, onRoute, onProfile, 
     day: 'numeric',
     weekday: 'long'
   });
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 820);
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth <= 820);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
   const [erroredAvatarUrl, setErroredAvatarUrl] = useState(null);
   const updateSettingsMutation = useUpdateSettingsMutation();
 
   return (
     <Shell mode={state.mode}>
-      <Orb mode={state.mode} style={{ background: colors[0], animation: `${driftA} 28s ease-in-out infinite`, ...(isMobile ? { width: 'clamp(240px, 64vw, 360px)', height: 'clamp(240px, 64vw, 360px)', left: '-24%', top: '-3%', filter: 'blur(58px)' } : { width: 640, height: 640, left: -100, top: -180, filter: 'blur(110px)' }) }} />
-      <Orb mode={state.mode} style={{ background: colors[1], animation: `${driftB} 32s ease-in-out infinite`, ...(isMobile ? { width: 'clamp(220px, 58vw, 320px)', height: 'clamp(220px, 58vw, 320px)', right: '-28%', top: '20%', filter: 'blur(60px)' } : { width: 560, height: 560, right: -140, top: '16%', filter: 'blur(115px)' }) }} />
-      <Orb mode={state.mode} style={{ background: colors[2], animation: `${driftA} 36s ease-in-out infinite reverse`, ...(isMobile ? { width: 'clamp(240px, 64vw, 360px)', height: 'clamp(240px, 64vw, 360px)', left: '22%', bottom: '-6%', filter: 'blur(64px)' } : { width: 640, height: 640, left: '32%', bottom: -200, filter: 'blur(120px)' }) }} />
+      <AuroraBackground mode={state.mode} aurora={state.aurora} />
       <Veil mode={state.mode} />
       <Frame>
       <SidebarDesign route={route} onRoute={onRoute} user={state.user} onProfile={onProfile} />

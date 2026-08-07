@@ -5,9 +5,9 @@ import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { GlobalStyles } from '../styles/globalStyles.jsx';
 import { theme } from '../styles/theme.js';
-import { driftA, driftB } from '../styles/animations.js';
 import { useFeelioStore } from '../stores/useFeelioStore.js';
 import { AppLayoutDc } from '../components/common/AppLayoutDc.jsx';
+import { AuroraBackground } from '../components/common/AuroraBackground.jsx';
 import { BudgetSync } from '../components/common/BudgetSync.jsx';
 import { ErrorBoundary } from '../components/common/ErrorBoundary.jsx';
 import { Toast, NotificationToast } from '../components/common/Toast.jsx';
@@ -20,7 +20,6 @@ import RecordPageDc from '../pages/RecordPageDc.jsx';
 import TransactionsPageDesign from '../pages/TransactionsPageDesign.jsx';
 import AnalysisPageDc from '../pages/AnalysisPageDc.jsx';
 import UniversePageDc from '../pages/UniversePageDc.jsx';
-import { getAurora } from '../data/aurorasDc.js';
 
 const Root = styled.div`
   --bg-1: ${({ mode }) => mode === 'dark' ? '#12141e' : '#f6f2eb'};
@@ -41,24 +40,6 @@ const Root = styled.div`
   color: var(--text);
   background: linear-gradient(160deg, var(--bg-1), var(--bg-2));
   overflow-x: hidden;
-`;
-
-const Orb = styled.div`
-  position: fixed;
-  pointer-events: none;
-  z-index: 0;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: ${({ mode }) => mode === 'dark' ? .46 : .62};
-  mix-blend-mode: ${({ mode }) => mode === 'dark' ? 'screen' : 'multiply'};
-
-  /* 좁은 화면에서는 520·600·420px 원 세 개가 거의 전부 겹쳐 한 덩어리로 뭉갠다.
-     크기를 줄여 겹치는 면적을 떼어놓고, multiply 로 겹친 부분이 탁해지지 않게 농도도 낮춘다. */
-  @media (max-width: 900px) {
-    transform: scale(.58);
-    filter: blur(52px);
-    opacity: ${({ mode }) => mode === 'dark' ? .32 : .38};
-  }
 `;
 
 const titles = {
@@ -137,10 +118,6 @@ export default function App() {
   }
 
 
-
-
-  const colors = getAurora(state.aurora).colors;
-
   const content = {
     home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={globalDate} onSelectDate={setGlobalDate} onSaveToGoal={openRecordForGoal} onOpenGoals={openGoals} />,
     record: <RecordPageDc state={state} actions={actions} prefill={recordPrefill} onConsumePrefill={() => setRecordPrefill(null)} onSaved={(date) => {
@@ -155,11 +132,7 @@ export default function App() {
     <Root mode={state.mode} id="app-root">
       <GlobalStyles />
       {(!state.isLoggedIn || !state.onboardingDone) && (
-        <>
-          <Orb mode={state.mode} style={{ width: 520, height: 520, left: '10%', top: '8%', background: colors[0], animation: `${driftA} 14s ease-in-out infinite` }} />
-          <Orb mode={state.mode} style={{ width: 600, height: 600, right: '-8%', top: '22%', background: colors[2], animation: `${driftB} 16s ease-in-out infinite` }} />
-          <Orb mode={state.mode} style={{ width: 420, height: 420, left: '34%', bottom: '-16%', background: colors[1] }} />
-        </>
+        <AuroraBackground mode={state.mode} aurora={state.aurora} />
       )}
       {!state.isLoggedIn && (
         <LoginPage mode={state.mode} onToggleMode={actions.toggleMode} onLogin={actions.login} />
