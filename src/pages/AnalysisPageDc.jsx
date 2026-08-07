@@ -767,17 +767,31 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                          background: `linear-gradient(135deg, var(--card) 40%, ${insight.color + '1A'})`
                        }
                      }}>
+                       {/*
+                         셋이 비슷한 무게로 경쟁해 시선 둘 데가 없었다. 위계를 나눈다 (#310).
+                         감정명은 색점 하나 붙인 작은 라벨, 퍼센트가 주인공, 금액은 구분선 아래 각주.
+                         모바일 grid 배치(감정명·금액 오른쪽)는 그대로 둔다.
+                       */}
                        <span css={{ 
-                         fontSize: 'clamp(13px, 3vw, 16px)', color: 'var(--sub)', fontWeight: 800,
-                         '@media (max-width: 820px)': { gridArea: 'emotion', justifySelf: 'end', color: 'var(--text)', marginBottom: 2, fontSize: 18 }
-                       }}>{insight.emotion}</span>
+                         display: 'flex', alignItems: 'center', gap: 5,
+                         fontSize: 12, color: 'var(--sub)', fontWeight: 700, letterSpacing: '.02em',
+                         '@media (max-width: 820px)': { gridArea: 'emotion', justifySelf: 'end', color: 'var(--text)', marginBottom: 2, fontSize: 18, fontWeight: 800, letterSpacing: 0 }
+                       }}>
+                         <i css={{
+                           width: 6, height: 6, borderRadius: '50%', background: insight.color, flex: '0 0 auto',
+                           '@media (max-width: 820px)': { display: 'none' }
+                         }} />
+                         {insight.emotion}
+                       </span>
                        <b css={{ 
-                         fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 5.5vw, 36px)', color: 'var(--text)', lineHeight: 1,
-                         '@media (max-width: 820px)': { gridArea: 'percent', fontSize: 'clamp(36px, 8vw, 44px)', color: 'var(--text)' }
+                         fontFamily: 'var(--font-display)', fontSize: 'clamp(30px, 6.5vw, 46px)', color: 'var(--text)',
+                         lineHeight: 1, letterSpacing: '-.03em', margin: '10px 0 12px',
+                         '@media (max-width: 820px)': { gridArea: 'percent', fontSize: 'clamp(36px, 8vw, 44px)', color: 'var(--text)', margin: 0, letterSpacing: 0 }
                        }}>{insight.percent}%</b>
                        <span css={{ 
-                         fontSize: 'clamp(11px, 2.5vw, 14px)', color: insight.color, fontWeight: 900,
-                         '@media (max-width: 820px)': { gridArea: 'amount', justifySelf: 'end', color: insight.color, fontWeight: 900, fontSize: 16 }
+                         paddingTop: 11, borderTop: '1px solid var(--line)', width: 'min(120px, 70%)',
+                         fontSize: 13, color: 'var(--sub)', fontWeight: 700,
+                         '@media (max-width: 820px)': { gridArea: 'amount', justifySelf: 'end', width: 'auto', paddingTop: 0, borderTop: 0, color: insight.color, fontWeight: 900, fontSize: 16 }
                        }}>{insight.amount}</span>
 
                        {/* 뒤집힌다는 단서. 뒤집힌 뒤에는 숨겨 뒷면 문구를 가리지 않는다. */}
