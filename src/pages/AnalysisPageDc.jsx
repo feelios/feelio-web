@@ -8,8 +8,7 @@ import { RiskRouteIcon } from '../components/analysis/RiskRouteIcon.jsx';
 import { FactBomberIcon } from '../components/analysis/FactBomberIcon.jsx';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
-import { useMonthlyAnalysisQuery, useAiReportQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery } from '../hooks/queries/useAnalysis.js';
-import { useBudgetStore } from '../stores/budgetStore.js';
+import { useMonthlyAnalysisQuery, useAiReportQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery, useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
 
 const Page = styled.div`
   width: 100%;
@@ -157,8 +156,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: reportData } = useAiReportQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: trendData } = useMonthlyTrendQuery();
-  // 예산 현황은 전역 스토어(BudgetSync가 동기화)를 구독한다 (#145)
-  const serverBudgetItems = useBudgetStore((s) => s.budgetItems);
+  // 전역 예산 상태 대신 선택된 달의 예산 현황을 동적으로 패칭한다 (#284)
+  const { data: budgetData } = useBudgetStatusQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
+  const serverBudgetItems = budgetData?.budgetItems ?? [];
   const { data: patternData } = usePatternQuery();
 
   const monthly = trendData?.monthlyData ?? [];
