@@ -116,6 +116,10 @@
 | [ ] | - | F17-3 | 반복되는 감정소비 패턴 UI 카드 오버플로우 스크롤 처리 | `feat/pattern-card-overflow` | - | Component | - | 신규 | 데이터가 많아질 때 패턴 리스트 카드가 무한히 길어지지 않도록 max-height 및 내부 스크롤(scrollbar-width: none) 적용 |
 | [ ] | - | F17-4 | 목표 100% 달성 상태(COMPLETED) 예외 처리 및 UI 연동 | `feat/goal-completed-ui` | - | Component | `['goals']` | 신규 | 목표 완료 시 기록 폼의 Select 옵션에서 제외 및 홈 화면에서의 상태 구분 UI 랜더링 방어 로직 추가 |
 | [ ] | - | F17-5 | 과거 달 예산 현황(Budget Status) 동적 뷰 연동 | `feat/historical-budget-ui` | - | api·Hook·Page | `['analysis', 'budget']` | 신규 | 분석 페이지 캘린더 날짜 변경 시 해당 과거 달의 지출 데이터를 기반으로 예산 초과/미달 현황을 동적 렌더링 (A11-2 연계) |
+| [ ] | - | F18-1 | '신남' 감정 핑크색 표기 오류 수정 (스타일 변경) | `fix/emotion-excited-color` | - | Component | - | 신규 | '신남(excited)' 감정의 색상 코드를 핑크색에서 기존 테마 기획인 주황색 계열로 통일 및 렌더링 수정 |
+| [ ] | - | F18-2 | 홈 화면 말랑이 상태 당월 최다 감정으로 변경 | `feat/home-mallang-monthly-emotion` | - | Page | `['aiInsights']` | 신규 | 최근 트랜잭션 대신 월간 통계 API의 emotionSegments 비중 1순위 감정을 추출하여 말랑이 face 속성으로 바인딩 |
+| [ ] | - | F18-3 | 홈 화면 달력 클릭 시 지출/수입 화면 라우팅 연동 | `feat/home-calendar-routing` | - | Page | - | 신규 | 홈 화면 달력 날짜(Date Node) 클릭 시 전역 Date 갱신 및 해당 일자의 가계부 기록 탭으로 즉시 navigate 처리 |
+| [ ] | - | F18-4 | AI 맞춤 챌린지 주간(Weekly) 단위 갱신 UI 표시 | `feat/ai-challenge-weekly-ui` | - | Page | `['aiInsights']` | 신규 | 분석 페이지 맞춤 챌린지 타이틀에 현재 주차(예: 8월 2주차)를 명시하여 갱신 주기 시각적 안내 |
 
 
 
