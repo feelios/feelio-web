@@ -43,6 +43,14 @@ const Root = styled.div`
   overflow-x: hidden;
 `;
 
+/**
+ * 오로라 배경 orb. 크기·위치는 각 orb 컴포넌트가 CSS 로 들고 있다.
+ *
+ * 예전에는 인라인 style 로 넘겼는데, 인라인이 CSS 보다 우선해서 아래 미디어 쿼리의
+ * transform·filter·opacity 만 먹고 width·left 는 데스크톱 값이 그대로 남았다.
+ * 520·600·420px 원 세 개가 375px 화면에 그대로 들어가 한 덩어리로 뭉쳤고,
+ * 그 위에 로그인 히어로 문구가 겹쳐 강조색 첫 줄이 읽히지 않았다 (#300).
+ */
 const Orb = styled.div`
   position: fixed;
   pointer-events: none;
@@ -52,12 +60,58 @@ const Orb = styled.div`
   opacity: ${({ mode }) => mode === 'dark' ? .46 : .62};
   mix-blend-mode: ${({ mode }) => mode === 'dark' ? 'screen' : 'multiply'};
 
-  /* 좁은 화면에서는 520·600·420px 원 세 개가 거의 전부 겹쳐 한 덩어리로 뭉갠다.
-     크기를 줄여 겹치는 면적을 떼어놓고, multiply 로 겹친 부분이 탁해지지 않게 농도도 낮춘다. */
   @media (max-width: 900px) {
-    transform: scale(.58);
-    filter: blur(52px);
-    opacity: ${({ mode }) => mode === 'dark' ? .32 : .38};
+    filter: blur(46px);
+    opacity: ${({ mode }) => mode === 'dark' ? .34 : .40};
+  }
+`;
+
+/*
+ * 모바일에서는 셋을 화면 가장자리로 벌린다. 가운데는 말랑이와 히어로 문구 자리라
+ * 비워둬야 한다. 각각 한쪽 모서리 밖으로 절반쯤 걸쳐 색만 번지게 한다.
+ */
+const OrbA = styled(Orb)`
+  width: 520px;
+  height: 520px;
+  left: 10%;
+  top: 8%;
+  animation: ${driftA} 14s ease-in-out infinite;
+
+  @media (max-width: 900px) {
+    width: 260px;
+    height: 260px;
+    left: -22%;
+    top: 4%;
+  }
+`;
+
+const OrbB = styled(Orb)`
+  width: 600px;
+  height: 600px;
+  right: -8%;
+  top: 22%;
+  animation: ${driftB} 16s ease-in-out infinite;
+
+  @media (max-width: 900px) {
+    width: 280px;
+    height: 280px;
+    right: -26%;
+    top: 26%;
+  }
+`;
+
+const OrbC = styled(Orb)`
+  width: 420px;
+  height: 420px;
+  left: 34%;
+  bottom: -16%;
+
+  @media (max-width: 900px) {
+    width: 240px;
+    height: 240px;
+    /* 시트가 화면 아래를 덮으므로 더 내려 보내야 문구 뒤로 올라오지 않는다. */
+    left: 8%;
+    bottom: -14%;
   }
 `;
 
@@ -156,9 +210,10 @@ export default function App() {
       <GlobalStyles />
       {(!state.isLoggedIn || !state.onboardingDone) && (
         <>
-          <Orb mode={state.mode} style={{ width: 520, height: 520, left: '10%', top: '8%', background: colors[0], animation: `${driftA} 14s ease-in-out infinite` }} />
-          <Orb mode={state.mode} style={{ width: 600, height: 600, right: '-8%', top: '22%', background: colors[2], animation: `${driftB} 16s ease-in-out infinite` }} />
-          <Orb mode={state.mode} style={{ width: 420, height: 420, left: '34%', bottom: '-16%', background: colors[1] }} />
+          {/* 색만 인라인으로 넘긴다. 테마마다 달라지는 값이라 CSS 로 고정할 수 없다. */}
+          <OrbA mode={state.mode} style={{ background: colors[0] }} />
+          <OrbB mode={state.mode} style={{ background: colors[2] }} />
+          <OrbC mode={state.mode} style={{ background: colors[1] }} />
         </>
       )}
       {!state.isLoggedIn && (
