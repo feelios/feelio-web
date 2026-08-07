@@ -111,6 +111,14 @@
 | [ ] | #255 | F16-4 | 홈 화면 팩트 리포트(말랑이 코멘트) 카드 텍스트 잘림 현상 수정 및 UI 재구성 | fix/fact-report-card-text-overflow | - | Component | - | 신규 | 긴 AI 코멘트 텍스트가 말줄임표(...)로 잘리는 현상 수정. 텍스트 래핑 허용 및 가변 높이 적용하여 카드 레이아웃 재구성 |
 | [ ] | #259 | F16-5 | API-CONTRACT에 `GET /api/analysis/ai-report` 항목 추가 | `docs/contract-ai-report` | §9 | docs | - | 신규 | 프론트가 이미 쓰는 엔드포인트(F13-8)인데 웹 계약서에 없어 응답 구조를 백엔드 레포에서 찾아야 한다. `ai.emotion`이 감정 카드 3장과 구조가 다른 점도 함께 명시 |
 | [ ] | #260 | F16-6 | ProfileModalDc lint 오류로 `npm run lint` 실패 | `fix/profile-modal-lint` | - | Component | - | 신규 | `ProfileModalDc.jsx:483` no-unused-vars가 main에 있어, 이 브랜치를 딴 모든 작업자가 자기 변경과 무관한 lint 실패를 본다. 한 줄 수정 |
+<<<<<<< Updated upstream
+=======
+| [ ] | - | F17-1 | 과거 달의 AI 분석 결과 뷰 연동 | `feat/historical-ai-analysis-ui` | - | Page·Hook | `['aiInsights']` | 완료 | 상단 날짜(globalDate) 변경 시 useAiInsightsQuery 등 훅에 month 파라터를 넘겨 과거 데이터를 패칭하고 UI 업데이트 |
+| [ ] | - | F17-2 | 목표 저축 시 시스템 카테고리 매핑 오류 사전 방어 | `fix/goal-transaction-category-mapping` | - | Page | - | 신규 | RecordPageDc에서 '저축' 카테고리를 찾지 못해 발생하는 예외 방어 및 시스템 기본 카테고리 매핑 로직 수정 |
+| [ ] | - | F17-3 | 반복되는 감정소비 패턴 UI 카드 오버플로우 스크롤 처리 | `feat/pattern-card-overflow` | - | Component | - | 신규 | 데이터가 많아질 때 패턴 리스트 카드가 무한히 길어지지 않도록 max-height 및 내부 스크롤(scrollbar-width: none) 적용 |
+| [ ] | - | F17-4 | 목표 100% 달성 상태(COMPLETED) 예외 처리 및 UI 연동 | `feat/goal-completed-ui` | - | Component | `['goals']` | 신규 | 목표 완료 시 기록 폼의 Select 옵션에서 제외 및 홈 화면에서의 상태 구분 UI 랜더링 방어 로직 추가 |
+| [ ] | - | F17-5 | 과거 달 예산 현황(Budget Status) 동적 뷰 연동 | `feat/historical-budget-ui` | - | api·Hook·Page | `['analysis', 'budget']` | 신규 | 분석 페이지 캘린더 날짜 변경 시 해당 과거 달의 지출 데이터를 기반으로 예산 초과/미달 현황을 동적 렌더링 (A11-2 연계) |
+>>>>>>> Stashed changes
 
 
 > **계층** = 프론트 레이어(`src/pages` 등 `src/hooks` 등 `src/api` 등 `src/store`). **캐시키** = TanStack Query Key(배열 문자열 꼴 'tx' 등, 쿼리 파라미터는 포함하지 않음).

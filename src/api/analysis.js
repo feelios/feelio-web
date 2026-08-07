@@ -5,12 +5,12 @@ export const analysisAPI = {
     const response = await client.get('/analysis/monthly', { params: { year, month } });
     return response.data.data;
   },
-  getAiInsights: async () => {
-    const response = await client.get('/analysis/ai-insights');
+  getAiInsights: async (year, month) => {
+    const response = await client.get('/analysis/ai-insights', { params: { year, month } });
     return response.data.data;
   },
-  getAiReport: async () => {
-    const response = await client.get('/analysis/ai-report');
+  getAiReport: async (year, month) => {
+    const response = await client.get('/analysis/ai-report', { params: { year, month } });
     return response.data.data;
   },
   getMonthlyTrend: async () => {
