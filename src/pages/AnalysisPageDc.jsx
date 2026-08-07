@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { useState, useMemo } from 'react';
 import styled from '@emotion/styled';
+import { RotateCw } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { Skeleton } from '../components/common/Skeleton.jsx';
 import { ChallengeFlag } from '../components/analysis/ChallengeFlag.jsx';
@@ -708,7 +709,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
         </Card>
         <Card css={{ display: 'flex', flexDirection: 'column' }}>
           <div css={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}><span css={{ width: 24, height: 24, borderRadius: 8, background: 'var(--ink)', color: 'var(--on-ink)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 900 }}>AI</span><b css={{ fontSize: 16 }}>감정소비 분석</b></div>
-          <p css={{ color: 'var(--sub)', fontSize: 12, marginBottom: 20 }}>이번 달 지출에 가장 큰 영향을 미친 감정들이에요.</p>
+          <p css={{ color: 'var(--sub)', fontSize: 12, marginBottom: 20 }}>
+            이번 달 지출에 가장 큰 영향을 미친 감정들이에요. 카드를 누르면 말랑이의 분석을 볼 수 있어요.
+          </p>
           
           <div css={{
             display: 'flex',
@@ -746,6 +749,10 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        background: 'var(--card)',
                        display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 3,
                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                       // 힌트는 absolute 로 얹는다. 모바일은 grid-template-areas 로 배치가
+                       // 고정돼 있어 자식을 흐름에 넣으면 칸이 어긋난다 (#310).
+                       // 앞면 자체가 inset:0 의 absolute 라 그것이 기준이 된다.
+                       overflow: 'hidden',
                        '@media (max-width: 820px)': { 
                          display: 'grid',
                          gridTemplateColumns: '1fr auto',
@@ -769,6 +776,28 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                          fontSize: 'clamp(11px, 2.5vw, 14px)', color: insight.color, fontWeight: 900,
                          '@media (max-width: 820px)': { gridArea: 'amount', justifySelf: 'end', color: insight.color, fontWeight: 900, fontSize: 16 }
                        }}>{insight.amount}</span>
+
+                       {/* 뒤집힌다는 단서. 뒤집힌 뒤에는 숨겨 뒷면 문구를 가리지 않는다. */}
+                       <span
+                         aria-hidden="true"
+                         css={{
+                           position: 'absolute',
+                           right: 12,
+                           bottom: 10,
+                           display: 'flex',
+                           alignItems: 'center',
+                           gap: 4,
+                           color: 'var(--sub)',
+                           fontSize: 10.5,
+                           fontWeight: 800,
+                           opacity: .75,
+                           pointerEvents: 'none',
+                           '@media (max-width: 820px)': { right: 14, bottom: 6, fontSize: 10 }
+                         }}
+                       >
+                         <RotateCw size={11} strokeWidth={2.6} />
+                         분석 보기
+                       </span>
                      </div>
                      
                      <div css={{
