@@ -756,13 +756,20 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        // 칸이 어긋난다. 앞면 자체가 inset:0 의 absolute 라 그것이 기준이 된다.
                        paddingBottom: 34,
                        overflow: 'hidden',
-                       '@media (max-width: 820px)': { 
+                       '@media (max-width: 820px)': {
                          display: 'grid',
-                         gridTemplateColumns: '1fr auto',
+                         // 열을 auto 1fr 로 둬 퍼센트가 제 폭만 차지하게 한다.
+                         // 1fr auto 였을 때는 첫 열이 남는 폭을 다 먹어 퍼센트와 오른쪽 글자
+                         // 사이가 텅 비었다 — 한 카드 안에 덩어리가 둘로 갈라져 보였다.
+                         gridTemplateColumns: 'auto 1fr',
                          gridTemplateAreas: '"percent emotion" "percent amount"',
                          alignItems: 'center',
+                         // 행 높이를 안 잡아두면 두 행이 카드 높이(150px)에 맞춰 늘어나
+                         // 감정명은 위로, 금액은 아래로 벌어진다. 내용만큼만 쓰고 가운데로 모은다.
+                         alignContent: 'center',
                          padding: '16px 20px 30px',
-                         gap: 2,
+                         columnGap: 14,
+                         rowGap: 1,
                          border: `1px solid ${insight.color + '60'}`,
                          background: `linear-gradient(135deg, var(--card) 40%, ${insight.color + '1A'})`
                        }
@@ -770,14 +777,18 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        {/*
                          셋이 비슷한 무게로 경쟁해 시선 둘 데가 없었다. 위계를 나눈다 (#310).
                          감정명은 색점 하나 붙인 작은 라벨, 퍼센트가 주인공, 금액은 구분선 아래 각주.
-                         모바일 grid 배치(감정명·금액 오른쪽)는 그대로 둔다.
+                         모바일은 카드가 넓고 낮아 세로로 못 쌓는다. 퍼센트를 왼쪽에 두고
+                         감정명·금액을 그 오른쪽에 두 줄로 붙여 한 덩어리로 읽히게 한다.
                        */}
                        <span css={{ 
                          display: 'flex', alignItems: 'center', gap: 5,
                          // 퍼센트 위 왼쪽에 붙인다. 가운데 정렬 흐름에서 이것만 왼쪽으로 뺀다.
                          alignSelf: 'flex-start',
                          fontSize: 12, color: 'var(--sub)', fontWeight: 700, letterSpacing: '.02em',
-                         '@media (max-width: 820px)': { gridArea: 'emotion', alignSelf: 'auto', justifySelf: 'end', color: 'var(--text)', marginBottom: 2, fontSize: 18, fontWeight: 800, letterSpacing: 0 }
+                         // 퍼센트 바로 옆에 왼쪽 정렬로 붙인다. 오른쪽 끝으로 밀어두면
+                         // 퍼센트와 짝으로 안 읽힌다. 아래 금액과는 행 경계에서 맞물리게
+                         // alignSelf 로 서로를 향해 붙인다(감정명 end, 금액 start).
+                         '@media (max-width: 820px)': { gridArea: 'emotion', alignSelf: 'end', justifySelf: 'start', color: 'var(--text)', marginBottom: 0, fontSize: 17, fontWeight: 800, letterSpacing: 0, lineHeight: 1.2 }
                        }}>
                          <i css={{
                            width: 6, height: 6, borderRadius: '50%', background: insight.color, flex: '0 0 auto',
@@ -793,7 +804,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        <span css={{ 
                          paddingTop: 11, borderTop: '1px solid var(--line)', width: 'min(120px, 70%)',
                          fontSize: 13, color: 'var(--sub)', fontWeight: 700,
-                         '@media (max-width: 820px)': { gridArea: 'amount', justifySelf: 'end', width: 'auto', paddingTop: 0, borderTop: 0, color: insight.color, fontWeight: 900, fontSize: 16 }
+                         '@media (max-width: 820px)': { gridArea: 'amount', alignSelf: 'start', justifySelf: 'start', width: 'auto', paddingTop: 0, borderTop: 0, color: insight.color, fontWeight: 900, fontSize: 15, lineHeight: 1.2 }
                        }}>{insight.amount}</span>
 
                        {/* 뒤집힌다는 단서. 뒤집힌 뒤에는 숨겨 뒷면 문구를 가리지 않는다. */}
