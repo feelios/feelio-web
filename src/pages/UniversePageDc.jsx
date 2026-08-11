@@ -94,18 +94,21 @@ export default function UniversePageDc() {
     let currentNote = `${goal.name} · `;
     currentNote += current.monthsToGoal ? `${current.monthsToGoal}개월 예상` : "도달 불가";
 
-    let reducedNote = `${goal.name} · `;
-    if (reduced.monthsToGoal) {
-      if (current.monthsToGoal && current.monthsToGoal > reduced.monthsToGoal) {
-        reducedNote += `${current.monthsToGoal - reduced.monthsToGoal}개월 단축!`;
-      } else {
-        reducedNote += `${reduced.monthsToGoal}개월 예상`;
-      }
-    } else {
-      reducedNote += "도달 불가";
-    }
-
     const savedAmount = reduced.monthlySaving - current.monthlySaving;
+
+    // 두 우주의 개월 수가 같아지면(목표가 코앞이면 올림 때문에 둘 다 1개월이 된다)
+    // "1개월 예상"을 양쪽에 똑같이 적게 되어 대비가 사라진다. 그럴 때는 시간 대신
+    // 금액 차이를 앞세운다 — 줄인 결과 그 자체라 추정이 아니고 항상 다른 값이다.
+    let reducedNote = `${goal.name} · `;
+    if (!reduced.monthsToGoal) {
+      reducedNote += "도달 불가";
+    } else if (current.monthsToGoal && current.monthsToGoal > reduced.monthsToGoal) {
+      reducedNote += `${current.monthsToGoal - reduced.monthsToGoal}개월 단축!`;
+    } else if (savedAmount > 0) {
+      reducedNote += `매달 ${formatMoney(savedAmount)} 더`;
+    } else {
+      reducedNote += `${reduced.monthsToGoal}개월 예상`;
+    }
 
     return {
       goalName: goal.name,
@@ -465,8 +468,6 @@ export default function UniversePageDc() {
                   <div style={{ animation: "pu-hover 4.5s ease-in-out infinite" }}>
                     <SpaceBlob size={isMobile ? 110 : 150} speaking={true} poked={blobPoke} onClick={handleBlobClick} />
                   </div>
-                  {!isMobile && <div style={{ width: 16, height: 16, background: "rgba(255,255,255,.94)", transform: "rotate(45deg)", marginLeft: -8, marginRight: -8, borderRadius: 3, alignSelf: "center", position: "relative", top: 8 }}></div>}
-                  {isMobile && <div style={{ width: 16, height: 16, background: "rgba(255,255,255,.94)", transform: "rotate(45deg)", marginBottom: -12, borderRadius: 3, alignSelf: "center", position: "relative", zIndex: 1 }}></div>}
                   
                   <div style={{ width: isMobile ? "100%" : "auto", maxWidth: 400, padding: isMobile ? "20px" : "18px 22px", borderRadius: 20, background: "rgba(255,255,255,.94)", boxShadow: "0 18px 44px -18px rgba(0,0,0,.6)", animation: "pu-pop .5s ease .15s both", position: "relative", zIndex: 2 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 7, font: "600 10.5px system-ui", letterSpacing: ".03em", color: u.accent }}>
