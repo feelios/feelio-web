@@ -230,8 +230,11 @@ function MobileLayout({ goalName, current, reduced, revealProgress, short }) {
       {!short && <div style={{ padding: '7px 14px', borderRadius: 999, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.1)', color: '#AAA6B3', fontSize: 10, marginTop: 9 }}>✦ 두 미래를 비교해 보세요</div>}
       <div style={{ position: 'relative', width: '100%', flex: '1 1 210px', minHeight: short ? 118 : 135, maxHeight: short ? 150 : 230, marginTop: short ? 0 : 5 }}>
         <WellGrid mobile revealProgress={revealProgress} />
-        <MobilePlanet side="left" tone="stress" size={planetSize} label={current?.title || '지금처럼 소비한다면'} />
-        <MobilePlanet side="right" tone="calm" size={planetSize} label={reduced?.title || '설렘 소비를 줄이면'} />
+        {/* 폴백은 데이터가 없을 때만 쓰인다. '설렘 소비를 줄이면'이 남아 있었는데
+            기준이 감정에서 카테고리로 바뀐 뒤로는 나올 수 없는 문구다.
+            무슨 항목을 줄이는지는 데이터가 있어야 알 수 있으니 중립적으로 둔다. */}
+        <MobilePlanet side="left" tone="stress" size={planetSize} label={current?.title || '지금처럼 쓴다면'} />
+        <MobilePlanet side="right" tone="calm" size={planetSize} label={reduced?.title || '소비를 줄이면'} />
       </div>
       <div style={{ width: '100%', maxWidth: 430, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: short ? 7 : 10, marginTop: short ? 5 : 10 }}>
         <ScenarioCard scenario={current} variant="current" compact />
