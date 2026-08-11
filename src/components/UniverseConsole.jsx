@@ -38,7 +38,7 @@ export default function UniverseConsole({
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         {/* 모바일 콘솔 메인 패널 (크기 및 여백 축소) */}
-        <div style={{ width: '92%', maxWidth: '400px', background: '#17181c', borderRadius: '28px', border: '1.5px solid #23252a', padding: '16px 16px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.6)' }}>
+        <div style={{ width: '92%', maxWidth: '400px', background: '#17181c', borderRadius: '28px', border: '1.5px solid #23252a', padding: '16px 16px 26px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.6)' }}>
           
           {/* 상단 도트 인디케이터 (여백 축소) */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px' }}>
