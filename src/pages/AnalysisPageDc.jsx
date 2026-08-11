@@ -11,11 +11,6 @@ import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
 import { useMonthlyAnalysisQuery, useAiReportQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery, useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
 
-// 모바일 감정 카드의 감정명 앞 색점. 금액을 이만큼 들여써 두 줄의 왼쪽 끝을 맞추므로
-// 점 크기와 간격을 여기 한곳에서 잡는다 — 따로 두면 한쪽만 고쳐 정렬이 어긋난다.
-const DOT_SIZE = 7;
-const DOT_GAP = 6;
-
 const Page = styled.div`
   width: 100%;
   margin: 0;
@@ -763,15 +758,15 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        overflow: 'hidden',
                        '@media (max-width: 820px)': {
                          display: 'grid',
-                         // 두 열 다 auto 로 두고 justifyContent 로 트랙째 가운데 보낸다.
-                         // 어느 한쪽이 1fr 이면 그 열이 남는 폭을 다 먹어 덩어리가 갈라진다.
+                         // 두 열 다 auto 로 두고 justifyContent 로 좌우 끝에 붙인다.
+                         // 어느 한쪽이 1fr 이면 그 열이 남는 폭을 먹어 정렬이 그쪽에 끌려간다.
                          gridTemplateColumns: 'auto auto',
                          gridTemplateAreas: '"percent emotion" "percent amount"',
                          alignItems: 'center',
                          // 행 높이를 안 잡아두면 두 행이 카드 높이에 맞춰 늘어나
                          // 감정명은 위로, 금액은 아래로 벌어진다. 내용만큼만 쓰고 가운데로 모은다.
                          alignContent: 'center',
-                         justifyContent: 'center',
+                         justifyContent: 'space-between',
                          // 힌트가 왼쪽 상단으로 갔으니 자리를 위쪽에 비워 준다.
                          padding: '30px 18px 16px',
                          columnGap: 14,
@@ -794,12 +789,12 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                          // 퍼센트 바로 옆에 왼쪽 정렬로 붙인다. 오른쪽 끝으로 밀어두면
                          // 퍼센트와 짝으로 안 읽힌다. 아래 금액과는 행 경계에서 맞물리게
                          // alignSelf 로 서로를 향해 붙인다(감정명 end, 금액 start).
-                         '@media (max-width: 820px)': { gridArea: 'emotion', alignSelf: 'end', justifySelf: 'start', color: 'var(--text)', marginBottom: 0, fontSize: 17, fontWeight: 800, letterSpacing: 0, lineHeight: 1.2, gap: DOT_GAP }
+                         '@media (max-width: 820px)': { gridArea: 'emotion', alignSelf: 'end', justifySelf: 'start', color: 'var(--text)', marginBottom: 0, fontSize: 17, fontWeight: 800, letterSpacing: 0, lineHeight: 1.2, gap: 6 }
                        }}>
                          {/* 감정명 앞 색점은 데스크톱과 같이 모바일에도 둔다. 글자가 커진 만큼 점도 키운다. */}
                          <i css={{
                            width: 6, height: 6, borderRadius: '50%', background: insight.color, flex: '0 0 auto',
-                           '@media (max-width: 820px)': { width: DOT_SIZE, height: DOT_SIZE }
+                           '@media (max-width: 820px)': { width: 7, height: 7 }
                          }} />
                          {insight.emotion}
                        </span>
@@ -811,9 +806,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        <span css={{ 
                          paddingTop: 11, borderTop: '1px solid var(--line)', width: 'min(120px, 70%)',
                          fontSize: 13, color: 'var(--sub)', fontWeight: 700,
-                         // 색점만큼 들여써 금액의 왼쪽 끝을 감정명 글자에 맞춘다.
-                         // 안 그러면 점이 감정명만 밀어내 두 줄의 왼쪽이 어긋나 보인다.
-                         '@media (max-width: 820px)': { gridArea: 'amount', alignSelf: 'start', justifySelf: 'start', width: 'auto', paddingTop: 0, paddingLeft: DOT_SIZE + DOT_GAP, borderTop: 0, color: insight.color, fontWeight: 900, fontSize: 15, lineHeight: 1.2 }
+                         // 들여쓰지 않는다. 색점과 금액의 왼쪽 끝이 한 선에 서야 한다.
+                         '@media (max-width: 820px)': { gridArea: 'amount', alignSelf: 'start', justifySelf: 'start', width: 'auto', paddingTop: 0, borderTop: 0, color: insight.color, fontWeight: 900, fontSize: 15, lineHeight: 1.2 }
                        }}>{insight.amount}</span>
 
                        {/* 뒤집힌다는 단서. 뒤집힌 뒤에는 숨겨 뒷면 문구를 가리지 않는다. */}
