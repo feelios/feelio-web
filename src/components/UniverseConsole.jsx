@@ -56,10 +56,6 @@ export default function UniverseConsole({
             <span style={{ font: "400 10px ui-monospace,Menlo,monospace", color: "#6a6d75", letterSpacing: ".1em", whiteSpace: 'nowrap' }}>{statusText}</span>
           </div>
           
-          {/* 데스크톱과 같은 한 줄 배치: [지금 이대로라면] (REC) [조금 줄여본다면].
-              예전에는 노브가 위에 얹히고 버튼이 아래 한 줄이라 축이 둘로 나뉘어 보였다.
-              좁은 기기에서는 글자가 먼저 줄어들도록 두고(minWidth: 0 + ellipsis),
-              노브와 버튼 높이는 유지해 터치 영역을 지킨다. */}
           {/* 선택 버튼 두 개를 한 줄에 두고, 비교는 그 아래 가로로 긴 버튼으로 뺀다.
               데스크톱처럼 [버튼][노브][버튼] 한 줄로 붙였더니 폭이 1/3 뿐인 모바일에서
               노브가 가운데를 먹어 "지금 이대로…" 처럼 라벨이 잘렸다.
