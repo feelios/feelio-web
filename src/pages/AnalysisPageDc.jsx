@@ -49,6 +49,11 @@ const InsightItem = styled.div`
   }
 
   @media (max-width: 820px) {
+    /* 칸 폭이 곧 글자 폭이다. 좌우 여백과 열 간격을 줄여 라벨·등급이 들어갈 자리를 만든다. */
+    padding-left: 12px;
+    padding-right: 12px;
+    column-gap: 8px;
+
     &:nth-of-type(2) {
       border-right: 0;
     }
@@ -94,6 +99,25 @@ const RiskSignal = styled.span`
   i.active {
     opacity: 1;
     box-shadow: 0 0 16px ${({ glow = '#E87573' }) => glow}bd, 0 0 0 3px ${({ glow = '#E87573' }) => glow}29;
+  }
+
+  /* 모바일에서 이 신호등만 52px 이었다. 다른 칸 아이콘은 19px 이라 위험도 칸만
+     글자 쓸 폭이 33px 좁았고, 그래서 등급('안전')이 잘려 나갔다.
+     등급을 글자로도 보여주게 된 뒤로는 이만큼 클 이유도 없다. */
+  @media (max-width: 820px) {
+    width: 37px;
+    height: 20px;
+    padding: 4px 5px;
+    gap: 3px;
+
+    i {
+      width: 7px;
+      height: 7px;
+    }
+
+    i.active {
+      box-shadow: 0 0 11px ${({ glow = '#E87573' }) => glow}bd, 0 0 0 2px ${({ glow = '#E87573' }) => glow}29;
+    }
   }
 `;
 
@@ -397,7 +421,10 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               cursor: 'pointer',
               // 펼침 여부로 정렬 방식을 바꾸면 라벨이 크게 튀어 오른다(옆 칸이 펼쳐져 칸이
               // 높을 때 특히). 정렬은 어느 상태에서나 같게 두고, 내용 묶음만 칸 가운데에 놓는다.
-              alignItems: 'flex-start',
+              //
+              // alignItems 는 행 안에서의 정렬이라 아이콘과 라벨 줄이 서로 세로 가운데로 맞물린다.
+              // 라벨 줄 높이는 펼쳐도 그대로라 이 값은 튀는 것과 무관하다.
+              alignItems: 'center',
               alignContent: 'center',
               paddingTop: 12,
               paddingBottom: 12,
@@ -406,17 +433,17 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
             }}
           >
             {item.type === 'risk' ? (
-              <RiskSignal glow={risk?.color} role="img" aria-label={`소비 위험도 ${risk?.value ?? '측정중'}`} css={{ marginTop: 2, '@media (min-width: 821px)': { marginTop: 0 } }}>
+              <RiskSignal glow={risk?.color} role="img" aria-label={`소비 위험도 ${risk?.value ?? '측정중'}`}>
                 {['green', 'yellow', 'red'].map(lamp => (
                   <i key={lamp} className={lamp === risk?.lamp ? `${lamp} active` : lamp} />
                 ))}
               </RiskSignal>
             ) : item.label === CHALLENGE_LABEL ? (
-              <ChallengeFlag expanded={isExpanded} />
+              <ChallengeFlag />
             ) : item.type === 'fact' ? (
-              <FactBomberIcon expanded={isExpanded} color={item.color} />
+              <FactBomberIcon color={item.color} />
             ) : (
-              <RiskRouteIcon expanded={isExpanded} />
+              <RiskRouteIcon />
             )}
             {/* 데스크톱은 [라벨+본문] 옆에 note 를 두고 세로 중앙에 맞춘다.
                 note 를 라벨 줄 안에 두면 baseline 에 묶여 위로 붙어 보인다 (#280). */}
@@ -431,8 +458,16 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               '@media (min-width: 821px)': { display: 'flex', alignItems: 'center', gap: 12 }
             }}>
               <div css={{ display: 'contents', minWidth: 0, '@media (min-width: 821px)': { display: 'block', flex: 1, minWidth: 0 } }}>
-              <div css={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, width: '100%' }}>
-                <span css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', flexShrink: 0 }}>{item.label}</span>
+              {/* 모바일은 칸이 좁아 gap 10 이면 등급('안전')이 잘려 나간다. 6 으로 줄인다. */}
+              <div css={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6, width: '100%', '@media (min-width: 821px)': { gap: 10 } }}>
+                {/* 자리가 모자라면 줄어드는 쪽은 라벨이다. 좁은 기기에서 둘 중 하나가
+                    잘려야 한다면, 아이콘이 이미 무슨 칸인지 말해 주는 라벨보다
+                    등급('안전')이 살아남아야 한다. */}
+                <span css={{
+                  color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap',
+                  minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
+                  '@media (min-width: 821px)': { flexShrink: 0, overflow: 'visible' }
+                }}>{item.label}</span>
                 {showHeadline && (isInsightsLoading
                   ? <Skeleton w="44px" h={11} radius={5} />
                   : <span css={{
@@ -447,6 +482,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                       textAlign: 'right',
                       wordBreak: isExpanded ? 'keep-all' : 'normal',
                       minWidth: 0,
+                      flexShrink: 0,
                       // 위험도 등급은 접혀 있을 때도 보인다 — 펼치지 않고 확인하려고 보는 값이다.
                       display: (isRisk || isExpanded) ? 'inline' : 'none',
                       // 데스크톱에서는 아래쪽 전용 note 가 대신 나온다(세로 중앙 정렬 때문).
