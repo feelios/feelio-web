@@ -2,8 +2,8 @@
  * 모바일 콘솔의 우주 선택 버튼. 데스크톱 버튼과 같은 구성이다 —
  * 유리 질감 배경에 [표시등][라벨 / PLANET-0x · TONE] 가로 배치.
  *
- * 좁은 기기에서는 글자가 먼저 줄어들게 둔다(minWidth: 0 + ellipsis).
- * 버튼 폭을 줄이면 노브와 겹치거나 터치 영역이 무너진다.
+ * 아주 좁은 기기를 대비해 ellipsis 를 남겨두지만, 노브를 이 줄에서 뺀 뒤로는
+ * 실제로 잘릴 일이 거의 없다.
  */
 function ConsoleChoice({ on, onClick, label, sub, glow }) {
   return (
