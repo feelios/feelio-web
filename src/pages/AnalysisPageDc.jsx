@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { useState, useMemo } from 'react';
 import styled from '@emotion/styled';
+import { RotateCw } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { Skeleton } from '../components/common/Skeleton.jsx';
 import { ChallengeFlag } from '../components/analysis/ChallengeFlag.jsx';
@@ -708,7 +709,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
         </Card>
         <Card css={{ display: 'flex', flexDirection: 'column' }}>
           <div css={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}><span css={{ width: 24, height: 24, borderRadius: 8, background: 'var(--ink)', color: 'var(--on-ink)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 900 }}>AI</span><b css={{ fontSize: 16 }}>감정소비 분석</b></div>
-          <p css={{ color: 'var(--sub)', fontSize: 12, marginBottom: 20 }}>이번 달 지출에 가장 큰 영향을 미친 감정들이에요.</p>
+          <p css={{ color: 'var(--sub)', fontSize: 12, marginBottom: 20 }}>
+            이번 달 지출에 가장 큰 영향을 미친 감정들이에요. 카드를 누르면 말랑이의 분석을 볼 수 있어요.
+          </p>
           
           <div css={{
             display: 'flex',
@@ -744,31 +747,78 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                        padding: '24px 20px', borderRadius: 16, 
                        border: `1px solid ${insight.color + '40'}`, 
                        background: 'var(--card)',
-                       display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 3,
+                       // 데스크톱은 카드 폭에 비해 왼쪽에 쏠려 있어 허전했다. 가운데로 모은다 (#310).
+                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                       textAlign: 'center',
                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                       // 힌트는 absolute 로 얹고, 아래 여백으로 자리를 비워 겹치지 않게 한다.
+                       // 모바일은 grid-template-areas 로 배치가 고정돼 있어 자식을 흐름에 넣으면
+                       // 칸이 어긋난다. 앞면 자체가 inset:0 의 absolute 라 그것이 기준이 된다.
+                       paddingBottom: 34,
+                       overflow: 'hidden',
                        '@media (max-width: 820px)': { 
                          display: 'grid',
                          gridTemplateColumns: '1fr auto',
                          gridTemplateAreas: '"percent emotion" "percent amount"',
                          alignItems: 'center',
-                         padding: '16px 20px',
+                         padding: '16px 20px 30px',
                          gap: 2,
                          border: `1px solid ${insight.color + '60'}`,
                          background: `linear-gradient(135deg, var(--card) 40%, ${insight.color + '1A'})`
                        }
                      }}>
+                       {/*
+                         셋이 비슷한 무게로 경쟁해 시선 둘 데가 없었다. 위계를 나눈다 (#310).
+                         감정명은 색점 하나 붙인 작은 라벨, 퍼센트가 주인공, 금액은 구분선 아래 각주.
+                         모바일 grid 배치(감정명·금액 오른쪽)는 그대로 둔다.
+                       */}
                        <span css={{ 
-                         fontSize: 'clamp(13px, 3vw, 16px)', color: 'var(--sub)', fontWeight: 800,
-                         '@media (max-width: 820px)': { gridArea: 'emotion', justifySelf: 'end', color: 'var(--text)', marginBottom: 2, fontSize: 18 }
-                       }}>{insight.emotion}</span>
+                         display: 'flex', alignItems: 'center', gap: 5,
+                         // 퍼센트 위 왼쪽에 붙인다. 가운데 정렬 흐름에서 이것만 왼쪽으로 뺀다.
+                         alignSelf: 'flex-start',
+                         fontSize: 12, color: 'var(--sub)', fontWeight: 700, letterSpacing: '.02em',
+                         '@media (max-width: 820px)': { gridArea: 'emotion', alignSelf: 'auto', justifySelf: 'end', color: 'var(--text)', marginBottom: 2, fontSize: 18, fontWeight: 800, letterSpacing: 0 }
+                       }}>
+                         <i css={{
+                           width: 6, height: 6, borderRadius: '50%', background: insight.color, flex: '0 0 auto',
+                           '@media (max-width: 820px)': { display: 'none' }
+                         }} />
+                         {insight.emotion}
+                       </span>
                        <b css={{ 
-                         fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 5.5vw, 36px)', color: 'var(--text)', lineHeight: 1,
-                         '@media (max-width: 820px)': { gridArea: 'percent', fontSize: 'clamp(36px, 8vw, 44px)', color: 'var(--text)' }
+                         fontFamily: 'var(--font-display)', fontSize: 'clamp(30px, 6.5vw, 46px)', color: insight.color,
+                         lineHeight: 1, letterSpacing: '-.03em', margin: '10px 0 12px',
+                         '@media (max-width: 820px)': { gridArea: 'percent', fontSize: 'clamp(36px, 8vw, 44px)', color: insight.color, margin: 0, letterSpacing: 0 }
                        }}>{insight.percent}%</b>
                        <span css={{ 
-                         fontSize: 'clamp(11px, 2.5vw, 14px)', color: insight.color, fontWeight: 900,
-                         '@media (max-width: 820px)': { gridArea: 'amount', justifySelf: 'end', color: insight.color, fontWeight: 900, fontSize: 16 }
+                         paddingTop: 11, borderTop: '1px solid var(--line)', width: 'min(120px, 70%)',
+                         fontSize: 13, color: 'var(--sub)', fontWeight: 700,
+                         '@media (max-width: 820px)': { gridArea: 'amount', justifySelf: 'end', width: 'auto', paddingTop: 0, borderTop: 0, color: insight.color, fontWeight: 900, fontSize: 16 }
                        }}>{insight.amount}</span>
+
+                       {/* 뒤집힌다는 단서. 뒤집힌 뒤에는 숨겨 뒷면 문구를 가리지 않는다. */}
+                       <span
+                         aria-hidden="true"
+                         css={{
+                           position: 'absolute',
+                           left: 0,
+                           right: 0,
+                           bottom: 12,
+                           display: 'flex',
+                           alignItems: 'center',
+                           justifyContent: 'center',
+                           gap: 4,
+                           color: 'var(--sub)',
+                           fontSize: 10.5,
+                           fontWeight: 800,
+                           opacity: .75,
+                           pointerEvents: 'none',
+                           '@media (max-width: 820px)': { bottom: 9, fontSize: 10 }
+                         }}
+                       >
+                         <RotateCw size={11} strokeWidth={2.6} />
+                         분석 보기
+                       </span>
                      </div>
                      
                      <div css={{
