@@ -27,8 +27,12 @@ const globalStyles = css`
   @keyframes pu-fly-a-m{0%{transform:translate(50vw,85vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(22vw,40vh) scale(.32) rotate(-10deg);opacity:1}}
   @keyframes pu-fly-b{0%{transform:translate(580px,600px) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(830px,196px) scale(.32) rotate(10deg);opacity:1}}
   @keyframes pu-fly-b-m{0%{transform:translate(50vw,85vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(78vw,40vh) scale(.32) rotate(10deg);opacity:1}}
-  @keyframes pu-depart{0%{transform:translate(330px,430px) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(948px,344px) scale(.22) rotate(16deg);opacity:1}}
-  @keyframes pu-depart-m{0%{transform:translate(25vw,25vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(80vw,15vh) scale(.22) rotate(16deg);opacity:1}}
+  /* 종점은 목적지 행성 좌표에 앵커링하고(아래 wrapper 의 left/top), 키프레임은 거기까지의
+     오프셋만 그린다. 예전에는 끝점을 translate(948px,344px) / translate(80vw,15vh) 로 따로
+     적어 뒀는데, 모바일은 컨테이너가 뷰포트보다 작아(하단 내비) vw·vh 가 컨테이너 % 와
+     다른 지점을 가리켰다. 그래서 배가 행성 옆을 스쳐 갔다. */
+  @keyframes pu-depart{0%{transform:translate(-618px,86px) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(0,0) scale(.22) rotate(16deg);opacity:1}}
+  @keyframes pu-depart-m{0%{transform:translate(-55vw,55vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(0,0) scale(.22) rotate(16deg);opacity:1}}
   @keyframes pu-scan{0%{transform:scale(.4);opacity:.85}100%{transform:scale(3.2);opacity:0}}
   @keyframes pu-hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
   @keyframes pu-selglow{0%,100%{opacity:.5;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}
@@ -434,10 +438,15 @@ export default function UniversePageDc() {
                 )}
 
                 <div style={{ position: "absolute", inset: 0, zIndex: 3, transformOrigin: selected === "current" ? "330px 196px" : "830px 196px", transition: "transform .6s cubic-bezier(.4,0,.2,1)", transform: phase === "flying" ? `scale(1.8)` : phase === "result" ? "scale(0) opacity(0)" : "scale(1)" }}>
+                  {/* 라벨은 모바일에만 있었다. 데스크톱은 행성 둘이 색만 다른 구슬로 보여
+                      어느 쪽이 무슨 우주인지 눌러봐야 알 수 있었다. 같은 라벨을 붙인다. */}
                   <div onClick={() => select("current")} style={{ position: "absolute", left: 330, top: 196, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
                     <div style={{ position: "relative", width: 150, height: 150 }}>
                       <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 232, height: 232, borderRadius: "50%", background: "radial-gradient(circle,rgba(158,150,238,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4.4s ease-in-out infinite" }}></div>
                       <UniversePlanet tone="stress" size={150} />
+                    </div>
+                    <div style={{ position: "absolute", left: "50%", top: 168, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", pointerEvents: "none" }}>
+                      <div style={{ font: "600 14px system-ui", color: "#ECEBF0" }}>지금처럼 소비한 나</div>
                     </div>
                   </div>
 
@@ -445,6 +454,9 @@ export default function UniversePageDc() {
                     <div style={{ position: "relative", width: 150, height: 150 }}>
                       <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 232, height: 232, borderRadius: "50%", background: "radial-gradient(circle,rgba(130,226,194,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4s ease-in-out .6s infinite" }}></div>
                       <UniversePlanet tone="calm" size={150} />
+                    </div>
+                    <div style={{ position: "absolute", left: "50%", top: 168, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", pointerEvents: "none" }}>
+                      <div style={{ font: "600 14px system-ui", color: "#ECEBF0" }}>{U_DATA.reduced.focusTag ? `${U_DATA.reduced.focusTag} 줄인 나` : "덜 쓴 나"}</div>
                     </div>
                   </div>
                 </div>
@@ -469,7 +481,7 @@ export default function UniversePageDc() {
           </div>
 
           {(phase === "flying" || phase === "departing") && (
-            <div style={{ position: "absolute", left: 0, top: 0, zIndex: 20, animation: (phase === "departing" ? (isMobile ? "pu-depart-m" : "pu-depart") : (selected === "current" ? (isMobile ? "pu-fly-a-m" : "pu-fly-a") : (isMobile ? "pu-fly-b-m" : "pu-fly-b"))) + " 1.2s cubic-bezier(.42,.08,.5,1) forwards" }}>
+            <div style={{ position: "absolute", left: phase === "departing" ? (isMobile ? "80%" : 948) : 0, top: phase === "departing" ? (isMobile ? "12%" : 344) : 0, zIndex: 20, animation: (phase === "departing" ? (isMobile ? "pu-depart-m" : "pu-depart") : (selected === "current" ? (isMobile ? "pu-fly-a-m" : "pu-fly-a") : (isMobile ? "pu-fly-b-m" : "pu-fly-b"))) + " 1.2s cubic-bezier(.42,.08,.5,1) forwards" }}>
               <div style={{ position: "relative", width: 120, height: 96, transform: "translate(-50%,-50%)" }}>
                 <div style={{ position: "absolute", left: "50%", bottom: -4, transform: "translateX(-50%)", width: 74, height: 26, borderRadius: "50%", background: "radial-gradient(circle,rgba(130,226,194,.85),transparent 70%)", filter: "blur(6px)" }}></div>
                 <div style={{ position: "absolute", left: "50%", bottom: 22, transform: "translateX(-50%)", width: 120, height: 34, borderRadius: "50%", background: "linear-gradient(180deg,#e9e6f4,#b6b1cf 52%,#918cae)", boxShadow: "0 8px 18px -8px rgba(0,0,0,.6),inset 0 2px 4px rgba(255,255,255,.5)" }}></div>
