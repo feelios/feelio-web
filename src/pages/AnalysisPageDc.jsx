@@ -11,6 +11,18 @@ import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
 import { useMonthlyAnalysisQuery, useAiReportQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery, useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
 
+/**
+ * 분석 문구를 문장 단위 문단으로 끊는다.
+ * 마침표·물음표·느낌표 뒤의 공백에서만 자른다. 서버가 이미 줄바꿈을 넣어 보내면 그것도 존중한다.
+ * 문장이 하나뿐이어도 그대로 한 문단이 되므로 옛 문구에도 안전하다.
+ */
+function toParagraphs(text) {
+  return String(text ?? '')
+    .split(/\n+|(?<=[.!?])\s+/)
+    .map(line => line.trim())
+    .filter(Boolean);
+}
+
 const Page = styled.div`
   width: 100%;
   margin: 0;
@@ -544,7 +556,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                     {isRisk ? (
                       <>
                         <span css={{ '@media (min-width: 821px)': { display: 'none' } }}>{item.note}</span>
-                        <span css={{ display: 'none', '@media (min-width: 821px)': { display: 'inline' } }}>{item.value}</span>
+                        {/* 색 규칙은 모바일과 같게 맞춘다 — 초록은 '안전'이라는 판정에 붙고,
+                            소진율은 판정이 아니라 수치라 기본색이다. 자리만 좌우가 다를 뿐이다. */}
+                        <span css={{ display: 'none', '@media (min-width: 821px)': { display: 'inline', color: item.color } }}>{item.value}</span>
                       </>
                     ) : bodyText}
                   </div>
@@ -565,7 +579,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                     flexShrink: 0,
                     textAlign: 'right',
                     whiteSpace: 'nowrap',
-                    color: item.color,
+                    // 위험도 칸에서 초록을 가져가는 건 등급('안전')이다. 여기 오는 소진율은 기본색.
+                    color: isRisk ? 'var(--text)' : item.color,
                     fontSize: (item.type === 'risk' || item.label === RISK_ROUTE_LABEL) ? 13.5 : 11,
                     fontWeight: (item.type === 'risk' || item.label === RISK_ROUTE_LABEL) ? 950 : 900
                   }
@@ -1034,11 +1049,18 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                 </span>
               </div>
 
-              <p css={{ margin: 0, color: 'var(--sub)', fontSize: 13, fontWeight: 750, lineHeight: 1.65 }}>
-                {hasPattern 
-                  ? pattern.desc 
-                  : '꾸준히 소비 내역을 기록해 주시면, 숨겨진 소비 패턴을 감지해 AI가 분석해 줘요.'}
-              </p>
+              {/* 관찰·해석·처방 세 문장이 한 덩어리로 붙어 나와 눈이 쉴 곳이 없었다.
+                  문장마다 문단으로 끊는다. 문장 수는 모델이 정하므로 개수를 가정하지 않는다. */}
+              <div css={{ display: 'grid', gap: 10 }}>
+                {(hasPattern
+                  ? toParagraphs(pattern.desc)
+                  : ['꾸준히 소비 내역을 기록해 주시면, 숨겨진 소비 패턴을 감지해 AI가 분석해 줘요.']
+                ).map((line, idx) => (
+                  <p key={idx} css={{ margin: 0, color: 'var(--sub)', fontSize: 13, fontWeight: 750, lineHeight: 1.65, wordBreak: 'keep-all' }}>
+                    {line}
+                  </p>
+                ))}
+              </div>
             </div>
             
             <div css={{ display: 'none', '@media (max-width: 820px)': { display: 'block', textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--sub)', fontWeight: 800 } }}>
