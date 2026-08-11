@@ -120,6 +120,9 @@ export default function UniversePageDc() {
         narratives: current.narrations || [ current.narration ],
         goalNote: currentNote,
         focusTag: null,
+        // 항해 머리말용. 제목("지금처럼 쓴다면")은 ~면 으로 끝나는 조건절이라
+        // "… 우주로 진입하고 있어요" 앞에 그대로 붙이면 말이 안 된다. 관형형을 따로 둔다.
+        voyageLabel: "지금처럼 쓰는",
         monthlySaving: current.monthlySaving,
         monthsToGoal: current.monthsToGoal,
         estimatedAchieveDate: current.estimatedAchieveDate
@@ -135,6 +138,7 @@ export default function UniversePageDc() {
         // 줄이는 대상만 태그로 단다. 현재 우주에는 줄일 대상이 없어 태그가 없다.
         // 예전에는 여기에 "평온 · 뿌듯함"이 하드코딩돼 있었다 — 아무 데이터도 안 보는 값이었다.
         focusTag: topCategory ? topCategory.name : null,
+        voyageLabel: topCategory ? `${topCategory.name} 소비를 줄인` : "덜 쓰는",
         monthlySaving: reduced.monthlySaving,
         monthsToGoal: reduced.monthsToGoal,
         estimatedAchieveDate: reduced.estimatedAchieveDate
@@ -144,7 +148,9 @@ export default function UniversePageDc() {
 
   const [phase, setPhase] = useState("idle");
   const [selected, setSelected] = useState("");
-  const [from, setFrom] = useState("");
+  // 항해 중 머리말이 가리킬 "목적지". 예전에는 직전 선택(from)을 썼는데,
+  // 첫 항해에서는 직전 값이 비어 있어 어느 행성을 눌러도 REDUCED 로 표시됐다.
+  const [heading, setHeading] = useState("");
   const [leverA, setLeverA] = useState(0.5);
   const [leverB, setLeverB] = useState(0.6);
   const [egg, setEgg] = useState(false);
@@ -191,7 +197,7 @@ export default function UniversePageDc() {
 
   const reset = () => {
     if (tRef.current) clearTimeout(tRef.current);
-    setPhase("idle"); setSelected(""); setFrom("");
+    setPhase("idle"); setSelected(""); setHeading("");
   };
 
   // 하단 목표 선택 → 해당 goalId로 시뮬레이션 전환(항해 상태 초기화)
@@ -199,12 +205,12 @@ export default function UniversePageDc() {
     if (goalId === activeGoalId) return;
     if (tRef.current) clearTimeout(tRef.current);
     setSelectedGoalId(goalId);
-    setPhase("idle"); setSelected(""); setFrom("");
+    setPhase("idle"); setSelected(""); setHeading("");
   };
 
   const select = (key) => {
     if (tRef.current) clearTimeout(tRef.current);
-    setPhase("flying"); setSelected(key); setFrom(selected); setNarrativeIndex(0);
+    setPhase("flying"); setSelected(key); setHeading(key); setNarrativeIndex(0);
     tRef.current = setTimeout(() => setPhase("result"), 1200);
   };
 
@@ -238,6 +244,8 @@ export default function UniversePageDc() {
   const depart = (key) => {
     if (phase === "departing") return;
     if (tRef.current) clearTimeout(tRef.current);
+    // selected 는 애니메이션이 끝난 뒤에야 바뀐다. 머리말은 지금 향하는 쪽을 말해야 하므로 먼저 잡는다.
+    setHeading(key);
     setPhase("departing");
     tRef.current = setTimeout(() => {
       setPhase("result"); setSelected(key);
@@ -326,7 +334,7 @@ export default function UniversePageDc() {
                 {(phase === "flying" || phase === "departing") && (
                   <div style={{ position: "absolute", left: 24, top: 24, zIndex: 10, animation: "pu-welldraw .6s ease both" }}>
                     <div style={{ font: `600 10px ui-monospace,Menlo,monospace`, letterSpacing: ".1em", color: "#ECEBF0" }}>VOYAGE LOG</div>
-                    <div style={{ font: `800 20px/1 system-ui`, color: "#fff", letterSpacing: "-.02em", marginTop: 6 }}>{from === "current" ? U_DATA.current.title : U_DATA.reduced.title} 우주로<br/>진입하고 있어요</div>
+                    <div style={{ font: `800 20px/1 system-ui`, color: "#fff", letterSpacing: "-.02em", marginTop: 6 }}>{heading === "current" ? U_DATA.current.voyageLabel : U_DATA.reduced.voyageLabel} 우주로<br/>진입하고 있어요</div>
                   </div>
                 )}
 
@@ -386,7 +394,7 @@ export default function UniversePageDc() {
                 {(phase === "flying" || phase === "departing") && (
                   <div style={{ position: "absolute", left: 48, top: 48, zIndex: 10, animation: "pu-welldraw .6s ease both" }}>
                     <div style={{ font: `600 12px ui-monospace,Menlo,monospace`, letterSpacing: ".1em", color: "#ECEBF0" }}>VOYAGE LOG</div>
-                    <div style={{ font: `800 28px/1 system-ui`, color: "#fff", letterSpacing: "-.02em", marginTop: 6 }}>{from === "current" ? U_DATA.current.title : U_DATA.reduced.title} 우주로<br/>진입하고 있어요</div>
+                    <div style={{ font: `800 28px/1 system-ui`, color: "#fff", letterSpacing: "-.02em", marginTop: 6 }}>{heading === "current" ? U_DATA.current.voyageLabel : U_DATA.reduced.voyageLabel} 우주로<br/>진입하고 있어요</div>
                   </div>
                 )}
 
