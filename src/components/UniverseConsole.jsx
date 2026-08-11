@@ -20,7 +20,7 @@ function ConsoleChoice({ on, onClick, label, sub, glow }) {
     >
       <span style={{ width: 8, height: 8, borderRadius: '50%', flex: 'none', background: on ? glow : 'rgba(255,255,255,.24)', boxShadow: on ? `0 0 9px ${glow}` : 'none', transition: '.25s' }}></span>
       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.22, minWidth: 0, overflow: 'hidden' }}>
-        <span style={{ font: "600 11.5px system-ui", color: '#ECEBF0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{label}</span>
+        <span style={{ font: "600 12.5px system-ui", color: '#ECEBF0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{label}</span>
         <span style={{ font: "500 7.5px ui-monospace,Menlo,monospace", color: '#8f8c9c', letterSpacing: '.06em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{sub}</span>
       </span>
       {on && (
@@ -60,27 +60,35 @@ export default function UniverseConsole({
               예전에는 노브가 위에 얹히고 버튼이 아래 한 줄이라 축이 둘로 나뉘어 보였다.
               좁은 기기에서는 글자가 먼저 줄어들도록 두고(minWidth: 0 + ellipsis),
               노브와 버튼 높이는 유지해 터치 영역을 지킨다. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', marginBottom: '4px', marginTop: '6px' }}>
+          {/* 선택 버튼 두 개를 한 줄에 두고, 비교는 그 아래 가로로 긴 버튼으로 뺀다.
+              데스크톱처럼 [버튼][노브][버튼] 한 줄로 붙였더니 폭이 1/3 뿐인 모바일에서
+              노브가 가운데를 먹어 "지금 이대로…" 처럼 라벨이 잘렸다.
+              같은 구도를 우겨넣는 것보다 글자가 온전한 쪽이 낫다. */}
+          <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '4px' }}>
             <ConsoleChoice on={leftOn} onClick={selectCurrent} label="지금 이대로라면" sub="PLANET-01 · STRESS" glow="#9E96EE" />
-
-            {/* 중앙: REC 노브 (데스크톱 SVG 다이얼과 같은 디자인) */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none', zIndex: 10 }}>
-              <button onClick={ignite} style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {recommending && <div style={{ position: 'absolute', inset: -2, border: '1.5px solid #82E2C2', borderRadius: '50%', animation: 'pu-scan 1.7s ease-out infinite' }}></div>}
-                <svg viewBox="0 0 62 62" width="52" height="52" style={{ display: 'block', borderRadius: '50%', background: '#17181c', boxShadow: 'inset 0 4px 10px rgba(0,0,0,.6)' }}>
-                  <circle cx="31" cy="31" r="30" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.08)" strokeWidth="1"/>
-                  <circle cx="31" cy="31" r="23" fill="none" stroke="#8B7EE8" strokeOpacity=".25" strokeWidth="1" strokeDasharray="2 4"/>
-                  <circle cx="31" cy="31" r="17" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" strokeWidth="1"/>
-                  <line x1="31" y1="18" x2="31" y2="24" stroke="#8B7EE8" strokeWidth="2.4" strokeLinecap="round"/>
-                </svg>
-              </button>
-              {/* 이 노브를 누르면 두 미래 비교 화면이 뜬다. 라벨이 REC 뿐이라
-                  누르면 무엇이 나오는지 화면 어디에도 적혀 있지 않았다. */}
-              <span style={{ font: "600 8.5px system-ui", color: "rgba(255,255,255,.62)", marginTop: '5px', whiteSpace: 'nowrap' }}>두 미래 비교</span>
-            </div>
-
             <ConsoleChoice on={rightOn} onClick={selectReduced} label="조금 줄여본다면" sub="PLANET-02 · CALM" glow="#82E2C2" />
           </div>
+
+          {/* 두 미래 비교. 노브만 있고 라벨이 REC 뿐이라 눌러도 뭐가 나오는지 알 수 없었다.
+              다이얼은 아이콘으로 줄여 넣고 글자로 무엇인지 말한다. */}
+          <button
+            onClick={ignite}
+            style={{
+              position: 'relative', width: '100%', height: '44px', marginTop: '10px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+              borderRadius: 13, border: '1px solid rgba(255,255,255,.12)',
+              background: 'rgba(255,255,255,.045)', color: '#D8D5E2',
+              font: '700 12px system-ui', cursor: 'pointer'
+            }}
+          >
+            {recommending && <span style={{ position: 'absolute', inset: -1, border: '1.5px solid #82E2C2', borderRadius: 13, animation: 'pu-scan 1.7s ease-out infinite' }}></span>}
+            <svg viewBox="0 0 62 62" width="24" height="24" style={{ display: 'block', flex: 'none' }}>
+              <circle cx="31" cy="31" r="29" fill="rgba(0,0,0,.35)" stroke="rgba(255,255,255,.12)" strokeWidth="2"/>
+              <circle cx="31" cy="31" r="20" fill="none" stroke="#8B7EE8" strokeOpacity=".45" strokeWidth="2" strokeDasharray="3 5"/>
+              <line x1="31" y1="14" x2="31" y2="24" stroke="#8B7EE8" strokeWidth="4" strokeLinecap="round"/>
+            </svg>
+            두 미래 비교
+          </button>
         </div>
       </div>
     );
