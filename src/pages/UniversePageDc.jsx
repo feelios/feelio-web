@@ -152,6 +152,13 @@ export default function UniversePageDc() {
   const [blobPoke, setBlobPoke] = useState(false);
   const [narrativeIndex, setNarrativeIndex] = useState(0);
 
+  // 머리말 날짜. 데스크톱에 "2026년 7월 6일 월요일"이 문자열로 박혀 있어 어느 날 열어도
+  // 그 날짜였다. 오늘로 만들어 두 화면이 같은 값을 쓰게 한다.
+  const today = useMemo(
+    () => new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
+    []
+  );
+
   const tRef = useRef(null);
   const stRef = useRef(null);
   const ivRef = useRef(null);
@@ -308,10 +315,12 @@ export default function UniversePageDc() {
 
             {isMobile ? (
               <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", position: "absolute", inset: 0, zIndex: 3 }}>
-                <div style={{ flexShrink: 0, padding: 24, zIndex: 10, display: "flex", flexDirection: "column", gap: 6, opacity: phase === "idle" ? 1 : 0, transition: "opacity .3s ease", pointerEvents: "none" }}>
-                  <div style={{ font: "600 10px ui-monospace,Menlo,monospace", letterSpacing: ".1em", color: "#ECEBF0", opacity: 0.7 }}>PARALLEL UNIVERSE</div>
-                  <div style={{ font: "800 22px/1.2 system-ui", color: "#fff", letterSpacing: "-.02em" }}>미래는 지금 갈라지고 있어요</div>
-                  <div style={{ font: "400 12px system-ui", color: "#8A837A", marginTop: 2 }}>두 우주 중 하나를 눌러 항해를 시작해요.</div>
+                {/* 데스크톱과 같은 머리말 구성(날짜 + 평행우주)으로 맞춘다.
+                    예전 제목 "미래는 지금 갈라지고 있어요"는 22px 두 줄이라 우측 상단 목표 칩
+                    아래로 파고들어 글자가 겹쳤다. paddingRight 로 칩 자리를 비워 두 번 막는다. */}
+                <div style={{ flexShrink: 0, padding: "24px 130px 24px 24px", zIndex: 10, display: "flex", flexDirection: "column", gap: 6, opacity: phase === "idle" ? 1 : 0, transition: "opacity .3s ease", pointerEvents: "none" }}>
+                  <div style={{ font: "600 10px ui-monospace,Menlo,monospace", letterSpacing: ".1em", color: "#ECEBF0" }}>{today}</div>
+                  <div style={{ font: "800 22px/1 system-ui", color: "#fff", letterSpacing: "-.02em" }}>평행우주 ☾</div>
                 </div>
 
                 {(phase === "flying" || phase === "departing") && (
@@ -343,7 +352,7 @@ export default function UniversePageDc() {
                             <UniversePlanet tone="calm" size={pSize} />
                           </div>
                           <div style={{ position: "absolute", left: "50%", top: pTextOffset, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", opacity: parked ? 0 : 1, transition: "opacity .3s ease", pointerEvents: "none" }}>
-                            <div style={{ font: "600 13px system-ui", color: "#ECEBF0" }}>감정소비를 줄인 나</div>
+                            <div style={{ font: "600 13px system-ui", color: "#ECEBF0" }}>{U_DATA.reduced.focusTag ? `${U_DATA.reduced.focusTag} 줄인 나` : "덜 쓴 나"}</div>
                           </div>
                         </div>
                       </div>
@@ -370,7 +379,7 @@ export default function UniversePageDc() {
             ) : (
               <>
                 <div style={{ position: "absolute", left: 48, top: 48, zIndex: 10, display: "flex", flexDirection: "column", gap: 6, opacity: phase === "idle" ? 1 : 0, transition: "opacity .3s ease", pointerEvents: "none" }}>
-                  <div style={{ font: "600 12px ui-monospace,Menlo,monospace", letterSpacing: ".1em", color: "#ECEBF0" }}>2026년 7월 6일 월요일</div>
+                  <div style={{ font: "600 12px ui-monospace,Menlo,monospace", letterSpacing: ".1em", color: "#ECEBF0" }}>{today}</div>
                   <div style={{ font: "800 28px/1 system-ui", color: "#fff", letterSpacing: "-.02em" }}>평행우주 ☾</div>
                 </div>
 
@@ -462,6 +471,19 @@ export default function UniversePageDc() {
                     </div>
                     <div style={{ height: 1, background: "rgba(50,42,32,.09)", margin: "15px 0" }}></div>
                     <div style={{ font: "400 13px/1.6 system-ui", color: "#3A352F" }}>{u.narratives[narrativeIndex]}</div>
+                    {/* 말랑이를 누르면 다음 코멘트로 넘어간다(handleBlobClick). 화면에 그 단서가 없어
+                        코멘트가 여러 개인 줄도, 누를 수 있는 줄도 알 수 없었다.
+                        점으로 개수와 현재 위치를 같이 보여준다. 하나뿐이면 넘길 게 없으니 감춘다. */}
+                    {u.narratives.length > 1 && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 11 }}>
+                        <span style={{ display: "inline-flex", gap: 4 }}>
+                          {u.narratives.map((_, i) => (
+                            <i key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: i === narrativeIndex ? u.accent : "rgba(50,42,32,.22)", transition: "background .2s ease" }} />
+                          ))}
+                        </span>
+                        <span style={{ font: "600 10.5px system-ui", color: "#8A837A" }}>말랑이를 누르면 다음 이야기</span>
+                      </div>
+                    )}
                     <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 11, background: "rgba(50,42,32,.055)", font: "600 11px system-ui", color: "#5c564e" }}>🎯 {u.goalNote}</span>
                       {u.focusTag && (
