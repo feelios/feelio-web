@@ -83,7 +83,9 @@ export default function UniversePageDc() {
     if (!universeData) return null;
     
     const goal = universeData.goal;
-    const focus = universeData.focusEmotion;
+    // 기준이 감정에서 카테고리로 바뀌었다(계약 §9 topCategory).
+    // 감정은 왜 그게 뽑혔는지도, 무엇을 줄여야 하는지도 화면에서 설명되지 않았다.
+    const topCategory = universeData.topCategory;
     const current = universeData.scenarios.find(s => s.key === 'CURRENT');
     const reduced = universeData.scenarios.find(s => s.key === 'REDUCED');
 
@@ -110,12 +112,14 @@ export default function UniversePageDc() {
       current: {
         tag: "현재 우주",
         title: current.title,
-        metricLabel: focus ? `이번 달 ${focus.name} 소비` : "이번 달 소비",
-        metric: `-${formatMoney(focus ? focus.monthlyAmount : current.monthlyExpense)}`,
-        accent: focus ? focus.color : "#9E96EE",
+        // 현재 우주는 이번 달 전체 소비를 보여준다. 특정 항목 금액을 보여주면
+        // 그 아래 '목표까지 N개월'과 근거가 어긋난다 — 개월 수는 전체 지출로 계산된 값이다.
+        metricLabel: "이번 달 소비",
+        metric: `-${formatMoney(current.monthlyExpense)}`,
+        accent: "#9E96EE",
         narratives: current.narrations || [ current.narration ],
         goalNote: currentNote,
-        emotionTag: focus ? focus.name : "일반",
+        focusTag: null,
         monthlySaving: current.monthlySaving,
         monthsToGoal: current.monthsToGoal,
         estimatedAchieveDate: current.estimatedAchieveDate
@@ -128,7 +132,9 @@ export default function UniversePageDc() {
         accent: "#82E2C2",
         narratives: reduced.narrations || [ reduced.narration ],
         goalNote: reducedNote,
-        emotionTag: "평온 · 뿌듯함",
+        // 줄이는 대상만 태그로 단다. 현재 우주에는 줄일 대상이 없어 태그가 없다.
+        // 예전에는 여기에 "평온 · 뿌듯함"이 하드코딩돼 있었다 — 아무 데이터도 안 보는 값이었다.
+        focusTag: topCategory ? topCategory.name : null,
         monthlySaving: reduced.monthlySaving,
         monthsToGoal: reduced.monthsToGoal,
         estimatedAchieveDate: reduced.estimatedAchieveDate
@@ -458,7 +464,9 @@ export default function UniversePageDc() {
                     <div style={{ font: "400 13px/1.6 system-ui", color: "#3A352F" }}>{u.narratives[narrativeIndex]}</div>
                     <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 11, background: "rgba(50,42,32,.055)", font: "600 11px system-ui", color: "#5c564e" }}>🎯 {u.goalNote}</span>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 11, background: "rgba(50,42,32,.055)", font: "600 11px system-ui", color: "#5c564e" }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: u.accent }}></span>{u.emotionTag}</span>
+                      {u.focusTag && (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 11, background: "rgba(50,42,32,.055)", font: "600 11px system-ui", color: "#5c564e" }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: u.accent }}></span>{u.focusTag}</span>
+                      )}
                     </div>
                   </div>
                 </div>
