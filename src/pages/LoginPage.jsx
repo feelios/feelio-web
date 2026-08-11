@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
+import { GoogleLogo, KakaoLogo } from '../components/common/SocialLogos.jsx';
 import { stepIn } from '../styles/animations.js';
 import { emotionPalette } from '../styles/theme.js';
 
@@ -173,6 +174,9 @@ const Button = styled.button`
     top: 50%;
     transform: translateY(-50%);
     font-weight: 900;
+    /* SVG 는 인라인이라 baseline 에 걸려 몇 px 내려앉는다. flex 로 가운데 맞춘다 (#298). */
+    display: flex;
+    align-items: center;
   }
 
   @media (max-width: 900px) {
@@ -303,8 +307,8 @@ export default function LoginPage({ mode, onToggleMode, onLogin }) {
         <AuthBox>
           <h2>feelio 시작하기</h2>
           <p>{isMobile ? '소셜 계정으로 3초 만에 시작해요.' : <>소셜 계정으로 3초 만에 시작해요.<br />따로 가입할 필요 없어요.</>}</p>
-          <Button onClick={() => onLogin('Google')}><span>G</span>Google로 계속하기</Button>
-          <Button solid tone="#FFE100" color="#3A1D1D" onClick={() => onLogin('Kakao')}><span>●</span>Kakao로 계속하기</Button>
+          <Button onClick={() => onLogin('Google')}><span><GoogleLogo /></span>Google로 계속하기</Button>
+          <Button solid tone="#FFE100" color="#3A1D1D" onClick={() => onLogin('Kakao')}><span><KakaoLogo /></span>Kakao로 계속하기</Button>
           <Button solid tone="#08C963" color="#fff" onClick={() => onLogin('Naver')}><span>N</span>Naver로 계속하기</Button>
           <small css={{ display: 'block', marginTop: 24, color: 'var(--sub)', lineHeight: 1.6, '@media (max-width: 900px)': { marginTop: 12, fontSize: 11 } }}>
             {isMobile ? '가입 시 서비스 약관과 개인정보 처리방침에 동의하게 돼요.' : '가입하면 feelio의 서비스 약관과 개인정보 처리방침에 동의하게 돼요.'}

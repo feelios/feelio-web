@@ -11,6 +11,7 @@ import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/querie
 import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
+import { PartyPopper } from 'lucide-react';
 
 const Grid = styled.div`
   width: 100%;
@@ -95,7 +96,7 @@ const Ridge = styled(GlassCard)`
   min-height: 0;
   overflow: hidden;
   padding: ${({ expanded }) => expanded ? 'clamp(18px, 1.6vw, 22px) clamp(20px, 1.8vw, 26px) 0' : '22px'};
-  border-radius: 24px;
+  border-radius: 26px;
   cursor: pointer;
   transition: padding 0.3s ease;
 
@@ -326,7 +327,7 @@ const Bubble = styled.div`
   @media (max-width: 980px) {
     font-size: 11.5px;
     padding: 8px 13px;
-    border-radius: 18px;
+    border-radius: 17px;
   }
 `;
 
@@ -389,6 +390,8 @@ const DeckCard = styled(GlassCard)`
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
 `;
 
 const DeckDots = styled.div`
@@ -429,7 +432,16 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
   const doneGoals = goals.filter(g => (g.currentAmount || 0) >= g.targetAmount);
   const savingGoals = goals.filter(g => (g.currentAmount || 0) < g.targetAmount);
   const savingTotal = savingGoals.reduce((sum, g) => sum + (g.currentAmount || 0), 0);
-  const cards = [{ type: 'asset' }, ...goals.map((g) => ({ type: 'goal', goal: g }))];
+  
+  const sortedGoals = [...goals].sort((a, b) => {
+    const aDone = (a.currentAmount || 0) >= a.targetAmount;
+    const bDone = (b.currentAmount || 0) >= b.targetAmount;
+    if (aDone && !bDone) return 1;
+    if (!aDone && bDone) return -1;
+    return 0;
+  });
+  
+  const cards = [{ type: 'asset' }, ...sortedGoals.map((g) => ({ type: 'goal', goal: g }))];
 
   const handleScroll = () => {
     const el = trackRef.current;
@@ -526,6 +538,49 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
               const over = card.goal.currentAmount - card.goal.targetAmount;
               return (
               <DeckCard tappable onClick={() => { if (!dragRef.current.moved) onRoute('universe'); }}>
+                {isDone && (
+                  <div
+                    css={{
+                      position: 'absolute', inset: 0,
+                      background: 'rgba(26,27,33,0.85)',
+                      backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+                      display: 'flex', flexDirection: 'column',
+                      zIndex: 10,
+                      padding: '24px 20px',
+                      color: '#fff',
+                      textAlign: 'left'
+                    }}
+                  >
+                    <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'auto' }}>
+                      <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                        <PartyPopper size={16} color="#fff" strokeWidth={2.5} />
+                        <span css={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.goal.name}</span>
+                      </div>
+                      <span css={{ color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: 4, fontSize: 12.5, fontWeight: 900, flex: '0 0 auto' }}>
+                        100%
+                      </span>
+                    </div>
+                    
+                    <div css={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16, marginTop: 'auto' }}>
+                      <span css={{ fontSize: 18, color: '#fff', fontWeight: 900 }}>✔️</span>
+                      <span css={{ fontSize: 16, color: '#fff', fontWeight: 800 }}>목표를 달성했어요!</span>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onOpenGoals?.(); }}
+                      css={{
+                        background: '#fff', color: '#111',
+                        border: 'none', borderRadius: 999,
+                        padding: '12px 20px', fontSize: 14, fontWeight: 800,
+                        cursor: 'pointer', width: '100%',
+                        fontFamily: 'inherit'
+                      }}
+                    >
+                      목표 관리로 가기
+                    </button>
+                  </div>
+                )}
                 <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.9"><circle cx="12" cy="12" r="4.5" fill={isDone ? 'var(--ink)' : 'none'} /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
@@ -734,12 +789,20 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
   const lastClickTimeRef = useRef({});
   const [isRidgeExpanded, setIsRidgeExpanded] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 980);
+  const [viewportW, setViewportW] = useState(() => typeof window === 'undefined' ? 1280 : window.innerWidth);
+  const isMobile = viewportW <= 980;
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth <= 980);
+    const onResize = () => setViewportW(window.innerWidth);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+  /**
+   * 말랑이 크기. 담는 박스(BlobHalo, 모바일 clamp(252px, 62vw, 336px))보다 크면
+   * 좌우로 넘치는데, 상위에 overflow-x: hidden 이 걸려 있어 왼쪽만 잘린다.
+   * 그러면 말랑이가 오른쪽으로 밀린 것처럼 보인다 — 264px 고정이라 좁은 기기에서
+   * 늘 그 상태였다 (#302). 박스 안에 들어오도록 폭을 따라가게 한다.
+   */
+  const blobSize = isMobile ? Math.min(264, Math.max(200, Math.round(viewportW * 0.62) - 8)) : 410;
   // 데스크톱: 12초마다 3개가 물결처럼 / 모바일: 4.5초마다 말풍선 1개 순환
   const [budgetWave, setBudgetWave] = useState(0);
   useEffect(() => {
@@ -844,7 +907,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     const lastClick = lastClickTimeRef.current[dateKey] || 0;
 
     if (dateKey === selectedDayKey || now - lastClick < 600) {
-      onRoute?.('transactions');
+      onRoute?.('record');
     } else {
       lastClickTimeRef.current[dateKey] = now;
       onSelectDate?.(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), day));
@@ -880,8 +943,8 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
               <BlobHalo color={topMeta.color}>
                 <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 272 : 'clamp(320px, 28vw, 400px)', height: isMobile ? 280 : 'clamp(360px, 31vw, 372px)' }}>
                   {!showEmptyBlob
-                    ? <EmotionBlob emotion={displayEmotion} size={isMobile ? 264 : 410} onDragChange={handleBlobDrag} />
-                    : <EmptyEmotionBlob size={isMobile ? 264 : 410} dark={dark} />}
+                    ? <EmotionBlob emotion={displayEmotion} size={blobSize} onDragChange={handleBlobDrag} />
+                    : <EmptyEmotionBlob size={blobSize} dark={dark} />}
                 </div>
               </BlobHalo>
               <BubbleStack css={{ transform: `translate(${blobDrag.dx * (isMobile ? 0.4 : 0.5)}px, ${blobDrag.dy * (isMobile ? 0.4 : 0.5)}px)`, transition: blobDrag.isDragging ? 'none' : 'transform .4s cubic-bezier(.34, 1.4, .64, 1)', '@media (max-width: 980px)': { marginBottom: showEmptyBlob ? 20 : -20 } }}>

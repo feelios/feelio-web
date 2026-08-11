@@ -3,7 +3,7 @@
 // 팩트 리포트 칸의 왼쪽 표시.
 // 이 칸의 페르소나가 'MZ 팩트 폭격기'라 폭탄으로 표시한다 (#280).
 // 다른 칸(위험 루트 경고, 챌린지 깃발, 위험도 신호등)과 함께 아이콘만 보고 구분되게 한다.
-export function FactBomberIcon({ expanded = false, color }) {
+export function FactBomberIcon({ color }) {
   return (
     <span
       aria-hidden="true"
@@ -12,8 +12,6 @@ export function FactBomberIcon({ expanded = false, color }) {
         placeItems: 'center',
         width: 19,
         color: color || '#E87573',
-        marginTop: expanded ? 2 : 0,
-        '@media (min-width: 821px)': { marginTop: 0 }
       }}
     >
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
