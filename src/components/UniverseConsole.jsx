@@ -1,4 +1,36 @@
-export default function UniverseConsole({ 
+/**
+ * 모바일 콘솔의 우주 선택 버튼. 데스크톱 버튼과 같은 구성이다 —
+ * 유리 질감 배경에 [표시등][라벨 / PLANET-0x · TONE] 가로 배치.
+ *
+ * 좁은 기기에서는 글자가 먼저 줄어들게 둔다(minWidth: 0 + ellipsis).
+ * 버튼 폭을 줄이면 노브와 겹치거나 터치 영역이 무너진다.
+ */
+function ConsoleChoice({ on, onClick, label, sub, glow }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1, minWidth: 0, position: 'relative', height: '56px', borderRadius: 13,
+        background: 'linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.03))',
+        border: '1px solid rgba(255,255,255,.14)',
+        boxShadow: '0 3px 7px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.2)',
+        display: 'flex', alignItems: 'center', gap: 8, padding: '0 11px',
+        boxSizing: 'border-box', cursor: 'pointer', transition: 'box-shadow .2s ease'
+      }}
+    >
+      <span style={{ width: 8, height: 8, borderRadius: '50%', flex: 'none', background: on ? glow : 'rgba(255,255,255,.24)', boxShadow: on ? `0 0 9px ${glow}` : 'none', transition: '.25s' }}></span>
+      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.22, minWidth: 0, overflow: 'hidden' }}>
+        <span style={{ font: "600 11.5px system-ui", color: '#ECEBF0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{label}</span>
+        <span style={{ font: "500 7.5px ui-monospace,Menlo,monospace", color: '#8f8c9c', letterSpacing: '.06em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{sub}</span>
+      </span>
+      {on && (
+        <span style={{ position: 'absolute', inset: 0, borderRadius: 13, border: `1.5px solid ${glow}a6`, boxShadow: `inset 0 2px 7px rgba(0,0,0,.4),0 0 18px -4px ${glow}b3`, pointerEvents: 'none' }}></span>
+      )}
+    </button>
+  );
+}
+
+export default function UniverseConsole({
   isMobile, leverA, leverB, startLeverA, startLeverB, ignite, recommending, statusText, 
   selectCurrent, selectReduced, leftOn, rightOn 
 }) {
@@ -24,57 +56,28 @@ export default function UniverseConsole({
             <span style={{ font: "400 10px ui-monospace,Menlo,monospace", color: "#6a6d75", letterSpacing: ".1em", whiteSpace: 'nowrap' }}>{statusText}</span>
           </div>
           
-          {/* 계기판: REC 노브가 상단에 걸쳐있고 아래 카드들이 벌어져 있는 구조 */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '16px', position: 'relative', marginTop: '10px' }}>
-            
-            {/* 중앙: 둥근 REC 노브 (데스크탑 SVG 다이얼과 동일한 디자인 적용) */}
-            {/* 노브가 버튼 위에 걸쳐 있어 버튼 윗변을 가렸다. 겹치지 않게 띄운다. */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 10, marginBottom: '14px' }}>
-              <button onClick={ignite} style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {/* 데스크톱과 같은 한 줄 배치: [지금 이대로라면] (REC) [조금 줄여본다면].
+              예전에는 노브가 위에 얹히고 버튼이 아래 한 줄이라 축이 둘로 나뉘어 보였다.
+              좁은 기기에서는 글자가 먼저 줄어들도록 두고(minWidth: 0 + ellipsis),
+              노브와 버튼 높이는 유지해 터치 영역을 지킨다. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', marginBottom: '4px', marginTop: '6px' }}>
+            <ConsoleChoice on={leftOn} onClick={selectCurrent} label="지금 이대로라면" sub="PLANET-01 · STRESS" glow="#9E96EE" />
+
+            {/* 중앙: REC 노브 (데스크톱 SVG 다이얼과 같은 디자인) */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none', zIndex: 10 }}>
+              <button onClick={ignite} style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 {recommending && <div style={{ position: 'absolute', inset: -2, border: '1.5px solid #82E2C2', borderRadius: '50%', animation: 'pu-scan 1.7s ease-out infinite' }}></div>}
-                <svg viewBox="0 0 62 62" width="62" height="62" style={{ display: 'block', borderRadius: '50%', background: '#17181c', boxShadow: 'inset 0 4px 10px rgba(0,0,0,.6)' }}>
+                <svg viewBox="0 0 62 62" width="52" height="52" style={{ display: 'block', borderRadius: '50%', background: '#17181c', boxShadow: 'inset 0 4px 10px rgba(0,0,0,.6)' }}>
                   <circle cx="31" cy="31" r="30" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.08)" strokeWidth="1"/>
                   <circle cx="31" cy="31" r="23" fill="none" stroke="#8B7EE8" strokeOpacity=".25" strokeWidth="1" strokeDasharray="2 4"/>
                   <circle cx="31" cy="31" r="17" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" strokeWidth="1"/>
                   <line x1="31" y1="18" x2="31" y2="24" stroke="#8B7EE8" strokeWidth="2.4" strokeLinecap="round"/>
                 </svg>
               </button>
-              <span style={{ font: "600 8px ui-monospace,Menlo,monospace", letterSpacing: ".15em", color: "rgba(255,255,255,.4)", marginTop: '8px' }}>REC</span>
+              <span style={{ font: "600 7.5px ui-monospace,Menlo,monospace", letterSpacing: ".15em", color: "rgba(255,255,255,.4)", marginTop: '5px' }}>REC</span>
             </div>
 
-            {/* 두 선택 버튼. 데스크톱과 같은 구성으로 맞춘다 —
-                유리 질감 배경 + [표시등][라벨 / PLANET-0x · TONE] 가로 배치.
-                예전에는 글자를 아래로 붙이고 좌우를 서로 반대로 정렬해(왼쪽 버튼은 왼쪽,
-                오른쪽 버튼은 오른쪽) 두 버튼이 대칭으로 어긋나 보였다.
-                데스크톱의 세로 눈금 장식은 폭을 먹어서 좁은 기기를 위해 뺐다. */}
-            <div style={{ display: 'flex', width: '100%', gap: '10px' }}>
-              {[
-                { on: leftOn, onClick: selectCurrent, label: '지금 이대로라면', sub: 'PLANET-01 · STRESS', glow: '#9E96EE' },
-                { on: rightOn, onClick: selectReduced, label: '조금 줄여본다면', sub: 'PLANET-02 · CALM', glow: '#82E2C2' }
-              ].map(btn => (
-                <button
-                  key={btn.sub}
-                  onClick={btn.onClick}
-                  style={{
-                    flex: 1, minWidth: 0, position: 'relative', height: '56px', borderRadius: 13,
-                    background: 'linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.03))',
-                    border: '1px solid rgba(255,255,255,.14)',
-                    boxShadow: '0 3px 7px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.2)',
-                    display: 'flex', alignItems: 'center', gap: 9, padding: '0 12px',
-                    boxSizing: 'border-box', cursor: 'pointer', transition: 'box-shadow .2s ease'
-                  }}
-                >
-                  <span style={{ width: 9, height: 9, borderRadius: '50%', flex: 'none', background: btn.on ? btn.glow : 'rgba(255,255,255,.24)', boxShadow: btn.on ? `0 0 9px ${btn.glow}` : 'none', transition: '.25s' }}></span>
-                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.22, minWidth: 0 }}>
-                    <span style={{ font: "600 12.5px system-ui", color: '#ECEBF0', whiteSpace: 'nowrap' }}>{btn.label}</span>
-                    <span style={{ font: "500 8px ui-monospace,Menlo,monospace", color: '#8f8c9c', letterSpacing: '.08em', whiteSpace: 'nowrap' }}>{btn.sub}</span>
-                  </span>
-                  {btn.on && (
-                    <span style={{ position: 'absolute', inset: 0, borderRadius: 13, border: `1.5px solid ${btn.glow}a6`, boxShadow: `inset 0 2px 7px rgba(0,0,0,.4),0 0 18px -4px ${btn.glow}b3`, pointerEvents: 'none' }}></span>
-                  )}
-                </button>
-              ))}
-            </div>
+            <ConsoleChoice on={rightOn} onClick={selectReduced} label="조금 줄여본다면" sub="PLANET-02 · CALM" glow="#82E2C2" />
           </div>
         </div>
       </div>
