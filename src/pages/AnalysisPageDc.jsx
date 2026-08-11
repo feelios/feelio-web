@@ -544,7 +544,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                     {isRisk ? (
                       <>
                         <span css={{ '@media (min-width: 821px)': { display: 'none' } }}>{item.note}</span>
-                        <span css={{ display: 'none', '@media (min-width: 821px)': { display: 'inline' } }}>{item.value}</span>
+                        {/* 색 규칙은 모바일과 같게 맞춘다 — 초록은 '안전'이라는 판정에 붙고,
+                            소진율은 판정이 아니라 수치라 기본색이다. 자리만 좌우가 다를 뿐이다. */}
+                        <span css={{ display: 'none', '@media (min-width: 821px)': { display: 'inline', color: item.color } }}>{item.value}</span>
                       </>
                     ) : bodyText}
                   </div>
@@ -565,7 +567,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                     flexShrink: 0,
                     textAlign: 'right',
                     whiteSpace: 'nowrap',
-                    color: item.color,
+                    // 위험도 칸에서 초록을 가져가는 건 등급('안전')이다. 여기 오는 소진율은 기본색.
+                    color: isRisk ? 'var(--text)' : item.color,
                     fontSize: (item.type === 'risk' || item.label === RISK_ROUTE_LABEL) ? 13.5 : 11,
                     fontWeight: (item.type === 'risk' || item.label === RISK_ROUTE_LABEL) ? 950 : 900
                   }
