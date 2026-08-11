@@ -151,7 +151,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const [flippedCards, setFlippedCards] = useState({});
   const [activeChartTab, setActiveChartTab] = useState('emotion');
   const [patternFlipped, setPatternFlipped] = useState(false);
-  const [expandedInsight, setExpandedInsight] = useState(null);
+  // 칸마다 따로 여닫는다. 하나를 열 때 다른 하나가 닫히면, 두 개를 나란히 놓고
+  // 비교하려던 사용자가 방금 연 것을 다시 열어야 한다. 닫는 건 사용자가 정한다.
+  const [expandedInsights, setExpandedInsights] = useState({});
 
   const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
@@ -364,26 +366,36 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
     <Page>
       <InsightRail>
         {aiQuickInsights.map(item => {
-          const isExpanded = expandedInsight === item.label;
+          const isExpanded = !!expandedInsights[item.label];
+          const isRisk = item.type === 'risk';
+          // 칸의 기본 구성은 [라벨 옆 = note] [본문 = value] 다.
+          // 소비 위험도만 모바일에서 뒤집는다 — 등급(안전·주의·위험)이 라벨 옆, 예산 소진율이 본문.
+          // 데스크톱 위험도는 기존 배치를 그대로 두므로 본문은 아래에서 브레이크포인트로 가른다.
+          const headline = isRisk ? item.value : item.note;
+          // 팩트 리포트는 본문이 이미 금액을 말해 '이번 달 N원'이 중복이고,
+          // 챌린지의 '이번 주'는 모든 챌린지가 이번 주라 아무것도 알려주지 않는다.
+          const showHeadline = item.type !== 'fact' && item.label !== CHALLENGE_LABEL;
           return (
-          <InsightItem 
+          <InsightItem
             key={item.label}
             onClick={() => {
               if (window.innerWidth <= 820) {
-                setExpandedInsight(isExpanded ? null : item.label);
+                setExpandedInsights(prev => ({ ...prev, [item.label]: !prev[item.label] }));
               }
             }}
             css={{
               cursor: 'pointer',
-              alignItems: isExpanded ? 'flex-start' : 'center',
-              paddingTop: isExpanded ? 12 : 6,
-              paddingBottom: isExpanded ? 12 : 6,
+              // 펼칠 때 정렬을 바꾸면 라벨이 위로 튀어 오른다. 위 여백을 항상 같게 둬
+              // 라벨 줄을 제자리에 고정하고, 늘어나는 본문만 아래로 자라게 한다.
+              alignItems: 'flex-start',
+              paddingTop: 12,
+              paddingBottom: 12,
               transition: 'all 0.2s ease',
               '@media (min-width: 821px)': { cursor: 'default', alignItems: 'center', paddingTop: 6, paddingBottom: 6 }
             }}
           >
             {item.type === 'risk' ? (
-              <RiskSignal glow={risk?.color} role="img" aria-label={`소비 위험도 ${risk?.value ?? '측정중'}`} css={{ marginTop: isExpanded ? 2 : 0, '@media (min-width: 821px)': { marginTop: 0 } }}>
+              <RiskSignal glow={risk?.color} role="img" aria-label={`소비 위험도 ${risk?.value ?? '측정중'}`} css={{ marginTop: 2, '@media (min-width: 821px)': { marginTop: 0 } }}>
                 {['green', 'yellow', 'red'].map(lamp => (
                   <i key={lamp} className={lamp === risk?.lamp ? `${lamp} active` : lamp} />
                 ))}
@@ -404,22 +416,24 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               <div css={{ minWidth: 0, '@media (min-width: 821px)': { flex: 1, minWidth: 0 } }}>
               <div css={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, width: '100%' }}>
                 <span css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', flexShrink: 0 }}>{item.label}</span>
-                {isInsightsLoading
+                {showHeadline && (isInsightsLoading
                   ? <Skeleton w="44px" h={11} radius={5} />
                   : <span css={{
-                      color: item.type === 'fact' ? '#E87573' : item.color,
-                      fontSize: 11,
-                      fontWeight: 900,
+                      color: item.color,
+                      // 등급은 라벨과 같은 줄에서 바로 읽혀야 하는 결론이라 조금 키운다.
+                      fontSize: isRisk ? 12.5 : 11,
+                      fontWeight: 950,
                       whiteSpace: isExpanded ? 'normal' : 'nowrap',
                       overflow: isExpanded ? 'visible' : 'hidden',
                       textOverflow: isExpanded ? 'clip' : 'ellipsis',
                       textAlign: 'right',
                       wordBreak: isExpanded ? 'keep-all' : 'normal',
                       minWidth: 0,
-                      display: isExpanded ? 'inline' : 'none',
+                      // 위험도 등급은 접혀 있을 때도 보인다 — 펼치지 않고 확인하려고 보는 값이다.
+                      display: (isRisk || isExpanded) ? 'inline' : 'none',
                       // 데스크톱에서는 아래쪽 전용 note 가 대신 나온다(세로 중앙 정렬 때문).
                       '@media (min-width: 821px)': { display: 'none' }
-                    }}>{item.note}</span>}
+                    }}>{headline}</span>)}
                 {/* 접힘/펼침 표시 — 모바일에서만 (데스크톱은 늘 펼친 상태라 표시할 게 없다) */}
                 <svg
                   aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -450,21 +464,32 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                   <div css={{
                     marginTop: 3,
                     color: item.type === 'fact' ? '#E87573' : 'var(--text)',
-                    fontSize: item.type === 'fact' ? 14 : 13,
-                    fontWeight: item.type === 'fact' ? 950 : 900,
+                    // 팩트 리포트는 모바일에서 두세 줄로 접혀 덩치가 커진다.
+                    // 네 칸 중 한 칸만 크게 외치는 꼴이라 모바일에서만 낮춘다(데스크톱은 한 줄이라 그대로).
+                    fontSize: item.type === 'fact' ? 12.5 : 13,
+                    fontWeight: item.type === 'fact' ? 900 : 900,
                     lineHeight: 1.35,
                     overflow: 'visible',
                     whiteSpace: 'normal',
                     wordBreak: 'keep-all',
                     overflowWrap: 'anywhere',
                     '@media (min-width: 821px)': {
+                      fontSize: item.type === 'fact' ? 14 : 13,
+                      fontWeight: item.type === 'fact' ? 950 : 900,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       wordBreak: 'normal',
                       overflowWrap: 'normal'
                     }
-                  }}>{item.value}</div>
+                  }}>
+                    {isRisk ? (
+                      <>
+                        <span css={{ '@media (min-width: 821px)': { display: 'none' } }}>{item.note}</span>
+                        <span css={{ display: 'none', '@media (min-width: 821px)': { display: 'inline' } }}>{item.value}</span>
+                      </>
+                    ) : item.value}
+                  </div>
                   )}
                 </div>
               </div>
@@ -472,8 +497,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
 
               {/* 데스크톱 전용 note. 라벨 줄이 아니라 항목 전체를 기준으로 세로 중앙에 놓인다 (#280).
                   - 팩트 리포트: 본문이 이미 금액을 말해줘 '이번 달 N원'이 중복이라 감춘다
+                  - AI 맞춤 챌린지: 모든 챌린지가 이번 주라 '이번 주'는 아무것도 구분해 주지 않는다
                   - 위험 루트(건수) · 소비 위험도(예산 소진율): 본문만으로 알 수 없는 수치라 키운다 */}
-              {!isInsightsLoading && item.type !== 'fact' && (
+              {!isInsightsLoading && showHeadline && (
                 <span css={{
                   display: 'none',
                   '@media (min-width: 821px)': {
