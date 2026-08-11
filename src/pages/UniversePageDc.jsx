@@ -95,23 +95,33 @@ export default function UniversePageDc() {
 
     const formatMoney = (val) => val.toLocaleString() + "원";
 
-    let currentNote = `${goal.name} · `;
-    currentNote += current.monthsToGoal ? `${current.monthsToGoal}개월 예상` : "도달 불가";
+    // 개월은 올림이라 한 달 안쪽에서 두 우주가 같은 값이 된다(0.90개월과 0.84개월이 둘 다 1개월).
+    // 그 구간에서는 서버가 함께 주는 일수로 바꿔 차이를 드러낸다.
+    const withinAMonth = (s) => s.monthsToGoal != null && s.monthsToGoal <= 1 && s.daysToGoal > 0;
+    const durationOf = (s) => {
+      if (s.monthsToGoal == null) return "도달 불가";
+      return withinAMonth(s) ? `${s.daysToGoal}일 예상` : `${s.monthsToGoal}개월 예상`;
+    };
+
+    const currentNote = `${goal.name} · ${durationOf(current)}`;
 
     const savedAmount = reduced.monthlySaving - current.monthlySaving;
+    const monthsSaved = (current.monthsToGoal ?? 0) - (reduced.monthsToGoal ?? 0);
+    const daysSaved = (current.daysToGoal ?? 0) - (reduced.daysToGoal ?? 0);
 
-    // 두 우주의 개월 수가 같아지면(목표가 코앞이면 올림 때문에 둘 다 1개월이 된다)
-    // "1개월 예상"을 양쪽에 똑같이 적게 되어 대비가 사라진다. 그럴 때는 시간 대신
-    // 금액 차이를 앞세운다 — 줄인 결과 그 자체라 추정이 아니고 항상 다른 값이다.
+    // 얼마나 빨라지는지가 이 칸의 요점이다. 개월로 드러나면 개월, 한 달 안쪽이면 일,
+    // 그래도 같으면(반올림으로 하루도 안 줄면) 매달 더 남는 금액으로 말한다.
     let reducedNote = `${goal.name} · `;
-    if (!reduced.monthsToGoal) {
+    if (reduced.monthsToGoal == null) {
       reducedNote += "도달 불가";
-    } else if (current.monthsToGoal && current.monthsToGoal > reduced.monthsToGoal) {
-      reducedNote += `${current.monthsToGoal - reduced.monthsToGoal}개월 단축!`;
+    } else if (monthsSaved > 0) {
+      reducedNote += `${monthsSaved}개월 단축!`;
+    } else if (daysSaved > 0) {
+      reducedNote += `${daysSaved}일 단축!`;
     } else if (savedAmount > 0) {
       reducedNote += `매달 ${formatMoney(savedAmount)} 더`;
     } else {
-      reducedNote += `${reduced.monthsToGoal}개월 예상`;
+      reducedNote += durationOf(reduced);
     }
 
     return {

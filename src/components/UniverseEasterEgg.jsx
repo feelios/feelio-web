@@ -12,9 +12,21 @@ function formatMoney(value) {
   return Number.isFinite(amount) ? `${amount.toLocaleString('ko-KR')}원` : '-';
 }
 
-function formatMonths(value) {
-  if (value === null || value === undefined || value === '') return '도달 불가';
-  return Number.isFinite(Number(value)) ? `${Number(value).toLocaleString('ko-KR')}개월` : '도달 불가';
+/**
+ * 도달까지 걸리는 시간.
+ *
+ * 개월은 올림이라 한 달 안쪽에서 두 시나리오가 같은 값이 된다. 0.90개월과 0.84개월이
+ * 둘 다 "1개월" 이 되어, 매달 더 모으는 쪽이 같은 시점에 닿는 것처럼 보였다.
+ * 그 구간에서는 서버가 함께 주는 일수(daysToGoal)로 바꿔 차이를 드러낸다.
+ */
+function formatDuration(scenario) {
+  const months = scenario?.monthsToGoal;
+  if (months === null || months === undefined || months === '') return '도달 불가';
+  const days = scenario?.daysToGoal;
+  if (Number(months) <= 1 && Number.isFinite(Number(days)) && Number(days) > 0) {
+    return `${Number(days).toLocaleString('ko-KR')}일`;
+  }
+  return Number.isFinite(Number(months)) ? `${Number(months).toLocaleString('ko-KR')}개월` : '도달 불가';
 }
 
 function formatDate(value) {
@@ -45,7 +57,7 @@ function ScenarioCard({ scenario, variant, compact = false }) {
         <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,.11)', flexShrink: 0 }} />
         <div style={{ minWidth: 0, flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1.15fr', gap: 3 }}>
           <Metric label="월 저축" value={formatCompactMoney(scenario?.monthlySaving)} compact color={color.accent} />
-          <Metric label="도달까지" value={formatMonths(scenario?.monthsToGoal)} compact color={color.accent} />
+          <Metric label="도달까지" value={formatDuration(scenario)} compact color={color.accent} />
           <Metric label="예상 달성" value={formatCompactDate(scenario?.estimatedAchieveDate)} compact color={color.accent} />
         </div>
       </section>
@@ -69,7 +81,7 @@ function ScenarioCard({ scenario, variant, compact = false }) {
       <div style={{ height: 1, background: 'rgba(255,255,255,.11)', margin: '12px 0' }} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.15fr', gap: 0 }}>
         <Metric label="월 저축액" value={formatMoney(scenario?.monthlySaving)} color={color.accent} divided />
-        <Metric label="도달까지" value={formatMonths(scenario?.monthsToGoal)} color={color.accent} divided />
+        <Metric label="도달까지" value={formatDuration(scenario)} color={color.accent} divided />
         <Metric label="예상 달성" value={formatDate(scenario?.estimatedAchieveDate)} color={color.accent} />
       </div>
     </section>
