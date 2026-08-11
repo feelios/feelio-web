@@ -49,6 +49,11 @@ const InsightItem = styled.div`
   }
 
   @media (max-width: 820px) {
+    /* 칸 폭이 곧 글자 폭이다. 좌우 여백과 열 간격을 줄여 라벨·등급이 들어갈 자리를 만든다. */
+    padding-left: 12px;
+    padding-right: 12px;
+    column-gap: 8px;
+
     &:nth-of-type(2) {
       border-right: 0;
     }
@@ -94,6 +99,25 @@ const RiskSignal = styled.span`
   i.active {
     opacity: 1;
     box-shadow: 0 0 16px ${({ glow = '#E87573' }) => glow}bd, 0 0 0 3px ${({ glow = '#E87573' }) => glow}29;
+  }
+
+  /* 모바일에서 이 신호등만 52px 이었다. 다른 칸 아이콘은 19px 이라 위험도 칸만
+     글자 쓸 폭이 33px 좁았고, 그래서 등급('안전')이 잘려 나갔다.
+     등급을 글자로도 보여주게 된 뒤로는 이만큼 클 이유도 없다. */
+  @media (max-width: 820px) {
+    width: 37px;
+    height: 20px;
+    padding: 4px 5px;
+    gap: 3px;
+
+    i {
+      width: 7px;
+      height: 7px;
+    }
+
+    i.active {
+      box-shadow: 0 0 11px ${({ glow = '#E87573' }) => glow}bd, 0 0 0 2px ${({ glow = '#E87573' }) => glow}29;
+    }
   }
 `;
 
@@ -151,7 +175,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const [flippedCards, setFlippedCards] = useState({});
   const [activeChartTab, setActiveChartTab] = useState('emotion');
   const [patternFlipped, setPatternFlipped] = useState(false);
-  const [expandedInsight, setExpandedInsight] = useState(null);
+  // 칸마다 따로 여닫는다. 하나를 열 때 다른 하나가 닫히면, 두 개를 나란히 놓고
+  // 비교하려던 사용자가 방금 연 것을 다시 열어야 한다. 닫는 건 사용자가 정한다.
+  const [expandedInsights, setExpandedInsights] = useState({});
 
   const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
@@ -364,62 +390,104 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
     <Page>
       <InsightRail>
         {aiQuickInsights.map(item => {
-          const isExpanded = expandedInsight === item.label;
+          const isExpanded = !!expandedInsights[item.label];
+          const isRisk = item.type === 'risk';
+          // 칸의 기본 구성은 [라벨 옆 = note] [본문 = value] 다.
+          // 소비 위험도만 모바일에서 뒤집는다 — 등급(안전·주의·위험)이 라벨 옆, 예산 소진율이 본문.
+          // 데스크톱 위험도는 기존 배치를 그대로 두므로 본문은 아래에서 브레이크포인트로 가른다.
+          const headline = isRisk ? item.value : item.note;
+          // 팩트 리포트는 본문이 이미 금액을 말해 '이번 달 N원'이 중복이고,
+          // 챌린지의 '이번 주'는 모든 챌린지가 이번 주라 아무것도 알려주지 않는다.
+          const showHeadline = item.type !== 'fact' && item.label !== CHALLENGE_LABEL;
+          // 본문 문구 손질. 서버 문자열은 그대로 두고 읽는 리듬만 바꾼다.
+          // - 위험 루트: 가운뎃점을 화살표로. 시간 → 감정 → 사용처로 이어지는 '경로'라
+          //   방향이 보여야 한다(아래 반복 패턴 카드도 같은 화살표를 쓴다).
+          // - 팩트 리포트: 첫 쉼표에서 줄을 바꾼다. 모바일은 pre-line 으로 그 줄바꿈이 살고,
+          //   데스크톱은 nowrap 이라 공백으로 접혀 한 줄 그대로다.
+          const bodyText = item.label === RISK_ROUTE_LABEL
+            ? String(item.value ?? '').replace(/\s*·\s*/g, ' → ')
+            : item.type === 'fact'
+              ? String(item.value ?? '').replace(/,\s*/, ',\n')
+              : item.value;
           return (
-          <InsightItem 
+          <InsightItem
             key={item.label}
             onClick={() => {
               if (window.innerWidth <= 820) {
-                setExpandedInsight(isExpanded ? null : item.label);
+                setExpandedInsights(prev => ({ ...prev, [item.label]: !prev[item.label] }));
               }
             }}
             css={{
               cursor: 'pointer',
-              alignItems: isExpanded ? 'flex-start' : 'center',
-              paddingTop: isExpanded ? 12 : 6,
-              paddingBottom: isExpanded ? 12 : 6,
+              // 펼침 여부로 정렬 방식을 바꾸면 라벨이 크게 튀어 오른다(옆 칸이 펼쳐져 칸이
+              // 높을 때 특히). 정렬은 어느 상태에서나 같게 두고, 내용 묶음만 칸 가운데에 놓는다.
+              //
+              // alignItems 는 행 안에서의 정렬이라 아이콘과 라벨 줄이 서로 세로 가운데로 맞물린다.
+              // 라벨 줄 높이는 펼쳐도 그대로라 이 값은 튀는 것과 무관하다.
+              alignItems: 'center',
+              alignContent: 'center',
+              paddingTop: 12,
+              paddingBottom: 12,
               transition: 'all 0.2s ease',
-              '@media (min-width: 821px)': { cursor: 'default', alignItems: 'center', paddingTop: 6, paddingBottom: 6 }
+              '@media (min-width: 821px)': { cursor: 'default', alignItems: 'center', alignContent: 'normal', paddingTop: 6, paddingBottom: 6 }
             }}
           >
             {item.type === 'risk' ? (
-              <RiskSignal glow={risk?.color} role="img" aria-label={`소비 위험도 ${risk?.value ?? '측정중'}`} css={{ marginTop: isExpanded ? 2 : 0, '@media (min-width: 821px)': { marginTop: 0 } }}>
+              <RiskSignal glow={risk?.color} role="img" aria-label={`소비 위험도 ${risk?.value ?? '측정중'}`}>
                 {['green', 'yellow', 'red'].map(lamp => (
                   <i key={lamp} className={lamp === risk?.lamp ? `${lamp} active` : lamp} />
                 ))}
               </RiskSignal>
             ) : item.label === CHALLENGE_LABEL ? (
-              <ChallengeFlag expanded={isExpanded} />
+              <ChallengeFlag />
             ) : item.type === 'fact' ? (
-              <FactBomberIcon expanded={isExpanded} color={item.color} />
+              <FactBomberIcon color={item.color} />
             ) : (
-              <RiskRouteIcon expanded={isExpanded} />
+              <RiskRouteIcon />
             )}
             {/* 데스크톱은 [라벨+본문] 옆에 note 를 두고 세로 중앙에 맞춘다.
                 note 를 라벨 줄 안에 두면 baseline 에 묶여 위로 붙어 보인다 (#280). */}
+            {/* 모바일에서는 이 두 겹의 래퍼를 display:contents 로 없앤다.
+                래퍼가 아이콘 오른쪽 열에 갇혀 있으면 본문도 그 좁은 열에 갇힌다.
+                위험도 칸은 신호등이 52px(다른 아이콘은 19px)라 글자 폭이 33px 더 좁아,
+                거기서만 '예산의 60% 사용'이 두 줄로 접혔다. 래퍼를 없애면 라벨 줄과 본문이
+                InsightItem 의 직접 자식이 되어, 본문이 아이콘 아래까지 한 줄로 쓸 수 있다. */}
             <div css={{
+              display: 'contents',
               minWidth: 0,
               '@media (min-width: 821px)': { display: 'flex', alignItems: 'center', gap: 12 }
             }}>
-              <div css={{ minWidth: 0, '@media (min-width: 821px)': { flex: 1, minWidth: 0 } }}>
-              <div css={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, width: '100%' }}>
-                <span css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap', flexShrink: 0 }}>{item.label}</span>
-                {isInsightsLoading
+              <div css={{ display: 'contents', minWidth: 0, '@media (min-width: 821px)': { display: 'block', flex: 1, minWidth: 0 } }}>
+              {/* 모바일은 칸이 좁아 gap 10 이면 등급('안전')이 잘려 나간다. 6 으로 줄인다. */}
+              <div css={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6, width: '100%', '@media (min-width: 821px)': { gap: 10 } }}>
+                {/* 자리가 모자라면 줄어드는 쪽은 라벨이다. 좁은 기기에서 둘 중 하나가
+                    잘려야 한다면, 아이콘이 이미 무슨 칸인지 말해 주는 라벨보다
+                    등급('안전')이 살아남아야 한다. */}
+                <span css={{
+                  color: 'var(--sub)', fontSize: 11, fontWeight: 900, whiteSpace: 'nowrap',
+                  minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
+                  '@media (min-width: 821px)': { flexShrink: 0, overflow: 'visible' }
+                }}>{item.label}</span>
+                {showHeadline && (isInsightsLoading
                   ? <Skeleton w="44px" h={11} radius={5} />
                   : <span css={{
-                      color: item.type === 'fact' ? '#E87573' : item.color,
+                      color: item.color,
+                      // 라벨과 나란히 한 줄에 들어가야 한다. 키우면 '소비 위험도'와 꺾쇠 사이가
+                      // 꽉 차 보여서 다른 칸의 note 와 같은 11px 로 둔다.
                       fontSize: 11,
-                      fontWeight: 900,
+                      fontWeight: 950,
                       whiteSpace: isExpanded ? 'normal' : 'nowrap',
                       overflow: isExpanded ? 'visible' : 'hidden',
                       textOverflow: isExpanded ? 'clip' : 'ellipsis',
                       textAlign: 'right',
                       wordBreak: isExpanded ? 'keep-all' : 'normal',
                       minWidth: 0,
-                      display: isExpanded ? 'inline' : 'none',
+                      flexShrink: 0,
+                      // 위험도 등급은 접혀 있을 때도 보인다 — 펼치지 않고 확인하려고 보는 값이다.
+                      display: (isRisk || isExpanded) ? 'inline' : 'none',
                       // 데스크톱에서는 아래쪽 전용 note 가 대신 나온다(세로 중앙 정렬 때문).
                       '@media (min-width: 821px)': { display: 'none' }
-                    }}>{item.note}</span>}
+                    }}>{headline}</span>)}
                 {/* 접힘/펼침 표시 — 모바일에서만 (데스크톱은 늘 펼친 상태라 표시할 게 없다) */}
                 <svg
                   aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -436,12 +504,15 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                 </svg>
               </div>
 
-              {/* 0fr → 1fr 로 높이를 부드럽게 여닫는다. 데스크톱은 항상 열린 상태 */}
+              {/* 0fr → 1fr 로 높이를 부드럽게 여닫는다. 데스크톱은 항상 열린 상태.
+                  모바일에서는 위 래퍼가 display:contents 라 이 블록이 InsightItem 의 직접
+                  자식이 된다. 두 열을 다 걸치게 해 아이콘 아래 폭까지 본문이 쓴다. */}
               <div css={{
                 display: 'grid',
+                gridColumn: '1 / -1',
                 gridTemplateRows: isExpanded ? '1fr' : '0fr',
                 transition: 'grid-template-rows .24s ease',
-                '@media (min-width: 821px)': { gridTemplateRows: '1fr' }
+                '@media (min-width: 821px)': { gridColumn: 'auto', gridTemplateRows: '1fr' }
               }}>
                 <div css={{ minHeight: 0, overflow: 'hidden' }}>
                   {isInsightsLoading ? (
@@ -450,21 +521,33 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                   <div css={{
                     marginTop: 3,
                     color: item.type === 'fact' ? '#E87573' : 'var(--text)',
-                    fontSize: item.type === 'fact' ? 14 : 13,
-                    fontWeight: item.type === 'fact' ? 950 : 900,
+                    // 팩트 리포트는 모바일에서 두세 줄로 접혀 덩치가 커진다.
+                    // 네 칸 중 한 칸만 크게 외치는 꼴이라 모바일에서만 낮춘다(데스크톱은 한 줄이라 그대로).
+                    fontSize: item.type === 'fact' ? 12.5 : 13,
+                    fontWeight: item.type === 'fact' ? 900 : 900,
                     lineHeight: 1.35,
                     overflow: 'visible',
-                    whiteSpace: 'normal',
+                    // 팩트 리포트만 위에서 넣은 줄바꿈을 살린다.
+                    whiteSpace: item.type === 'fact' ? 'pre-line' : 'normal',
                     wordBreak: 'keep-all',
                     overflowWrap: 'anywhere',
                     '@media (min-width: 821px)': {
+                      fontSize: item.type === 'fact' ? 14 : 13,
+                      fontWeight: item.type === 'fact' ? 950 : 900,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       wordBreak: 'normal',
                       overflowWrap: 'normal'
                     }
-                  }}>{item.value}</div>
+                  }}>
+                    {isRisk ? (
+                      <>
+                        <span css={{ '@media (min-width: 821px)': { display: 'none' } }}>{item.note}</span>
+                        <span css={{ display: 'none', '@media (min-width: 821px)': { display: 'inline' } }}>{item.value}</span>
+                      </>
+                    ) : bodyText}
+                  </div>
                   )}
                 </div>
               </div>
@@ -472,8 +555,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
 
               {/* 데스크톱 전용 note. 라벨 줄이 아니라 항목 전체를 기준으로 세로 중앙에 놓인다 (#280).
                   - 팩트 리포트: 본문이 이미 금액을 말해줘 '이번 달 N원'이 중복이라 감춘다
+                  - AI 맞춤 챌린지: 모든 챌린지가 이번 주라 '이번 주'는 아무것도 구분해 주지 않는다
                   - 위험 루트(건수) · 소비 위험도(예산 소진율): 본문만으로 알 수 없는 수치라 키운다 */}
-              {!isInsightsLoading && item.type !== 'fact' && (
+              {!isInsightsLoading && showHeadline && (
                 <span css={{
                   display: 'none',
                   '@media (min-width: 821px)': {
