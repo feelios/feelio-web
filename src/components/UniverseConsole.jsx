@@ -74,7 +74,9 @@ export default function UniverseConsole({
                   <line x1="31" y1="18" x2="31" y2="24" stroke="#8B7EE8" strokeWidth="2.4" strokeLinecap="round"/>
                 </svg>
               </button>
-              <span style={{ font: "600 7.5px ui-monospace,Menlo,monospace", letterSpacing: ".15em", color: "rgba(255,255,255,.4)", marginTop: '5px' }}>REC</span>
+              {/* 이 노브를 누르면 두 미래 비교 화면이 뜬다. 라벨이 REC 뿐이라
+                  누르면 무엇이 나오는지 화면 어디에도 적혀 있지 않았다. */}
+              <span style={{ font: "600 8.5px system-ui", color: "rgba(255,255,255,.62)", marginTop: '5px', whiteSpace: 'nowrap' }}>두 미래 비교</span>
             </div>
 
             <ConsoleChoice on={rightOn} onClick={selectReduced} label="조금 줄여본다면" sub="PLANET-02 · CALM" glow="#82E2C2" />
@@ -159,7 +161,8 @@ export default function UniverseConsole({
           <circle cx="580" cy="191" r="18" fill="url(#cn-glass)" stroke="rgba(255,255,255,.14)" strokeWidth="1"/>
           <circle cx="580" cy="191" r="18" fill="url(#cn-bez)"/>
           <line x1="580" y1="178" x2="580" y2="186" stroke="#8B7EE8" strokeWidth="2.4" strokeLinecap="round"/>
-          <text x="580" y="234" textAnchor="middle" fill="rgba(255,255,255,.3)" style={{ font: "600 7px ui-monospace,Menlo,monospace", letterSpacing: ".14em" }}>REC</text>
+          {/* 누르면 두 미래 비교 화면이 뜬다. REC 만으로는 알 길이 없었다. */}
+          <text x="580" y="234" textAnchor="middle" fill="rgba(255,255,255,.55)" style={{ font: "600 8px system-ui" }}>두 미래 비교</text>
         </g>
         <g id="controls-detail">
           <circle cx="282" cy="90" r="1.6" fill="rgba(255,255,255,.2)"/>
