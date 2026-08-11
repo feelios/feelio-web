@@ -2,8 +2,8 @@
  * 모바일 콘솔의 우주 선택 버튼. 데스크톱 버튼과 같은 구성이다 —
  * 유리 질감 배경에 [표시등][라벨 / PLANET-0x · TONE] 가로 배치.
  *
- * 좁은 기기에서는 글자가 먼저 줄어들게 둔다(minWidth: 0 + ellipsis).
- * 버튼 폭을 줄이면 노브와 겹치거나 터치 영역이 무너진다.
+ * 아주 좁은 기기를 대비해 ellipsis 를 남겨두지만, 노브를 이 줄에서 뺀 뒤로는
+ * 실제로 잘릴 일이 거의 없다.
  */
 function ConsoleChoice({ on, onClick, label, sub, glow }) {
   return (
@@ -20,7 +20,7 @@ function ConsoleChoice({ on, onClick, label, sub, glow }) {
     >
       <span style={{ width: 8, height: 8, borderRadius: '50%', flex: 'none', background: on ? glow : 'rgba(255,255,255,.24)', boxShadow: on ? `0 0 9px ${glow}` : 'none', transition: '.25s' }}></span>
       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.22, minWidth: 0, overflow: 'hidden' }}>
-        <span style={{ font: "600 11.5px system-ui", color: '#ECEBF0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{label}</span>
+        <span style={{ font: "600 12.5px system-ui", color: '#ECEBF0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{label}</span>
         <span style={{ font: "500 7.5px ui-monospace,Menlo,monospace", color: '#8f8c9c', letterSpacing: '.06em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{sub}</span>
       </span>
       {on && (
@@ -38,7 +38,7 @@ export default function UniverseConsole({
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         {/* 모바일 콘솔 메인 패널 (크기 및 여백 축소) */}
-        <div style={{ width: '92%', maxWidth: '400px', background: '#17181c', borderRadius: '28px', border: '1.5px solid #23252a', padding: '16px 16px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.6)' }}>
+        <div style={{ width: '92%', maxWidth: '400px', background: '#17181c', borderRadius: '28px', border: '1.5px solid #23252a', padding: '16px 16px 26px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.6)' }}>
           
           {/* 상단 도트 인디케이터 (여백 축소) */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -56,29 +56,35 @@ export default function UniverseConsole({
             <span style={{ font: "400 10px ui-monospace,Menlo,monospace", color: "#6a6d75", letterSpacing: ".1em", whiteSpace: 'nowrap' }}>{statusText}</span>
           </div>
           
-          {/* 데스크톱과 같은 한 줄 배치: [지금 이대로라면] (REC) [조금 줄여본다면].
-              예전에는 노브가 위에 얹히고 버튼이 아래 한 줄이라 축이 둘로 나뉘어 보였다.
-              좁은 기기에서는 글자가 먼저 줄어들도록 두고(minWidth: 0 + ellipsis),
-              노브와 버튼 높이는 유지해 터치 영역을 지킨다. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', marginBottom: '4px', marginTop: '6px' }}>
+          {/* 선택 버튼 두 개를 한 줄에 두고, 비교는 그 아래 가로로 긴 버튼으로 뺀다.
+              데스크톱처럼 [버튼][노브][버튼] 한 줄로 붙였더니 폭이 1/3 뿐인 모바일에서
+              노브가 가운데를 먹어 "지금 이대로…" 처럼 라벨이 잘렸다.
+              같은 구도를 우겨넣는 것보다 글자가 온전한 쪽이 낫다. */}
+          <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '4px' }}>
             <ConsoleChoice on={leftOn} onClick={selectCurrent} label="지금 이대로라면" sub="PLANET-01 · STRESS" glow="#9E96EE" />
-
-            {/* 중앙: REC 노브 (데스크톱 SVG 다이얼과 같은 디자인) */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none', zIndex: 10 }}>
-              <button onClick={ignite} style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {recommending && <div style={{ position: 'absolute', inset: -2, border: '1.5px solid #82E2C2', borderRadius: '50%', animation: 'pu-scan 1.7s ease-out infinite' }}></div>}
-                <svg viewBox="0 0 62 62" width="52" height="52" style={{ display: 'block', borderRadius: '50%', background: '#17181c', boxShadow: 'inset 0 4px 10px rgba(0,0,0,.6)' }}>
-                  <circle cx="31" cy="31" r="30" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.08)" strokeWidth="1"/>
-                  <circle cx="31" cy="31" r="23" fill="none" stroke="#8B7EE8" strokeOpacity=".25" strokeWidth="1" strokeDasharray="2 4"/>
-                  <circle cx="31" cy="31" r="17" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.14)" strokeWidth="1"/>
-                  <line x1="31" y1="18" x2="31" y2="24" stroke="#8B7EE8" strokeWidth="2.4" strokeLinecap="round"/>
-                </svg>
-              </button>
-              <span style={{ font: "600 7.5px ui-monospace,Menlo,monospace", letterSpacing: ".15em", color: "rgba(255,255,255,.4)", marginTop: '5px' }}>REC</span>
-            </div>
-
             <ConsoleChoice on={rightOn} onClick={selectReduced} label="조금 줄여본다면" sub="PLANET-02 · CALM" glow="#82E2C2" />
           </div>
+
+          {/* 두 미래 비교. 노브만 있고 라벨이 REC 뿐이라 눌러도 뭐가 나오는지 알 수 없었다.
+              다이얼은 아이콘으로 줄여 넣고 글자로 무엇인지 말한다. */}
+          <button
+            onClick={ignite}
+            style={{
+              position: 'relative', width: '100%', height: '44px', marginTop: '10px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+              borderRadius: 13, border: '1px solid rgba(255,255,255,.12)',
+              background: 'rgba(255,255,255,.045)', color: '#D8D5E2',
+              font: '700 12px system-ui', cursor: 'pointer'
+            }}
+          >
+            {recommending && <span style={{ position: 'absolute', inset: -1, border: '1.5px solid #82E2C2', borderRadius: 13, animation: 'pu-scan 1.7s ease-out infinite' }}></span>}
+            <svg viewBox="0 0 62 62" width="24" height="24" style={{ display: 'block', flex: 'none' }}>
+              <circle cx="31" cy="31" r="29" fill="rgba(0,0,0,.35)" stroke="rgba(255,255,255,.12)" strokeWidth="2"/>
+              <circle cx="31" cy="31" r="20" fill="none" stroke="#8B7EE8" strokeOpacity=".45" strokeWidth="2" strokeDasharray="3 5"/>
+              <line x1="31" y1="14" x2="31" y2="24" stroke="#8B7EE8" strokeWidth="4" strokeLinecap="round"/>
+            </svg>
+            두 미래 비교
+          </button>
         </div>
       </div>
     );
@@ -159,7 +165,8 @@ export default function UniverseConsole({
           <circle cx="580" cy="191" r="18" fill="url(#cn-glass)" stroke="rgba(255,255,255,.14)" strokeWidth="1"/>
           <circle cx="580" cy="191" r="18" fill="url(#cn-bez)"/>
           <line x1="580" y1="178" x2="580" y2="186" stroke="#8B7EE8" strokeWidth="2.4" strokeLinecap="round"/>
-          <text x="580" y="234" textAnchor="middle" fill="rgba(255,255,255,.3)" style={{ font: "600 7px ui-monospace,Menlo,monospace", letterSpacing: ".14em" }}>REC</text>
+          {/* 누르면 두 미래 비교 화면이 뜬다. REC 만으로는 알 길이 없었다. */}
+          <text x="580" y="234" textAnchor="middle" fill="rgba(255,255,255,.55)" style={{ font: "600 8px system-ui" }}>두 미래 비교</text>
         </g>
         <g id="controls-detail">
           <circle cx="282" cy="90" r="1.6" fill="rgba(255,255,255,.2)"/>

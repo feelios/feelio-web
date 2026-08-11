@@ -27,8 +27,12 @@ const globalStyles = css`
   @keyframes pu-fly-a-m{0%{transform:translate(50vw,85vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(22vw,40vh) scale(.32) rotate(-10deg);opacity:1}}
   @keyframes pu-fly-b{0%{transform:translate(580px,600px) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(830px,196px) scale(.32) rotate(10deg);opacity:1}}
   @keyframes pu-fly-b-m{0%{transform:translate(50vw,85vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(78vw,40vh) scale(.32) rotate(10deg);opacity:1}}
-  @keyframes pu-depart{0%{transform:translate(330px,430px) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(948px,344px) scale(.22) rotate(16deg);opacity:1}}
-  @keyframes pu-depart-m{0%{transform:translate(25vw,25vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(80vw,15vh) scale(.22) rotate(16deg);opacity:1}}
+  /* 종점은 목적지 행성 좌표에 앵커링하고(아래 wrapper 의 left/top), 키프레임은 거기까지의
+     오프셋만 그린다. 예전에는 끝점을 translate(948px,344px) / translate(80vw,15vh) 로 따로
+     적어 뒀는데, 모바일은 컨테이너가 뷰포트보다 작아(하단 내비) vw·vh 가 컨테이너 % 와
+     다른 지점을 가리켰다. 그래서 배가 행성 옆을 스쳐 갔다. */
+  @keyframes pu-depart{0%{transform:translate(-618px,86px) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(0,0) scale(.22) rotate(16deg);opacity:1}}
+  @keyframes pu-depart-m{0%{transform:translate(-55vw,55vh) scale(1) rotate(0deg);opacity:0}14%{opacity:1}100%{transform:translate(0,0) scale(.22) rotate(16deg);opacity:1}}
   @keyframes pu-scan{0%{transform:scale(.4);opacity:.85}100%{transform:scale(3.2);opacity:0}}
   @keyframes pu-hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
   @keyframes pu-selglow{0%,100%{opacity:.5;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}
@@ -126,6 +130,7 @@ export default function UniversePageDc() {
         // 항해 머리말용. 제목("지금처럼 쓴다면")은 ~면 으로 끝나는 조건절이라
         // "… 우주로 진입하고 있어요" 앞에 그대로 붙이면 말이 안 된다. 관형형을 따로 둔다.
         voyageLabel: "지금처럼 쓰는",
+        universeDesc: "지금 소비 흐름을 그대로 이어간 미래예요.",
         monthlySaving: current.monthlySaving,
         monthsToGoal: current.monthsToGoal,
         estimatedAchieveDate: current.estimatedAchieveDate
@@ -142,6 +147,9 @@ export default function UniversePageDc() {
         // 예전에는 여기에 "평온 · 뿌듯함"이 하드코딩돼 있었다 — 아무 데이터도 안 보는 값이었다.
         focusTag: topCategory ? topCategory.name : null,
         voyageLabel: topCategory ? `${topCategory.name} 소비를 줄인` : "덜 쓰는",
+        universeDesc: topCategory
+          ? `${topCategory.name} 지출을 ${Math.round(universeData.reductionRate * 100)}% 줄인 미래예요.`
+          : "지출을 줄인 미래예요.",
         monthlySaving: reduced.monthlySaving,
         monthsToGoal: reduced.monthsToGoal,
         estimatedAchieveDate: reduced.estimatedAchieveDate
@@ -341,29 +349,49 @@ export default function UniversePageDc() {
                   </div>
                 )}
 
+                {/* 관측 화면에서는 머리말이 아예 없어 좌상단이 비어 보였다.
+                    지금 어느 우주를 보고 있는지 여기서 말해 준다. */}
+                {phase === "result" && selected && (
+                  <div style={{ position: "absolute", left: 24, top: 24, zIndex: 10, maxWidth: "62%", animation: "pu-welldraw .6s ease both", pointerEvents: "none" }}>
+                    <div style={{ font: `600 10px ui-monospace,Menlo,monospace`, letterSpacing: ".1em", color: "#ECEBF0", opacity: .75 }}>NOW OBSERVING</div>
+                    <div style={{ font: `800 20px/1.15 system-ui`, color: "#fff", letterSpacing: "-.02em", marginTop: 6 }}>{U_DATA[selected].voyageLabel} 우주</div>
+                    <div style={{ font: `400 11.5px/1.5 system-ui`, color: "#B9B4C7", marginTop: 6 }}>{U_DATA[selected].universeDesc}</div>
+                  </div>
+                )}
+
                 <div style={{ flexGrow: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <div style={{ position: "absolute", inset: 0 }}>
                     <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 3 }}>
                       <div style={{ position: "relative", width: "100%", maxWidth: 400, height: orbitHeight + 120, pointerEvents: "none", transformOrigin: selected === "current" ? "22% 50%" : "78% 50%", transition: "transform .6s cubic-bezier(.4,0,.2,1)", transform: phase === "flying" ? `scale(1.8)` : phase === "result" ? "scale(0) opacity(0)" : "scale(1)" }}>
-                        <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%) rotate(-8deg)", width: "82%", height: orbitHeight, border: "1px solid rgba(255,255,255,0.25)", borderRadius: "50%", pointerEvents: "none", zIndex: 3 }}></div>
-                        
-                        <div onClick={() => select("current")} style={{ position: "absolute", left: "22%", top: `calc(50% - ${orbitHeight/2}px + 8px)`, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
-                          <div style={{ position: "relative", width: pSize, height: pSize }}>
-                            <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle,rgba(158,150,238,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4.4s ease-in-out infinite" }}></div>
-                            <UniversePlanet tone="stress" size={pSize} />
-                          </div>
-                          <div style={{ position: "absolute", left: "50%", top: pTextOffset, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", opacity: parked ? 0 : 1, transition: "opacity .3s ease", pointerEvents: "none" }}>
-                            <div style={{ font: "600 13px system-ui", color: "#ECEBF0" }}>지금처럼 소비한 나</div>
-                          </div>
-                        </div>
+                        {/* 궤도와 행성을 한 상자에 담아 같은 회전을 받게 한다.
+                            예전에는 타원만 -8deg 로 돌리고 행성은 top: 50% ± orbitHeight/2 —
+                            타원의 꼭짓점 — 에 박아 두 좌표계가 어긋났다. 그래서 행성이 궤도에서 떠 보였다.
 
-                        <div onClick={() => select("reduced")} style={{ position: "absolute", left: "78%", top: `calc(50% + ${orbitHeight/2}px - 15px)`, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
-                          <div style={{ position: "relative", width: pSize, height: pSize }}>
-                            <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle,rgba(130,226,194,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4s ease-in-out .6s infinite" }}></div>
-                            <UniversePlanet tone="calm" size={pSize} />
+                            이제 상자 = 타원이다. 중심에서 x 로 35% 떨어진 지점의 궤도 높이는
+                            y = 50% ∓ 50% · √(1 − 0.7²) = 14.3% / 85.7% 이므로 그 자리에 놓으면
+                            행성 중심이 정확히 궤도선 위에 앉는다. */}
+                        <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%) rotate(-8deg)", width: "82%", height: orbitHeight, pointerEvents: "none", zIndex: 3 }}>
+                          <div style={{ position: "absolute", inset: 0, border: "1px solid rgba(255,255,255,0.25)", borderRadius: "50%" }}></div>
+
+                          {/* 상자가 기울어 있으니 행성은 반대로 되돌려 라벨이 수평을 유지하게 한다. */}
+                          <div onClick={() => select("current")} style={{ position: "absolute", left: "15%", top: "14.3%", transform: "translate(-50%,-50%) rotate(8deg)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
+                            <div style={{ position: "relative", width: pSize, height: pSize }}>
+                              <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle,rgba(158,150,238,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4.4s ease-in-out infinite" }}></div>
+                              <UniversePlanet tone="stress" size={pSize} />
+                            </div>
+                            <div style={{ position: "absolute", left: "50%", top: pTextOffset, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", opacity: parked ? 0 : 1, transition: "opacity .3s ease", pointerEvents: "none" }}>
+                              <div style={{ font: "600 13px system-ui", color: "#ECEBF0" }}>지금처럼 소비한 나</div>
+                            </div>
                           </div>
-                          <div style={{ position: "absolute", left: "50%", top: pTextOffset, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", opacity: parked ? 0 : 1, transition: "opacity .3s ease", pointerEvents: "none" }}>
-                            <div style={{ font: "600 13px system-ui", color: "#ECEBF0" }}>{U_DATA.reduced.focusTag ? `${U_DATA.reduced.focusTag} 줄인 나` : "덜 쓴 나"}</div>
+
+                          <div onClick={() => select("reduced")} style={{ position: "absolute", left: "85%", top: "85.7%", transform: "translate(-50%,-50%) rotate(8deg)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
+                            <div style={{ position: "relative", width: pSize, height: pSize }}>
+                              <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle,rgba(130,226,194,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4s ease-in-out .6s infinite" }}></div>
+                              <UniversePlanet tone="calm" size={pSize} />
+                            </div>
+                            <div style={{ position: "absolute", left: "50%", top: pTextOffset, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", opacity: parked ? 0 : 1, transition: "opacity .3s ease", pointerEvents: "none" }}>
+                              <div style={{ font: "600 13px system-ui", color: "#ECEBF0" }}>{U_DATA.reduced.focusTag ? `${U_DATA.reduced.focusTag} 줄인 나` : "덜 쓴 나"}</div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -401,11 +429,24 @@ export default function UniversePageDc() {
                   </div>
                 )}
 
+                {phase === "result" && selected && (
+                  <div style={{ position: "absolute", left: 48, top: 48, zIndex: 10, maxWidth: 360, animation: "pu-welldraw .6s ease both", pointerEvents: "none" }}>
+                    <div style={{ font: `600 12px ui-monospace,Menlo,monospace`, letterSpacing: ".1em", color: "#ECEBF0", opacity: .75 }}>NOW OBSERVING</div>
+                    <div style={{ font: `800 28px/1.12 system-ui`, color: "#fff", letterSpacing: "-.02em", marginTop: 6 }}>{U_DATA[selected].voyageLabel} 우주</div>
+                    <div style={{ font: `400 13px/1.55 system-ui`, color: "#B9B4C7", marginTop: 8 }}>{U_DATA[selected].universeDesc}</div>
+                  </div>
+                )}
+
                 <div style={{ position: "absolute", inset: 0, zIndex: 3, transformOrigin: selected === "current" ? "330px 196px" : "830px 196px", transition: "transform .6s cubic-bezier(.4,0,.2,1)", transform: phase === "flying" ? `scale(1.8)` : phase === "result" ? "scale(0) opacity(0)" : "scale(1)" }}>
+                  {/* 라벨은 모바일에만 있었다. 데스크톱은 행성 둘이 색만 다른 구슬로 보여
+                      어느 쪽이 무슨 우주인지 눌러봐야 알 수 있었다. 같은 라벨을 붙인다. */}
                   <div onClick={() => select("current")} style={{ position: "absolute", left: 330, top: 196, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 4, pointerEvents: "auto" }}>
                     <div style={{ position: "relative", width: 150, height: 150 }}>
                       <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 232, height: 232, borderRadius: "50%", background: "radial-gradient(circle,rgba(158,150,238,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4.4s ease-in-out infinite" }}></div>
                       <UniversePlanet tone="stress" size={150} />
+                    </div>
+                    <div style={{ position: "absolute", left: "50%", top: 168, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", pointerEvents: "none" }}>
+                      <div style={{ font: "600 14px system-ui", color: "#ECEBF0" }}>지금처럼 소비한 나</div>
                     </div>
                   </div>
 
@@ -413,6 +454,9 @@ export default function UniversePageDc() {
                     <div style={{ position: "relative", width: 150, height: 150 }}>
                       <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 232, height: 232, borderRadius: "50%", background: "radial-gradient(circle,rgba(130,226,194,.5),transparent 60%)", filter: "blur(16px)", animation: "pu-glow 4s ease-in-out .6s infinite" }}></div>
                       <UniversePlanet tone="calm" size={150} />
+                    </div>
+                    <div style={{ position: "absolute", left: "50%", top: 168, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", pointerEvents: "none" }}>
+                      <div style={{ font: "600 14px system-ui", color: "#ECEBF0" }}>{U_DATA.reduced.focusTag ? `${U_DATA.reduced.focusTag} 줄인 나` : "덜 쓴 나"}</div>
                     </div>
                   </div>
                 </div>
@@ -437,7 +481,7 @@ export default function UniversePageDc() {
           </div>
 
           {(phase === "flying" || phase === "departing") && (
-            <div style={{ position: "absolute", left: 0, top: 0, zIndex: 20, animation: (phase === "departing" ? (isMobile ? "pu-depart-m" : "pu-depart") : (selected === "current" ? (isMobile ? "pu-fly-a-m" : "pu-fly-a") : (isMobile ? "pu-fly-b-m" : "pu-fly-b"))) + " 1.2s cubic-bezier(.42,.08,.5,1) forwards" }}>
+            <div style={{ position: "absolute", left: phase === "departing" ? (isMobile ? "80%" : 948) : 0, top: phase === "departing" ? (isMobile ? "12%" : 344) : 0, zIndex: 20, animation: (phase === "departing" ? (isMobile ? "pu-depart-m" : "pu-depart") : (selected === "current" ? (isMobile ? "pu-fly-a-m" : "pu-fly-a") : (isMobile ? "pu-fly-b-m" : "pu-fly-b"))) + " 1.2s cubic-bezier(.42,.08,.5,1) forwards" }}>
               <div style={{ position: "relative", width: 120, height: 96, transform: "translate(-50%,-50%)" }}>
                 <div style={{ position: "absolute", left: "50%", bottom: -4, transform: "translateX(-50%)", width: 74, height: 26, borderRadius: "50%", background: "radial-gradient(circle,rgba(130,226,194,.85),transparent 70%)", filter: "blur(6px)" }}></div>
                 <div style={{ position: "absolute", left: "50%", bottom: 22, transform: "translateX(-50%)", width: 120, height: 34, borderRadius: "50%", background: "linear-gradient(180deg,#e9e6f4,#b6b1cf 52%,#918cae)", boxShadow: "0 8px 18px -8px rgba(0,0,0,.6),inset 0 2px 4px rgba(255,255,255,.5)" }}></div>
@@ -466,7 +510,9 @@ export default function UniversePageDc() {
               {phase === "result" && u && (
                 <div style={{ position: "absolute", left: isMobile ? "5%" : 206, top: isMobile ? "28%" : 266, right: isMobile ? "5%" : "auto", display: "flex", alignItems: "center", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 12 : 0, zIndex: 2 }}>
                   <div style={{ animation: "pu-hover 4.5s ease-in-out infinite" }}>
-                    <SpaceBlob size={isMobile ? 110 : 150} speaking={true} poked={blobPoke} onClick={handleBlobClick} />
+                    {/* 말랑이는 이 화면의 화자이고 눌러서 다음 코멘트를 넘기는 조작 대상이다.
+                        말풍선 옆에서 존재감이 밀려 눌러야 하는 줄도 몰랐다. 키운다. */}
+                    <SpaceBlob size={isMobile ? 150 : 200} speaking={true} poked={blobPoke} onClick={handleBlobClick} />
                   </div>
                   
                   <div style={{ width: isMobile ? "100%" : "auto", maxWidth: 400, padding: isMobile ? "20px" : "18px 22px", borderRadius: 20, background: "rgba(255,255,255,.94)", boxShadow: "0 18px 44px -18px rgba(0,0,0,.6)", animation: "pu-pop .5s ease .15s both", position: "relative", zIndex: 2 }}>
@@ -504,8 +550,25 @@ export default function UniversePageDc() {
               )}
 
               {phase === "result" && (
-                <button onClick={reset} style={{ position: "absolute", right: 34, bottom: 28, zIndex: 3, display: "inline-flex", alignItems: "center", gap: 9, padding: "7px 8px 7px 16px", borderRadius: 24, border: "1px solid rgba(255,255,255,.14)", background: "rgba(255,255,255,.06)", color: "#c9c6d4", font: "600 12px system-ui", cursor: "pointer", backdropFilter: "blur(8px)" }}>
-                  콘솔로 돌아가기 <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: "50%", background: "rgba(255,255,255,.12)", fontSize: 13 }}>↩</span>
+                /* 어두운 우주 배경에 반투명 흰색 6% + 글자 #c9c6d4 라 거의 보이지 않았다.
+                   여기서 빠져나가는 유일한 길이라 눈에 띄어야 한다. 불투명한 밝은 배경에
+                   어두운 글자로 뒤집고, 모바일은 화면 아래 가운데로 내려 엄지에 닿게 한다. */
+                <button
+                  onClick={reset}
+                  style={{
+                    position: "absolute", zIndex: 6,
+                    right: isMobile ? 16 : 34,
+                    bottom: isMobile ? 20 : 28,
+                    display: "inline-flex", alignItems: "center", gap: 9,
+                    padding: "9px 10px 9px 18px", borderRadius: 24,
+                    border: "1px solid rgba(255,255,255,.5)",
+                    background: "rgba(255,255,255,.92)",
+                    color: "#1b1622", font: "800 13px system-ui",
+                    boxShadow: "0 10px 26px -8px rgba(0,0,0,.75)",
+                    cursor: "pointer", whiteSpace: "nowrap"
+                  }}
+                >
+                  콘솔로 돌아가기 <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: "50%", background: "rgba(27,22,34,.10)", fontSize: 13 }}>↩</span>
                 </button>
               )}
             </div>
