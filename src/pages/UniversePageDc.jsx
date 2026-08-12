@@ -95,12 +95,19 @@ export default function UniversePageDc() {
 
     const formatMoney = (val) => val.toLocaleString() + "원";
 
-    // 개월은 올림이라 한 달 안쪽에서 두 우주가 같은 값이 된다(0.90개월과 0.84개월이 둘 다 1개월).
-    // 그 구간에서는 서버가 함께 주는 일수로 바꿔 차이를 드러낸다.
-    const withinAMonth = (s) => s.monthsToGoal != null && s.monthsToGoal <= 1 && s.daysToGoal > 0;
+    /**
+     * 개월은 올림이라 두 우주가 같은 값으로 뭉개진다 — 1.24개월과 1.18개월이 둘 다 "2개월"이다.
+     * 그러면 두 칸이 똑같아 보여서 평행우주를 볼 이유가 사라진다.
+     * 개월이 같은데 일수가 다르면 일수로 바꿔 차이를 드러낸다.
+     * (한 달 안쪽은 원래부터 일수로 보여준다 — 그 규칙을 여기로 합쳤다.)
+     */
+    const monthsTie = current.monthsToGoal != null && reduced.monthsToGoal != null
+      && current.monthsToGoal === reduced.monthsToGoal
+      && current.daysToGoal !== reduced.daysToGoal;
+    const showDays = (s) => s.daysToGoal > 0 && (s.monthsToGoal <= 1 || monthsTie);
     const durationOf = (s) => {
       if (s.monthsToGoal == null) return "도달 불가";
-      return withinAMonth(s) ? `${s.daysToGoal}일 예상` : `${s.monthsToGoal}개월 예상`;
+      return showDays(s) ? `${s.daysToGoal}일 예상` : `${s.monthsToGoal}개월 예상`;
     };
 
     const currentNote = `${goal.name} · ${durationOf(current)}`;

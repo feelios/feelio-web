@@ -237,7 +237,7 @@ const SAVING_MESSAGES = [
   '🏝️ 목표에 한 걸음 더 가까워졌어요',
 ];
 
-export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefill }) {
+export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefill, selectedDate }) {
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [addingTag, setAddingTag] = useState(null);
   const [addingText, setAddingText] = useState('');
@@ -245,10 +245,29 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
   const [datePickerInitialMode, setDatePickerInitialMode] = useState('date');
   const datePickerAnchorRef = useRef(null);
 
+  /** 지금 이 순간. '오늘' 버튼이 되돌아오는 기준값이다. */
   const getInitialDate = () => {
     const now = new Date();
     const tzOffset = now.getTimezoneOffset() * 60000;
     return new Date(now - tzOffset).toISOString().slice(0, 16);
+  };
+
+  /**
+   * 홈 달력에서 고른 날짜로 폼을 연다.
+   *
+   * 예전에는 늘 지금 시각으로 열려서, 달력에서 8월 4일을 눌러 들어와도 오늘 날짜로 저장됐다.
+   * 시각은 그 날의 현재 시각을 쓴다 — 사용자가 고른 건 '날짜'지 '시각'이 아니다.
+   * 미래 날짜는 서버가 @PastOrPresent 로 거부하므로 지금으로 되돌린다.
+   */
+  const getSelectedDate = () => {
+    if (!selectedDate) return getInitialDate();
+    const now = new Date();
+    const picked = new Date(selectedDate);
+    if (Number.isNaN(picked.getTime())) return getInitialDate();
+    picked.setHours(now.getHours(), now.getMinutes(), 0, 0);
+    if (picked > now) return getInitialDate();
+    const tzOffset = picked.getTimezoneOffset() * 60000;
+    return new Date(picked - tzOffset).toISOString().slice(0, 16);
   };
 
   const [form, setForm] = useState(() => {
@@ -265,7 +284,7 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
       memo: urlMerchant || '',
       savingsType: prefill?.goalId != null ? '목표' : null,
       goalId: prefill?.goalId ?? null,
-      date: getInitialDate()
+      date: getSelectedDate()
     };
   });
 
@@ -610,7 +629,9 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
                     fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s'
                   }}
                 >
-                  지금
+                  {/* 선택 여부를 날짜(toDateString)로 판정하므로 라벨도 '오늘'이다.
+                      '지금'이면 같은 날 안에서 시각만 바꿔도 불이 켜져 있는 게 어긋나 보인다. */}
+                  오늘
                 </button>
                 <button 
                   type="button" 
