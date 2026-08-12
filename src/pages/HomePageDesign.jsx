@@ -710,8 +710,8 @@ function EmptyRidge({ dark = false }) {
   );
 }
 
-const defaultRidgeData = [['화남', 8], ['평온', 15], ['외로움', 38], ['스트레스', 22], ['신남', 12], ['무덤덤', 5]];
-const ridgeEmotions = ['화남', '평온', '외로움', '스트레스', '신남', '무덤덤'];
+const defaultRidgeData = [['신남', 12], ['설렘', 18], ['뿌듯함', 15], ['스트레스', 22], ['외로움', 38], ['화남', 8], ['평온', 15], ['무덤덤', 5]];
+const ridgeEmotions = ['신남', '설렘', '뿌듯함', '스트레스', '외로움', '화남', '평온', '무덤덤'];
 
 function getEmotionRidgeData(emotions) {
   if (!emotions || emotions.length === 0) return defaultRidgeData;
@@ -840,28 +840,14 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   
   const selectedDayKey = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, '0')}-${String(selected.getDate()).padStart(2, '0')}`;
   
-  // 1. 선택한 날짜에 기록이 있는지?
-  const selectedDayEmotion = serverDays.find(d => {
-    let dStr = d.date;
-    if (Array.isArray(d.date)) dStr = `${d.date[0]}-${String(d.date[1]).padStart(2, '0')}-${String(d.date[2]).padStart(2, '0')}`;
-    else if (typeof d.date === 'string') dStr = d.date.slice(0, 10);
-    return dStr === selectedDayKey;
-  })?.dominantEmotion?.name;
-  
-  // 2. 이번 달에 기록이 있는지?
-  const hasAnyEmotionsThisMonth = serverDays.length > 0;
-  let topMonthEmotion = null;
-  if (hasAnyEmotionsThisMonth) {
-    const counts = serverDays.reduce((acc, d) => {
-      const name = d.dominantEmotion?.name;
-      if (name) acc[name] = (acc[name] || 0) + 1;
-      return acc;
-    }, {});
-    topMonthEmotion = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
-  }
-
-  // 3. 우선순위에 따라 렌더링할 감정 결정
-  const displayEmotion = selectedDayEmotion || topMonthEmotion || null;
+  // 대표 말랑이와 능선은 모두 월간 감정 기록 횟수(count)를 기준으로 한다.
+  // 금액이나 날짜별 대표 감정 수를 섞으면 같은 화면에서 서로 다른 감정이 대표가 된다.
+  const topMonthEmotion = serverEmotions.reduce((top, emotion) => {
+    if (!top || emotion.count > top.count) return emotion;
+    if (emotion.count === top.count && emotion.amount > top.amount) return emotion;
+    return top;
+  }, null)?.name;
+  const displayEmotion = topMonthEmotion || null;
   const showEmptyBlob = displayEmotion === null;
   const dark = state.mode === 'dark';
   const topMeta = showEmptyBlob ? { color: dark ? '#9B8CFF' : '#7C6BE0' } : getEmotion(displayEmotion);
@@ -983,7 +969,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
               </BubbleStack>
             </div>
             <div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 800, marginTop: isMobile ? 4 : -24 }}>
-              {showEmptyBlob ? '아직 감정을 기다리는 중' : selectedDayEmotion ? '선택한 날에 가장 오래 머문 마음' : '선택한 날에는 감정 기록이 없어요'}
+              {showEmptyBlob ? '아직 감정을 기다리는 중' : '이번 달 가장 많이 기록한 마음'}
             </div>
             <div css={{ fontSize: 24, color: !showEmptyBlob ? topMeta.color : (dark ? '#9B8CFF' : '#7C6BE0'), fontWeight: 900, letterSpacing: '-.02em', marginTop: 2 }}>
               {!showEmptyBlob ? `${displayEmotion} 말랑이` : '감정 말랑이'}
