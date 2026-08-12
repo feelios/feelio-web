@@ -7,7 +7,7 @@ import { EmptyEmotionBlob } from '../components/common/EmptyEmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
 import { money, percent } from '../utils/format.js';
-import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
+import { useCalendarSummaryQuery, useEmotionSummaryQuery, useMallangCommentQuery } from '../hooks/queries/useSummary.js';
 import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
@@ -869,7 +869,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const goals = goalsData?.goals || [];
   const totalAsset = state.user?.totalAsset ?? 0;
 
-  // 전역 예산 스토어 구독 → 소진율/상태로 말랑이 말풍선 문구 (F7-10 · #145)
+  // 전역 예산 스토어 구독 → 서버 문구를 못 받았을 때 쓰는 소진율 기반 문구 (F7-10 · #145)
   // 계산·동기화는 BudgetSync가 담당하고, 여기선 파생 상태만 읽는다.
   const budgetProgress = useBudgetStore((s) => s.progress);
   const budgetState = useBudgetStore((s) => s.state);
@@ -889,7 +889,23 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     '아래 달력에서 날짜를 골라 시작해봐',
     '가볍게 한 건부터, 천천히 같이 하자',
   ];
-  const bubblePhrases = showEmptyBlob ? emptyPhrases : budgetPhrases;
+
+  // 서버 말랑이 코멘트: 당월 대표 감정에 맞춘 개인화 문구 (F18-5 · feelio-api#240)
+  // 빈 상태에서는 부르지 않는다 — 기록이 없으면 감정도 없어 유도 문구가 맞다.
+  const { data: mallangComment } = useMallangCommentQuery();
+  const serverPhrases = useMemo(() => {
+    if (showEmptyBlob || !mallangComment) return null;
+    const phrases = [mallangComment.empathy, mallangComment.evaluation, mallangComment.encouragement].filter(Boolean);
+    return phrases.length > 0 ? phrases : null;
+  }, [showEmptyBlob, mallangComment]);
+
+  // 서버 문구가 없으면(로딩·실패) 기존 예산 문구로 버틴다. 말풍선은 비지 않는다.
+  const bubblePhrases = showEmptyBlob ? emptyPhrases : (serverPhrases || budgetPhrases);
+
+  // 데스크톱은 최대 3칸. 서버 문구는 평가·독려 2개뿐이라 2칸만 띄운다.
+  // 문구가 화면에 전부 들어가면 순환할 게 없다 — 돌리면 자리만 바뀌어 산만해진다.
+  const bubbleCount = Math.min(3, bubblePhrases.length);
+  const bubbleRotates = bubblePhrases.length > bubbleCount;
 
   const days = getCalendarCells(serverDays, visibleMonth);
   const ridgeData = hasEnoughRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
@@ -953,10 +969,11 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
                     {bubblePhrases[budgetWave % bubblePhrases.length]}
                   </Bubble>
                 ) : (
-                  [0, 1, 2].map((i) => {
-                    const phrase = bubblePhrases[(budgetWave + i) % bubblePhrases.length];
+                  Array.from({ length: bubbleCount }, (unused, i) => {
+                    // 순환하지 않을 땐 wave 를 빼서 자리 교체가 일어나지 않게 한다
+                    const phrase = bubblePhrases[(bubbleRotates ? budgetWave + i : i) % bubblePhrases.length];
                     return (
-                      <Bubble key={`${budgetWave}-${i}`} css={{ animation: `${bubblePop} 0.5s cubic-bezier(.5, 1.5, .5, 1) ${i * 0.22}s backwards` }}>
+                      <Bubble key={bubbleRotates ? `${budgetWave}-${i}` : `fixed-${i}`} css={{ animation: `${bubblePop} 0.5s cubic-bezier(.5, 1.5, .5, 1) ${i * 0.22}s backwards` }}>
                         {phrase}
                       </Bubble>
                     );
