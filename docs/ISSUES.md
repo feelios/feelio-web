@@ -118,8 +118,9 @@
 | [ ] | - | F17-5 | 과거 달 예산 현황(Budget Status) 동적 뷰 연동 | `feat/historical-budget-ui` | - | api·Hook·Page | `['analysis', 'budget']` | 신규 | 분석 페이지 캘린더 날짜 변경 시 해당 과거 달의 지출 데이터를 기반으로 예산 초과/미달 현황을 동적 렌더링 (A11-2 연계) |
 | [x] | #291 | F18-1 | '신남' 감정 핑크색 표기 오류 수정 (스타일 변경) | `fix/emotion-excited-color-align` | - | Component | - | 신규 | 말랑이 몸 색(핑크)을 기준으로 신남의 color·light 를 맞춰 통일. 말랑이 색은 변경하지 않는다 |
 | [ ] | - | F18-2 | 홈 화면 말랑이 상태 당월 최다 감정으로 변경 | `feat/home-mallang-monthly-emotion` | - | Page | `['aiInsights']` | 신규 | 최근 트랜잭션 대신 월간 통계 API의 emotionSegments 비중 1순위 감정을 추출하여 말랑이 face 속성으로 바인딩 |
-| [ ] | - | F18-3 | 홈 화면 달력 클릭 시 지출/수입 화면 라우팅 연동 | `feat/home-calendar-routing` | - | Page | - | 신규 | 홈 화면 달력 날짜(Date Node) 클릭 시 전역 Date 갱신 및 해당 일자의 가계부 기록 탭으로 즉시 navigate 처리 |
+| [ ] | - | F18-3 | 홈 화면 달력 클릭 시 지출/수입 화면 라우팅 연동 | `feat/home-calendar-routing` | - | Page | - | 신규 | 홈 화면 달력 날짜(Date Node) 클릭 시 전역 Date 갱신 및 해당 일자의 거래내역 탭으로 즉시 navigate 처리 |
 | [ ] | - | F18-4 | AI 맞춤 챌린지 주간(Weekly) 단위 갱신 UI 표시 | `feat/ai-challenge-weekly-ui` | - | Page | `['aiInsights']` | 신규 | 분석 페이지 맞춤 챌린지 타이틀에 현재 주차(예: 8월 2주차)를 명시하여 갱신 주기 시각적 안내 |
+| [ ] | #332 | F18-5 | 홈 말랑이 말풍선 서버 AI 코멘트 연동 | `feat/mallang-comment-binding` | §7 | Page | `['summary','mallangComment']` | 신규 | 하드코딩 budgetPhrases 를 서버 evaluation·encouragement 2개 순환으로 교체. 빈 상태 emptyPhrases 는 유지. feelio-api#240 선행 |
 
 
 
