@@ -120,7 +120,7 @@ export default function App() {
 
   const content = {
     home: <HomePageDesign state={state} onRoute={setRoute} selectedDate={globalDate} onSelectDate={setGlobalDate} onSaveToGoal={openRecordForGoal} onOpenGoals={openGoals} />,
-    record: <RecordPageDc state={state} actions={actions} prefill={recordPrefill} onConsumePrefill={() => setRecordPrefill(null)} onSaved={(date) => {
+    record: <RecordPageDc state={state} actions={actions} prefill={recordPrefill} selectedDate={globalDate} onConsumePrefill={() => setRecordPrefill(null)} onSaved={(date) => {
       setGlobalDate(new Date(date));
     }} />,
     transactions: <TransactionsPageDesign state={state} onSelect={setSelectedTxn} globalDate={globalDate} setGlobalDate={setGlobalDate} />,
