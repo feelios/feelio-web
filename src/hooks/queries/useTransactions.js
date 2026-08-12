@@ -22,19 +22,22 @@ export const useTransactionDetailQuery = (transactionId, initialData) => {
 };
 
 // 2. 캐시 일괄 무효화 유틸리티 함수
-const invalidateRelatedQueries = (queryClient) => {
-  [
+const invalidateRelatedQueries = async (queryClient) => {
+  const queryKeys = [
     ['tx', 'list'],
     // 상세 캐시도 비워야 한다. 빠져 있으면 수정 후에도 모달이 옛 값을 그대로 보여준다 (#280).
     ['tx', 'detail'],
     ['summary', 'calendar'],
     ['summary', 'emotions'],
+    ['summary', 'mallangComment'],
     ['analysis'],
     ['universe'],
     ['goals'],
-  ].forEach(queryKey => {
-    queryClient.invalidateQueries({ queryKey });
-  });
+  ];
+
+  await Promise.all(queryKeys.map(queryKey =>
+    queryClient.invalidateQueries({ queryKey, refetchType: 'all' })
+  ));
 
   // 총자산은 zustand state.user 에 있어 invalidateQueries 로는 갱신되지 않는다.
   // 서버가 거래를 반영해 계산해 주는 값이므로 여기서 직접 다시 받아온다 (#272).
@@ -46,9 +49,7 @@ export const useCreateTransactionMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data) => transactionsAPI.createTransaction(data),
-    onSuccess: () => {
-      invalidateRelatedQueries(queryClient);
-    },
+    onSuccess: () => invalidateRelatedQueries(queryClient),
   });
 };
 
@@ -57,9 +58,7 @@ export const useUpdateTransactionMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ transactionId, data }) => transactionsAPI.updateTransaction(transactionId, data),
-    onSuccess: () => {
-      invalidateRelatedQueries(queryClient);
-    },
+    onSuccess: () => invalidateRelatedQueries(queryClient),
   });
 };
 
@@ -81,9 +80,7 @@ export const useDeleteTransactionMutation = () => {
     onError: (_err, _vars, context) => {
       context?.previous?.forEach(([key, data]) => queryClient.setQueryData(key, data));
     },
-    onSettled: () => {
-      invalidateRelatedQueries(queryClient);
-    },
+    onSettled: () => invalidateRelatedQueries(queryClient),
   });
 };
 
@@ -106,9 +103,7 @@ export const useBulkDeleteTransactionsMutation = () => {
     onError: (_err, _vars, context) => {
       context?.previous?.forEach(([key, data]) => queryClient.setQueryData(key, data));
     },
-    onSettled: () => {
-      invalidateRelatedQueries(queryClient);
-    },
+    onSettled: () => invalidateRelatedQueries(queryClient),
   });
 };
 
@@ -117,9 +112,6 @@ export const useClearTransactionsMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => transactionsAPI.clearTransactions(),
-    onSuccess: () => {
-      invalidateRelatedQueries(queryClient);
-    },
+    onSuccess: () => invalidateRelatedQueries(queryClient),
   });
 };
-
