@@ -155,8 +155,12 @@ export default function UniversePageDc() {
       reduced: {
         tag: "다른 우주",
         title: reduced.title,
-        metricLabel: "매달 아낄 수 있는 금액",
-        metric: `+${formatMoney(savedAmount)}`,
+        // 목표까지 두어 달이면 도달 시점 차이는 며칠뿐이라 두 우주가 같아 보인다.
+        // 1년을 이어갔을 때의 격차는 같은 사실을 훨씬 크게 보여준다 — 축을 하나 더 준다.
+        metricLabel: "1년이면",
+        metric: `+${formatMoney(savedAmount * 12)}`,
+        subMetricLabel: "매달",
+        subMetric: `+${formatMoney(savedAmount)}`,
         accent: "#82E2C2",
         narratives: reduced.narrations || [ reduced.narration ],
         goalNote: reducedNote,
@@ -541,6 +545,11 @@ export default function UniversePageDc() {
                       <span style={{ font: "800 40px/1 system-ui", color: u.accent, letterSpacing: "-.02em" }}>{u.metric}</span>
                       <span style={{ font: "700 15px system-ui", color: u.accent }}>{u.metric.includes("-") ? "▼" : "▲"}</span>
                     </div>
+                    {u.subMetric && (
+                      <div style={{ font: "600 12px system-ui", color: "#8A837A", marginTop: 6 }}>
+                        {u.subMetricLabel} {u.subMetric}
+                      </div>
+                    )}
                     <div style={{ height: 1, background: "rgba(50,42,32,.09)", margin: "15px 0" }}></div>
                     <div style={{ font: "400 13px/1.6 system-ui", color: "#3A352F" }}>{u.narratives[narrativeIndex]}</div>
                     {/* 말랑이를 누르면 다음 코멘트로 넘어간다(handleBlobClick). 화면에 그 단서가 없어
