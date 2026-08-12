@@ -356,9 +356,16 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
     });
   const overBudgetItem = budgetItems.find(item => item.isOver);
   const validBudgetItems = budgetItems.filter(item => !item.isMeasuring);
-  const budgetAverage = validBudgetItems.length > 0
-    ? Math.round(validBudgetItems.reduce((sum, item) => sum + item.progress, 0) / validBudgetItems.length)
-    : 0;
+  /**
+   * 소진율은 '카테고리별 진행률의 평균'이 아니라 '총액 대비'로 낸다.
+   *
+   * 산술평균은 2만원짜리 카테고리와 30만원짜리 카테고리를 같은 무게로 세서, 같은 화면의
+   * 소비 위험도(총지출÷총예산)와 다른 숫자가 나왔다 — 한쪽은 36%, 한쪽은 44%.
+   * 정의를 위험도와 맞추고, 근거가 되는 총예산 금액도 함께 보여준다.
+   */
+  const budgetTotal = validBudgetItems.reduce((sum, item) => sum + item.budget, 0);
+  const budgetSpent = validBudgetItems.reduce((sum, item) => sum + item.amount, 0);
+  const budgetAverage = budgetTotal > 0 ? Math.round((budgetSpent / budgetTotal) * 100) : 0;
   // 급박도순(초과 → 진행률순) 정렬된 목록에서 상위 5개만 노출 (#145)
   const topBudgetItems = budgetItems.slice(0, 5);
   const hiddenBudgetCount = budgetItems.length - topBudgetItems.length;
@@ -601,7 +608,12 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               <div css={{ color: overBudgetItem ? '#E87573' : 'var(--text)', fontSize: 18, fontWeight: 950, lineHeight: 1 }}>
                 {validBudgetItems.length > 0 ? `${budgetAverage}%` : '측정중'}
               </div>
-              <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 800, marginTop: 4 }}>평균 사용률</div>
+              <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 800, marginTop: 4 }}>예산 소진율</div>
+              {validBudgetItems.length > 0 && (
+                <div css={{ color: 'var(--sub)', fontSize: 10.5, fontWeight: 700, marginTop: 3, whiteSpace: 'nowrap' }}>
+                  총 예산 {budgetTotal.toLocaleString()}원
+                </div>
+              )}
             </div>
           </div>
 

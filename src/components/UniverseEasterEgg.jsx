@@ -12,9 +12,21 @@ function formatMoney(value) {
   return Number.isFinite(amount) ? `${amount.toLocaleString('ko-KR')}원` : '-';
 }
 
-function formatMonths(value) {
-  if (value === null || value === undefined || value === '') return '도달 불가';
-  return Number.isFinite(Number(value)) ? `${Number(value).toLocaleString('ko-KR')}개월` : '도달 불가';
+/**
+ * 도달까지 걸리는 시간.
+ *
+ * 개월은 올림이라 한 달 안쪽에서 두 시나리오가 같은 값이 된다. 0.90개월과 0.84개월이
+ * 둘 다 "1개월" 이 되어, 매달 더 모으는 쪽이 같은 시점에 닿는 것처럼 보였다.
+ * 그 구간에서는 서버가 함께 주는 일수(daysToGoal)로 바꿔 차이를 드러낸다.
+ */
+function formatDuration(scenario) {
+  const months = scenario?.monthsToGoal;
+  if (months === null || months === undefined || months === '') return '도달 불가';
+  const days = scenario?.daysToGoal;
+  if (Number(months) <= 1 && Number.isFinite(Number(days)) && Number(days) > 0) {
+    return `${Number(days).toLocaleString('ko-KR')}일`;
+  }
+  return Number.isFinite(Number(months)) ? `${Number(months).toLocaleString('ko-KR')}개월` : '도달 불가';
 }
 
 function formatDate(value) {
@@ -45,7 +57,7 @@ function ScenarioCard({ scenario, variant, compact = false }) {
         <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,.11)', flexShrink: 0 }} />
         <div style={{ minWidth: 0, flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1.15fr', gap: 3 }}>
           <Metric label="월 저축" value={formatCompactMoney(scenario?.monthlySaving)} compact color={color.accent} />
-          <Metric label="도달까지" value={formatMonths(scenario?.monthsToGoal)} compact color={color.accent} />
+          <Metric label="도달까지" value={formatDuration(scenario)} compact color={color.accent} />
           <Metric label="예상 달성" value={formatCompactDate(scenario?.estimatedAchieveDate)} compact color={color.accent} />
         </div>
       </section>
@@ -69,7 +81,7 @@ function ScenarioCard({ scenario, variant, compact = false }) {
       <div style={{ height: 1, background: 'rgba(255,255,255,.11)', margin: '12px 0' }} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.15fr', gap: 0 }}>
         <Metric label="월 저축액" value={formatMoney(scenario?.monthlySaving)} color={color.accent} divided />
-        <Metric label="도달까지" value={formatMonths(scenario?.monthsToGoal)} color={color.accent} divided />
+        <Metric label="도달까지" value={formatDuration(scenario)} color={color.accent} divided />
         <Metric label="예상 달성" value={formatDate(scenario?.estimatedAchieveDate)} color={color.accent} />
       </div>
     </section>
@@ -175,7 +187,9 @@ function DesktopLayout({ goalName, current, reduced, revealProgress }) {
   return (
     <>
       <header style={{ position: 'absolute', top: 70, left: 0, right: 0, zIndex: 6, textAlign: 'center' }}>
-        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '.08em', background: 'linear-gradient(90deg,#B59AFF,#EEF0FF 48%,#82E2C2)', WebkitBackgroundClip: 'text', color: 'transparent', textShadow: '0 0 30px rgba(171,154,255,.12)' }}>두 미래가 펼쳐졌어요</div>
+        {/* 글자에 걸려 있던 보라→민트 그라디언트를 뺀다. 두 우주의 색을 제목에 섞어 놓으면
+            어느 쪽 이야기인지 흐려지고, 아래 비교표의 색 구분과도 경쟁한다. */}
+        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '.08em', color: '#EEF0FF' }}>두 미래가 펼쳐졌어요</div>
         <div style={{ display: 'inline-flex', marginTop: 16, padding: '9px 23px', borderRadius: 999, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.11)', color: '#C5C2CC', fontSize: 13 }}>두 미래를 비교해 보세요</div>
       </header>
       <div style={{ position: 'absolute', top: 24, right: 31, zIndex: 7, padding: '11px 22px', borderRadius: 13, background: 'rgba(9,11,18,.62)', border: '1px solid rgba(255,255,255,.24)', color: '#ECE9F2', fontSize: 15, fontWeight: 650 }}>
@@ -226,12 +240,15 @@ function MobileLayout({ goalName, current, reduced, revealProgress, short }) {
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: short ? '12px 13px 48px' : '18px 16px 52px', boxSizing: 'border-box' }}>
       <div style={{ alignSelf: 'flex-start', padding: '6px 14px', borderRadius: 999, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.14)', color: '#E7E3EC', fontSize: 10, fontWeight: 700 }}>{goalName || '나만의 목표'}</div>
-      <div style={{ maxWidth: 230, textAlign: 'center', fontSize: short ? 18 : 21, lineHeight: 1.22, fontWeight: 800, marginTop: short ? 7 : 12, background: 'linear-gradient(90deg,#B59AFF,#EEF0FF 48%,#82E2C2)', WebkitBackgroundClip: 'text', color: 'transparent' }}>두 미래가<br />펼쳐졌어요</div>
+      <div style={{ maxWidth: 230, textAlign: 'center', fontSize: short ? 18 : 21, lineHeight: 1.22, fontWeight: 800, marginTop: short ? 7 : 12, color: '#EEF0FF' }}>두 미래가<br />펼쳐졌어요</div>
       {!short && <div style={{ padding: '7px 14px', borderRadius: 999, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.1)', color: '#AAA6B3', fontSize: 10, marginTop: 9 }}>✦ 두 미래를 비교해 보세요</div>}
       <div style={{ position: 'relative', width: '100%', flex: '1 1 210px', minHeight: short ? 118 : 135, maxHeight: short ? 150 : 230, marginTop: short ? 0 : 5 }}>
         <WellGrid mobile revealProgress={revealProgress} />
-        <MobilePlanet side="left" tone="stress" size={planetSize} label={current?.title || '지금처럼 소비한다면'} />
-        <MobilePlanet side="right" tone="calm" size={planetSize} label={reduced?.title || '설렘 소비를 줄이면'} />
+        {/* 폴백은 데이터가 없을 때만 쓰인다. '설렘 소비를 줄이면'이 남아 있었는데
+            기준이 감정에서 카테고리로 바뀐 뒤로는 나올 수 없는 문구다.
+            무슨 항목을 줄이는지는 데이터가 있어야 알 수 있으니 중립적으로 둔다. */}
+        <MobilePlanet side="left" tone="stress" size={planetSize} label={current?.title || '지금처럼 쓴다면'} />
+        <MobilePlanet side="right" tone="calm" size={planetSize} label={reduced?.title || '소비를 줄이면'} />
       </div>
       <div style={{ width: '100%', maxWidth: 430, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: short ? 7 : 10, marginTop: short ? 5 : 10 }}>
         <ScenarioCard scenario={current} variant="current" compact />

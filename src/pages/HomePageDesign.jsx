@@ -7,7 +7,7 @@ import { EmptyEmotionBlob } from '../components/common/EmptyEmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
 import { money, percent } from '../utils/format.js';
-import { useCalendarSummaryQuery, useEmotionSummaryQuery } from '../hooks/queries/useSummary.js';
+import { useCalendarSummaryQuery, useEmotionSummaryQuery, useMallangCommentQuery } from '../hooks/queries/useSummary.js';
 import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
@@ -710,11 +710,12 @@ function EmptyRidge({ dark = false }) {
   );
 }
 
-const defaultRidgeData = [['화남', 8], ['평온', 15], ['외로움', 38], ['스트레스', 22], ['신남', 12], ['무덤덤', 5]];
-const ridgeEmotions = ['화남', '평온', '외로움', '스트레스', '신남', '무덤덤'];
+const defaultRidgeData = [['신남', 12], ['설렘', 18], ['뿌듯함', 15], ['스트레스', 22], ['외로움', 38], ['화남', 8], ['평온', 15], ['무덤덤', 5]];
+const ridgeEmotions = ['신남', '설렘', '뿌듯함', '스트레스', '외로움', '화남', '평온', '무덤덤'];
 
 function getEmotionRidgeData(emotions) {
   if (!emotions || emotions.length === 0) return defaultRidgeData;
+  // 능선 높이는 소비 금액(amount)이 아니라 감정을 기록한 횟수(count)를 기준으로 한다.
   const maxCount = Math.max(...emotions.map(e => e.count), 1);
   return ridgeEmotions.map(name => {
     const item = emotions.find(e => e.name === name);
@@ -835,32 +836,18 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const serverPrevEmotions = emotionData?.prevMonth || [];
 
   const hasMonthlyTransactions = serverEmotions.length > 0;
-  const hasEnoughRidgeData = serverEmotions.length >= 5;
+  const hasRidgeData = serverEmotions.length > 0;
   
   const selectedDayKey = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, '0')}-${String(selected.getDate()).padStart(2, '0')}`;
   
-  // 1. 선택한 날짜에 기록이 있는지?
-  const selectedDayEmotion = serverDays.find(d => {
-    let dStr = d.date;
-    if (Array.isArray(d.date)) dStr = `${d.date[0]}-${String(d.date[1]).padStart(2, '0')}-${String(d.date[2]).padStart(2, '0')}`;
-    else if (typeof d.date === 'string') dStr = d.date.slice(0, 10);
-    return dStr === selectedDayKey;
-  })?.dominantEmotion?.name;
-  
-  // 2. 이번 달에 기록이 있는지?
-  const hasAnyEmotionsThisMonth = serverDays.length > 0;
-  let topMonthEmotion = null;
-  if (hasAnyEmotionsThisMonth) {
-    const counts = serverDays.reduce((acc, d) => {
-      const name = d.dominantEmotion?.name;
-      if (name) acc[name] = (acc[name] || 0) + 1;
-      return acc;
-    }, {});
-    topMonthEmotion = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
-  }
-
-  // 3. 우선순위에 따라 렌더링할 감정 결정
-  const displayEmotion = selectedDayEmotion || topMonthEmotion || null;
+  // 대표 말랑이와 능선은 모두 월간 감정 기록 횟수(count)를 기준으로 한다.
+  // 금액이나 날짜별 대표 감정 수를 섞으면 같은 화면에서 서로 다른 감정이 대표가 된다.
+  const topMonthEmotion = serverEmotions.reduce((top, emotion) => {
+    if (!top || emotion.count > top.count) return emotion;
+    if (emotion.count === top.count && emotion.amount > top.amount) return emotion;
+    return top;
+  }, null)?.name;
+  const displayEmotion = topMonthEmotion || null;
   const showEmptyBlob = displayEmotion === null;
   const dark = state.mode === 'dark';
   const topMeta = showEmptyBlob ? { color: dark ? '#9B8CFF' : '#7C6BE0' } : getEmotion(displayEmotion);
@@ -869,7 +856,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const goals = goalsData?.goals || [];
   const totalAsset = state.user?.totalAsset ?? 0;
 
-  // 전역 예산 스토어 구독 → 소진율/상태로 말랑이 말풍선 문구 (F7-10 · #145)
+  // 전역 예산 스토어 구독 → 서버 문구를 못 받았을 때 쓰는 소진율 기반 문구 (F7-10 · #145)
   // 계산·동기화는 BudgetSync가 담당하고, 여기선 파생 상태만 읽는다.
   const budgetProgress = useBudgetStore((s) => s.progress);
   const budgetState = useBudgetStore((s) => s.state);
@@ -889,11 +876,36 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     '아래 달력에서 날짜를 골라 시작해봐',
     '가볍게 한 건부터, 천천히 같이 하자',
   ];
-  const bubblePhrases = showEmptyBlob ? emptyPhrases : budgetPhrases;
+
+  // 서버 말랑이 코멘트: 당월 대표 감정에 맞춘 개인화 문구 (F18-5 · feelio-api#240)
+  // 빈 상태에서는 부르지 않는다 — 기록이 없으면 감정도 없어 유도 문구가 맞다.
+  const { data: mallangComment } = useMallangCommentQuery();
+  const serverPhrases = useMemo(() => {
+    if (showEmptyBlob || !mallangComment) return null;
+    const phrases = [mallangComment.empathy, mallangComment.evaluation, mallangComment.encouragement].filter(Boolean);
+    return phrases.length > 0 ? phrases : null;
+  }, [showEmptyBlob, mallangComment]);
+
+  // 서버 문구가 없으면(로딩·실패) 기존 예산 문구로 버틴다. 말풍선은 비지 않는다.
+  const bubblePhrases = showEmptyBlob ? emptyPhrases : (serverPhrases || budgetPhrases);
+
+  // 데스크톱은 최대 3칸. 서버 문구는 평가·독려 2개뿐이라 2칸만 띄운다.
+  // 문구가 화면에 전부 들어가면 순환할 게 없다 — 돌리면 자리만 바뀌어 산만해진다.
+  const bubbleCount = Math.min(3, bubblePhrases.length);
+  const bubbleRotates = bubblePhrases.length > bubbleCount;
 
   const days = getCalendarCells(serverDays, visibleMonth);
-  const ridgeData = hasEnoughRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
-  const ridgePeak = ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0]);
+  const ridgeData = hasRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
+  /**
+   * 능선의 최고점은 대표 말랑이와 같은 감정이어야 한다.
+   *
+   * 높이는 기록 횟수라 동점이 잦은데, 배열에서 max 를 고르면(> 비교) 동점일 때
+   * ridgeEmotions 의 앞자리가 이긴다. 그래서 4건·391,757원 뿌듯함이 대표 말랑이인데
+   * 능선만 4건·87,800원 설렘이 가장 높다고 말하는 일이 생겼다.
+   * 동점은 금액으로 가른다 — topMonthEmotion 이 이미 그 규칙이라 그대로 따른다.
+   */
+  const ridgePeakName = topMonthEmotion
+    ?? ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0])[0];
   const slot = 560 / ridgeData.length;
   const signals = getEmotionSignals(serverEmotions, serverPrevEmotions);
   const monthLabel = `${visibleMonth.getFullYear()}년 ${visibleMonth.getMonth() + 1}월`;
@@ -953,10 +965,11 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
                     {bubblePhrases[budgetWave % bubblePhrases.length]}
                   </Bubble>
                 ) : (
-                  [0, 1, 2].map((i) => {
-                    const phrase = bubblePhrases[(budgetWave + i) % bubblePhrases.length];
+                  Array.from({ length: bubbleCount }, (unused, i) => {
+                    // 순환하지 않을 땐 wave 를 빼서 자리 교체가 일어나지 않게 한다
+                    const phrase = bubblePhrases[(bubbleRotates ? budgetWave + i : i) % bubblePhrases.length];
                     return (
-                      <Bubble key={`${budgetWave}-${i}`} css={{ animation: `${bubblePop} 0.5s cubic-bezier(.5, 1.5, .5, 1) ${i * 0.22}s backwards` }}>
+                      <Bubble key={bubbleRotates ? `${budgetWave}-${i}` : `fixed-${i}`} css={{ animation: `${bubblePop} 0.5s cubic-bezier(.5, 1.5, .5, 1) ${i * 0.22}s backwards` }}>
                         {phrase}
                       </Bubble>
                     );
@@ -965,7 +978,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
               </BubbleStack>
             </div>
             <div css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 800, marginTop: isMobile ? 4 : -24 }}>
-              {showEmptyBlob ? '아직 감정을 기다리는 중' : selectedDayEmotion ? '선택한 날에 가장 오래 머문 마음' : '선택한 날에는 감정 기록이 없어요'}
+              {showEmptyBlob ? '아직 감정을 기다리는 중' : '이번 달 가장 많이 기록한 마음'}
             </div>
             <div css={{ fontSize: 24, color: !showEmptyBlob ? topMeta.color : (dark ? '#9B8CFF' : '#7C6BE0'), fontWeight: 900, letterSpacing: '-.02em', marginTop: 2 }}>
               {!showEmptyBlob ? `${displayEmotion} 말랑이` : '감정 말랑이'}
@@ -974,7 +987,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
         </Stage>
 
         <Ridge expanded={isRidgeExpanded} onClick={() => setIsRidgeExpanded(!isRidgeExpanded)}>
-          {hasEnoughRidgeData ? (
+          {hasRidgeData ? (
             <>
               <AccordionSummary expanded={isRidgeExpanded}>
                 <div css={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -985,7 +998,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
                 <div css={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {!isRidgeExpanded && (
                     <span css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 800, '@media (min-width: 981px)': { display: 'none' } }}>
-                      가장 높은 감정: <b css={{ color: getEmotion(ridgePeak[0]).color }}>{ridgePeak[0]}</b>
+                      가장 높은 감정: <b css={{ color: getEmotion(ridgePeakName).color }}>{ridgePeakName}</b>
                     </span>
                   )}
                   <span css={{ color: 'var(--sub)', fontSize: 16, '@media (min-width: 981px)': { display: 'none' } }}>{isRidgeExpanded ? '▴' : '▾'}</span>
@@ -1012,7 +1025,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
                     </g>
                   </svg>
                 </div>
-                <div css={{ fontSize: 12.5, color: 'var(--sub)', padding: '8px 22px 14px' }}>이번 달은 <b css={{ color: getEmotion(ridgePeak[0]).color }}>{ridgePeak[0]}</b>이 가장 높이 솟았어요</div>
+                <div css={{ fontSize: 12.5, color: 'var(--sub)', padding: '8px 22px 14px' }}>이번 달은 <b css={{ color: getEmotion(ridgePeakName).color }}>{ridgePeakName}</b>이 가장 높이 솟았어요</div>
                </div>
               </div>
             </>
