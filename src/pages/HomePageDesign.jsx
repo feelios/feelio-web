@@ -715,6 +715,7 @@ const ridgeEmotions = ['화남', '평온', '외로움', '스트레스', '신남'
 
 function getEmotionRidgeData(emotions) {
   if (!emotions || emotions.length === 0) return defaultRidgeData;
+  // 능선 높이는 소비 금액(amount)이 아니라 감정을 기록한 횟수(count)를 기준으로 한다.
   const maxCount = Math.max(...emotions.map(e => e.count), 1);
   return ridgeEmotions.map(name => {
     const item = emotions.find(e => e.name === name);
@@ -835,7 +836,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const serverPrevEmotions = emotionData?.prevMonth || [];
 
   const hasMonthlyTransactions = serverEmotions.length > 0;
-  const hasEnoughRidgeData = serverEmotions.length >= 5;
+  const hasRidgeData = serverEmotions.length > 0;
   
   const selectedDayKey = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, '0')}-${String(selected.getDate()).padStart(2, '0')}`;
   
@@ -908,7 +909,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const bubbleRotates = bubblePhrases.length > bubbleCount;
 
   const days = getCalendarCells(serverDays, visibleMonth);
-  const ridgeData = hasEnoughRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
+  const ridgeData = hasRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
   const ridgePeak = ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0]);
   const slot = 560 / ridgeData.length;
   const signals = getEmotionSignals(serverEmotions, serverPrevEmotions);
@@ -991,7 +992,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
         </Stage>
 
         <Ridge expanded={isRidgeExpanded} onClick={() => setIsRidgeExpanded(!isRidgeExpanded)}>
-          {hasEnoughRidgeData ? (
+          {hasRidgeData ? (
             <>
               <AccordionSummary expanded={isRidgeExpanded}>
                 <div css={{ display: 'flex', alignItems: 'center', gap: 9 }}>
