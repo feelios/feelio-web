@@ -896,7 +896,16 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
 
   const days = getCalendarCells(serverDays, visibleMonth);
   const ridgeData = hasRidgeData ? getEmotionRidgeData(serverEmotions) : defaultRidgeData;
-  const ridgePeak = ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0]);
+  /**
+   * 능선의 최고점은 대표 말랑이와 같은 감정이어야 한다.
+   *
+   * 높이는 기록 횟수라 동점이 잦은데, 배열에서 max 를 고르면(> 비교) 동점일 때
+   * ridgeEmotions 의 앞자리가 이긴다. 그래서 4건·391,757원 뿌듯함이 대표 말랑이인데
+   * 능선만 4건·87,800원 설렘이 가장 높다고 말하는 일이 생겼다.
+   * 동점은 금액으로 가른다 — topMonthEmotion 이 이미 그 규칙이라 그대로 따른다.
+   */
+  const ridgePeakName = topMonthEmotion
+    ?? ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0])[0];
   const slot = 560 / ridgeData.length;
   const signals = getEmotionSignals(serverEmotions, serverPrevEmotions);
   const monthLabel = `${visibleMonth.getFullYear()}년 ${visibleMonth.getMonth() + 1}월`;
@@ -989,7 +998,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
                 <div css={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {!isRidgeExpanded && (
                     <span css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 800, '@media (min-width: 981px)': { display: 'none' } }}>
-                      가장 높은 감정: <b css={{ color: getEmotion(ridgePeak[0]).color }}>{ridgePeak[0]}</b>
+                      가장 높은 감정: <b css={{ color: getEmotion(ridgePeakName).color }}>{ridgePeakName}</b>
                     </span>
                   )}
                   <span css={{ color: 'var(--sub)', fontSize: 16, '@media (min-width: 981px)': { display: 'none' } }}>{isRidgeExpanded ? '▴' : '▾'}</span>
@@ -1016,7 +1025,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
                     </g>
                   </svg>
                 </div>
-                <div css={{ fontSize: 12.5, color: 'var(--sub)', padding: '8px 22px 14px' }}>이번 달은 <b css={{ color: getEmotion(ridgePeak[0]).color }}>{ridgePeak[0]}</b>이 가장 높이 솟았어요</div>
+                <div css={{ fontSize: 12.5, color: 'var(--sub)', padding: '8px 22px 14px' }}>이번 달은 <b css={{ color: getEmotion(ridgePeakName).color }}>{ridgePeakName}</b>이 가장 높이 솟았어요</div>
                </div>
               </div>
             </>
