@@ -74,6 +74,16 @@ const useStore = create(
             console.error('Failed to refresh user after transaction change', error);
           }
         },
+        /**
+         * 온보딩 화면이 PATCH /users/me/onboarding 성공 직후에만 부른다.
+         *
+         * 그래서 '완료'는 이 시점에 이미 사실이다. 예전엔 여기서 getMe() 를 다시 불러
+         * 그 응답의 onboardingDone 으로 전환을 판단했는데, 재조회가 실패하거나 아직 false 로
+         * 오면 화면이 안 넘어갔다. 온보딩 화면의 제출 잠금(submittingRef)은 성공 뒤 풀리지 않으므로
+         * 사용자는 '시작하기'를 한 번 더 눌러야 겨우 빠져나올 수 있었다.
+         *
+         * 재조회는 프로필·테마·목표를 채우는 용도로만 쓰고, 전환 자체는 재조회에 매달리지 않는다.
+         */
         completeOnboarding: async () => {
           try {
             const user = await authAPI.getMe();
@@ -88,7 +98,7 @@ const useStore = create(
                 ...prev.state,
                 user,
                 isLoggedIn: true,
-                onboardingDone: user.onboardingDone,
+                onboardingDone: true,
                 mode: user.themeMode ? user.themeMode.toLowerCase() : prev.state.mode,
                 aurora: user.auroraTheme || prev.state.aurora,
                 goals: Array.isArray(goals) ? goals : prev.state.goals // fix 브랜치 반영
@@ -96,6 +106,8 @@ const useStore = create(
             }));
           } catch (error) {
             console.error('Failed to refresh user after onboarding', error);
+            // 갱신에 실패해도 온보딩은 끝났다. 화면만은 넘겨 사용자를 가두지 않는다.
+            set((prev) => ({ state: { ...prev.state, onboardingDone: true } }));
           }
         },
         logout: async () => {

@@ -66,11 +66,15 @@ const HeroContent = styled.div`
   }
 
   p {
-    max-width: 500px;
+    /* 좁은 화면에서 줄이 접힐 때 단어가 쪼개지거나 마지막 두 글자만 떨어지지 않도록
+       keep-all 로 어절을 지키고 balance 로 줄 길이를 고르게 나눈다. */
+    max-width: 620px;
     margin: 18px 0 0;
     color: var(--sub);
     font-size: 16px;
     line-height: 1.75;
+    word-break: keep-all;
+    text-wrap: balance;
   }
 
   @media (max-width: 900px) {
@@ -193,23 +197,33 @@ const Pills = styled.div`
   gap: 10px;
   margin-top: 24px;
 
+  /*
+   * 앞의 색점을 뺀 순수 유리 알약.
+   * 점은 8px 이라 색이 제대로 보이지도 않으면서 글자 앞에 군더더기만 만들었고,
+   * 세 기능이 각각 다른 색을 달고 있을 이유도 없다(같은 층위의 기능 소개다).
+   * 재질은 앱의 다른 유리면과 같은 방식 — 흰 막 그라디언트 + 윗변 하이라이트 + 블러.
+   */
   span {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 9px 15px;
+    padding: 9px 17px;
     border-radius: 999px;
-    background: rgba(255,255,255,.34);
-    border: 1px solid var(--line);
-    color: var(--sub);
+    background: linear-gradient(135deg, rgba(255,255,255,.24), rgba(255,255,255,.08));
+    border: 1px solid var(--card-border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.38);
+    backdrop-filter: blur(16px) saturate(1.35);
+    -webkit-backdrop-filter: blur(16px) saturate(1.35);
+    color: var(--text);
     font-size: 13px;
     font-weight: 700;
+    letter-spacing: -.01em;
+    transition: background .2s ease, box-shadow .2s ease;
   }
 
-  i {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+  /* 테두리는 그대로 두고 흰 막만 두껍게 — 유리가 빛을 더 받은 것처럼. */
+  span:hover {
+    background: linear-gradient(135deg, rgba(255,255,255,.34), rgba(255,255,255,.14));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
   }
 
   /* 시트가 화면 아래를 차지하는 만큼 히어로에 남는 높이가 적다.
@@ -240,16 +254,23 @@ const ModeButton = styled.button`
   }
 `;
 
+/*
+ * copy 는 모바일용 짧은 문장, copyWide 는 데스크톱용 한 문장이다.
+ *
+ * 예전엔 데스크톱에서 '기록이 쌓이면 나만의 소비 흐름이 보여요.' 하나를 여덟 장 전부에
+ * 덧붙였다. 슬라이드를 넘겨도 뒷문장이 그대로라 문구가 겉돌았다. 그렇다고 감정마다
+ * 짧은 문장 둘을 이어 붙이면 두 마디가 따로 노는 소리가 나서, 한 문장으로 합쳤다.
+ */
 const heroSlides = [
-  ['스트레스', '스트레스였던 밤', '그 소비의 이유를 읽어드릴게요', '그 소비의 이유를 읽어드려요', '감정에 따라 반복되는 소비를 찾아드려요.'],
-  ['외로움', '외로웠던 새벽', '지갑이 열린 순간을 함께 볼게요', '지갑이 열린 순간을 봐요', '어떤 시간, 어떤 마음이었는지 함께 봐요.'],
-  ['뿌듯함', '뿌듯했던 하루', '좋은 소비는 더 선명하게 남겨요', '좋은 소비는 선명하게 남겨요', '아낄 소비와 지켜도 될 소비를 구분해요.'],
-  ['신남', '신났던 오후', '즐거웠던 소비도 이유가 있어요', '즐거운 소비도 이유가 있어요', '나를 기분 좋게 만든 선택을 발견해요.'],
-  ['설렘', '설렜던 순간', '기대가 담긴 소비를 기억해요', '기대가 담긴 소비를 기억해요', '새로운 시작을 앞둔 마음도 함께 기록해요.'],
-  ['화남', '화가 났던 저녁', '욱했던 결제에는 신호가 있어요', '욱했던 결제의 신호를 찾아요', '다음 선택에는 작은 틈을 만들어요.'],
-  ['평온', '평온했던 하루', '편안한 선택은 오래 남겨요', '편안한 선택은 오래 남겨요', '나에게 맞는 소비 리듬을 찾아가요.'],
-  ['무덤덤', '무덤덤했던 순간', '별생각 없던 소비도 들여다봐요', '무심했던 소비도 들여다봐요', '습관처럼 지나친 결제의 패턴을 찾아요.']
-].map(([emotion, eyebrow, title, titleMobile, copyMobile]) => ({ emotion, eyebrow, title, titleMobile, copyMobile }));
+  ['스트레스', '스트레스였던 밤', '그 소비의 이유를 읽어드릴게요', '그 소비의 이유를 읽어드려요', '감정에 따라 반복되는 소비를 찾아드려요.', '감정에 따라 반복되는 소비를 찾아, 버티려고 썼던 밤이 언제였는지 짚어드려요.'],
+  ['외로움', '외로웠던 새벽', '지갑이 열린 순간을 함께 볼게요', '지갑이 열린 순간을 봐요', '어떤 시간, 어떤 마음이었는지 함께 봐요.', '어떤 시간 어떤 마음이었는지, 혼자인 새벽에 무엇을 찾았는지 함께 봐요.'],
+  ['뿌듯함', '뿌듯했던 하루', '좋은 소비는 더 선명하게 남겨요', '좋은 소비는 선명하게 남겨요', '아낄 소비와 지켜도 될 소비를 구분해요.', '아낄 소비와 지켜도 될 소비를 구분해, 잘 쓴 돈은 줄이지 않아도 되게 해요.'],
+  ['신남', '신났던 오후', '즐거웠던 소비도 이유가 있어요', '즐거운 소비도 이유가 있어요', '나를 기분 좋게 만든 선택을 발견해요.', '들뜬 날의 씀씀이까지 남겨서 나를 기분 좋게 만든 선택을 발견해요.'],
+  ['설렘', '설렜던 순간', '기대가 담긴 소비를 기억해요', '기대가 담긴 소비를 기억해요', '새로운 시작을 앞둔 마음도 함께 기록해요.', '무엇을 기다리며 골랐는지까지, 새로운 시작을 앞둔 마음을 함께 기록해요.'],
+  ['화남', '화가 났던 저녁', '욱했던 결제에는 신호가 있어요', '욱했던 결제의 신호를 찾아요', '다음 선택에는 작은 틈을 만들어요.', '어떤 상황에서 결제 버튼을 눌렀는지 보여드려 다음 선택엔 작은 틈을 만들어요.'],
+  ['평온', '평온했던 하루', '편안한 선택은 오래 남겨요', '편안한 선택은 오래 남겨요', '나에게 맞는 소비 리듬을 찾아가요.', '무리하지 않은 날들을 기준 삼아 나에게 맞는 소비 리듬을 찾아가요.'],
+  ['무덤덤', '무덤덤했던 순간', '별생각 없던 소비도 들여다봐요', '무심했던 소비도 들여다봐요', '습관처럼 지나친 결제의 패턴을 찾아요.', '기억나지 않는 지출부터 모아 습관처럼 지나친 결제의 패턴을 찾아요.']
+].map(([emotion, eyebrow, title, titleMobile, copy, copyWide]) => ({ emotion, eyebrow, title, titleMobile, copy, copyWide }));
 
 export default function LoginPage({ mode, onToggleMode, onLogin }) {
   const [slideIndex, setSlideIndex] = useState(0);
@@ -260,11 +281,7 @@ export default function LoginPage({ mode, onToggleMode, onLogin }) {
   const isMobile = viewport.width <= 900;
   const slide = heroSlides[slideIndex];
   const accent = emotionPalette[slide.emotion].color;
-  const pills = [
-    ['감정 태그 기록', '#F28AB7'],
-    ['AI 패턴 분석', '#A68BEA'],
-    ['평행우주 목표', '#83C9B0']
-  ];
+  const pills = ['감정 태그 기록', 'AI 패턴 분석', '평행우주 목표'];
 
   // 900px 는 이 파일의 미디어쿼리 기준과 같다. 둘이 어긋나면 블롭만 데스크톱 크기로 남는다.
   useEffect(() => {
@@ -280,9 +297,11 @@ export default function LoginPage({ mode, onToggleMode, onLogin }) {
     return () => window.clearInterval(timer);
   }, []);
 
+  // 말랑이가 이 화면의 얼굴이다. 190px 은 옆 제목에 눌려 존재감이 없었다.
+  // 모바일은 화면 높이 비례 — 작은 기기에서 하단 시트를 밀어내면 안 되므로 상한으로 막는다.
   const blobSize = isMobile
-    ? Math.max(150, Math.min(220, Math.round(viewport.height * 0.28)))
-    : 190;
+    ? Math.max(180, Math.min(300, Math.round(viewport.height * 0.36)))
+    : 320;
 
   return (
     <Page>
@@ -296,12 +315,11 @@ export default function LoginPage({ mode, onToggleMode, onLogin }) {
             <EmotionBlob emotion={slide.emotion} size={blobSize} />
           </BlobSpot>
           <h1><span>{slide.eyebrow}</span>{isMobile ? slide.titleMobile : slide.title}</h1>
-          <p>{isMobile ? slide.copyMobile : `${slide.copyMobile} 기록이 쌓이면 나만의 소비 흐름이 보여요.`}</p>
+          <p>{isMobile ? slide.copy : slide.copyWide}</p>
           <Pills>
-            {pills.map(([label, color]) => <span key={label}><i style={{ background: color }} />{label}</span>)}
+            {pills.map(label => <span key={label}>{label}</span>)}
           </Pills>
         </HeroContent>
-        <small css={{ color: 'var(--sub)', fontWeight: 700, '@media (max-width: 900px)': { display: 'none' } }}>Feel + I/O · 감정 기반 소비 인사이트</small>
       </Hero>
       <AuthPanel>
         <AuthBox>
@@ -310,8 +328,10 @@ export default function LoginPage({ mode, onToggleMode, onLogin }) {
           <Button onClick={() => onLogin('Google')}><span><GoogleLogo /></span>Google로 계속하기</Button>
           <Button solid tone="#FFE100" color="#3A1D1D" onClick={() => onLogin('Kakao')}><span><KakaoLogo /></span>Kakao로 계속하기</Button>
           <Button solid tone="#08C963" color="#fff" onClick={() => onLogin('Naver')}><span>N</span>Naver로 계속하기</Button>
-          <small css={{ display: 'block', marginTop: 24, color: 'var(--sub)', lineHeight: 1.6, '@media (max-width: 900px)': { marginTop: 12, fontSize: 11 } }}>
-            {isMobile ? '가입 시 서비스 약관과 개인정보 처리방침에 동의하게 돼요.' : '가입하면 feelio의 서비스 약관과 개인정보 처리방침에 동의하게 돼요.'}
+          {/* 352px 폭에 담기지 않아 두 줄로 접혔다. 문구를 줄이고 글자도 한 단계 낮춰 한 줄에 맞춘다.
+              데스크톱·모바일이 같은 문장이면 갈라 쓸 이유도 없다. */}
+          <small css={{ display: 'block', marginTop: 24, color: 'var(--sub)', fontSize: 11.5, lineHeight: 1.6, whiteSpace: 'nowrap', '@media (max-width: 900px)': { marginTop: 12, fontSize: 11 } }}>
+            가입 시 서비스 약관과 개인정보 처리방침에 동의합니다
           </small>
         </AuthBox>
       </AuthPanel>
