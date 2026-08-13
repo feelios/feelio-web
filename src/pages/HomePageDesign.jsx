@@ -12,6 +12,7 @@ import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 import { PartyPopper } from 'lucide-react';
+import { monthAnchorDate } from '../utils/date.js';
 
 const Grid = styled.div`
   width: 100%;
@@ -916,7 +917,8 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const monthLabel = `${visibleMonth.getFullYear()}년 ${visibleMonth.getMonth() + 1}월`;
   const moveMonth = (step) => setVisibleMonth(prev => {
     const next = new Date(prev.getFullYear(), prev.getMonth() + step, 1);
-    onSelectDate?.(next);
+    // 이번 달로 돌아오면 1일이 아니라 오늘을 고른다(monthAnchorDate 주석 참고).
+    onSelectDate?.(monthAnchorDate(next.getFullYear(), next.getMonth()));
     return next;
   });
 
