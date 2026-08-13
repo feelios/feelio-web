@@ -17,12 +17,19 @@ const Shell = styled.div`
   --ink: ${({ mode }) => mode === 'dark' ? '#ECEBF0' : '#2b2723'};
   --on-ink: ${({ mode }) => mode === 'dark' ? '#141220' : '#fbf9f6'};
   --line: ${({ mode }) => mode === 'dark' ? 'rgba(255,255,255,.10)' : 'rgba(50,42,32,.10)'};
-  --modal-bg: ${({ mode }) => mode === 'dark' ? 'rgba(22,24,34,.58)' : 'rgba(248,245,240,.58)'};
+  /* 다크의 유리는 '어두운 막'이 아니라 --card 처럼 배경 위에 얹는 '흰 막'이다.
+     예전 rgba(22,24,34,.58) 은 어두운 막이라 페이지보다 가라앉아 새까맸고,
+     불투명한 회보라 판으로 바꿨더니 이번엔 유리질이 죽었다.
+     카드(.055)·카드강조(.085)와 같은 계열로 두되, 모달이라 한 단계 진하게 간다. */
+  --modal-bg: ${({ mode }) => mode === 'dark' ? 'rgba(255,255,255,.14)' : 'rgba(248,245,240,.46)'};
   --scrim: ${({ mode }) => mode === 'dark' ? 'rgba(5,6,12,.42)' : 'rgba(40,32,24,.22)'};
   --shadow: ${({ mode }) => mode === 'dark' ? theme.darkShadow : theme.shadow};
   --mobile-nav-height: 67px;
   --mobile-nav-offset: 12px;
-  --mobile-nav-clearance: calc(var(--mobile-nav-height) + var(--mobile-nav-offset) + env(safe-area-inset-bottom, 0px));
+  /* clearance 는 메뉴바가 깔고 앉는 자리까지만 비웠다. 그래서 홈을 뺀 화면은 마지막 카드가
+     메뉴바에 딱 붙었다. 홈이 혼자 갖고 있던 30px 숨통을 토큰으로 올려 모든 화면이 같이 쓴다. */
+  --mobile-nav-gap: 30px;
+  --mobile-nav-clearance: calc(var(--mobile-nav-height) + var(--mobile-nav-offset) + var(--mobile-nav-gap) + env(safe-area-inset-bottom, 0px));
   position: relative;
   height: 100dvh;
   overflow: hidden;

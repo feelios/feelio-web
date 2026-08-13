@@ -611,11 +611,14 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
           </SideCard>
 
           <SideCard>
+            {/* textarea 가 카드의 첫 자식이라 marginTop 14 는 카드 패딩(22) 위에 그냥 얹혀
+                위쪽에 36px 짜리 빈 띠만 만들고 있었다. 그 14 를 메모 칸 높이로 돌려준다 —
+                카드 전체 높이는 그대로고 입력 칸만 그만큼 커진다. */}
             <textarea
               value={form.memo}
               onChange={event => setField('memo', event.target.value)}
               placeholder="한 줄 메모 - 그 순간, 왜 그 마음이었을까요?"
-              css={{ marginTop: 14, minHeight: 76, resize: 'none', width: '100%', boxSizing: 'border-box', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: '12px 15px', color: 'var(--text)', outline: 0, fontFamily: 'inherit' }}
+              css={{ minHeight: 90, resize: 'none', width: '100%', boxSizing: 'border-box', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: '12px 15px', color: 'var(--text)', outline: 0, fontFamily: 'inherit' }}
             />
             <label ref={datePickerAnchorRef} css={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
               <div css={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.06)', padding: 4, borderRadius: 12 }}>
