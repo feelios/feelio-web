@@ -6,7 +6,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // 말랑이를 아직 안 고른 상태의 강조색. 감정을 고르면 그 감정 색으로 덮인다.
 const ACCENT_COLOR = "var(--ink)";
-const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+// 홈 달력은 일요일 시작인데 여기만 월요일 시작이라, 같은 앱에서 요일 줄이 서로 어긋나 보였다.
+const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
 const ITEM_H = 34; // 휠 아이템 높이(px) — 밴드 중앙 정렬 계산 기준
@@ -14,8 +15,9 @@ const ITEM_H = 34; // 휠 아이템 높이(px) — 밴드 중앙 정렬 계산 �
 function buildMonthGrid(year, monthIndex) {
   const firstOfMonth = new Date(year, monthIndex, 1);
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-  // Adjust so Monday is first (index 0) and Sunday is last (index 6)
-  const leadingBlanks = (firstOfMonth.getDay() + 6) % 7;
+  // 일요일이 첫 칸(index 0). getDay() 가 그대로 앞칸 수가 된다.
+  // 라벨만 일요일 시작으로 바꾸고 여기를 그대로 두면 날짜가 하루씩 밀린다.
+  const leadingBlanks = firstOfMonth.getDay();
  
   const cells = [];
   for (let i = 0; i < leadingBlanks; i++) cells.push(null);
@@ -83,14 +85,17 @@ const Backdrop = styled.div`
 
 const Card = styled.div`
   width: var(--date-card-w, 300px);
-  background: color-mix(in srgb, var(--bg-1) 95%, transparent);
+  /* --bg-1 95% 는 페이지 배경 그 자체라 다크에서 새까만 판이 됐다(모달 계열보다도 어두웠다).
+     그림자도 #dbdbdb 로 박혀 있어 어두운 배경 위에 흰 후광이 생겼다. 둘 다 테마 토큰으로 돌린다. */
+  background: var(--modal-bg);
+  border: 1px solid var(--card-border);
   border-radius: 28px;
-  box-shadow: 10px 10px 20px #dbdbdb;
+  box-shadow: var(--shadow);
   padding: 14px 15px;
   display: flex;
   flex-direction: column;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(26px) saturate(1.25);
+  -webkit-backdrop-filter: blur(26px) saturate(1.25);
 
   @media (max-width: 560px) {
     padding: 10px 11px;
@@ -305,12 +310,14 @@ const TimeListPanel = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: color-mix(in srgb, var(--bg-1) 95%, transparent);
+  /* 달력 카드와 나란히 서는 패널이라 같은 표면을 쓴다(위 Card 주석 참고). */
+  background: var(--modal-bg);
+  border: 1px solid var(--card-border);
   border-radius: 24px;
-  box-shadow: 10px 10px 20px #dbdbdb;
+  box-shadow: var(--shadow);
   padding: 8px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(26px) saturate(1.25);
+  -webkit-backdrop-filter: blur(26px) saturate(1.25);
 `;
 
 const WheelHeadRow = styled.div`

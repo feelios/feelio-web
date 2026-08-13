@@ -32,7 +32,8 @@ const Root = styled.div`
   --ink: ${({ mode }) => mode === 'dark' ? '#ECEBF0' : '#2b2723'};
   --on-ink: ${({ mode }) => mode === 'dark' ? '#141220' : '#fbf9f6'};
   --line: ${({ mode }) => mode === 'dark' ? 'rgba(255,255,255,.10)' : 'rgba(50,42,32,.10)'};
-  --modal-bg: ${({ mode }) => mode === 'dark' ? 'rgba(22,24,34,.58)' : 'rgba(248,245,240,.58)'};
+  /* AppLayoutDc 의 Shell 과 같은 값을 유지한다(두 곳에 중복 정의돼 있다). */
+  --modal-bg: ${({ mode }) => mode === 'dark' ? 'rgba(54,58,78,.86)' : 'rgba(248,245,240,.58)'};
   --scrim: ${({ mode }) => mode === 'dark' ? 'rgba(5,6,12,.42)' : 'rgba(40,32,24,.22)'};
   --shadow: ${({ mode }) => mode === 'dark' ? theme.darkShadow : theme.shadow};
   position: relative;
