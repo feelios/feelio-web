@@ -20,6 +20,7 @@ import RecordPageDc from '../pages/RecordPageDc.jsx';
 import TransactionsPageDesign from '../pages/TransactionsPageDesign.jsx';
 import AnalysisPageDc from '../pages/AnalysisPageDc.jsx';
 import UniversePageDc from '../pages/UniversePageDc.jsx';
+import { monthAnchorDate } from '../utils/date.js';
 
 const Root = styled.div`
   --bg-1: ${({ mode }) => mode === 'dark' ? '#12141e' : '#f6f2eb'};
@@ -152,7 +153,7 @@ export default function App() {
                 <MonthlyAnalysisSwitcher 
                   year={globalDate.getFullYear()} 
                   month={globalDate.getMonth()} 
-                  onChangeMonth={(y, m) => setGlobalDate(new Date(y, m, 1))} 
+                  onChangeMonth={(y, m) => setGlobalDate(monthAnchorDate(y, m))} 
                 />
               </div>
             ) : titles[route]
