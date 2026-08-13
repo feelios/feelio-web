@@ -141,9 +141,14 @@ const Choice = styled.button`
   gap: 12px;
   border-radius: 16px;
   border: 1px solid var(--card-border);
+  /*
+   * 흰 막을 그대로 쓰면 다크에서 깨진다 — .74 는 밝은 판이 되는데 글자는 밝은 --text 라
+   * 선택된 칸이 오히려 안 읽혔다. 테마 토큰 위에 옅은 막을 얹는 방식으로 바꾼다.
+   * 토큰이 모드별 밝기를 이미 갖고 있어서, 다크는 은은하게 뜨고 라이트는 또렷해진다.
+   */
   background: ${({ active }) => active
-    ? 'linear-gradient(135deg, rgba(255,255,255,.74), rgba(255,255,255,.36))'
-    : 'linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.03))'};
+    ? 'linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.05)), var(--card-strong)'
+    : 'var(--card)'};
   /* 선택 신호는 '유리의 두께' 하나로만 낸다 — 테두리도 링도 쓰지 않는다.
      고른 칸은 두껍게 언 유리처럼 뿌옇고 윗변이 환하게 빛나고,
      나머지는 거의 비어 있는 얇은 유리로 남는다. 그 차이가 곧 선택 표시다.
@@ -157,15 +162,19 @@ const Choice = styled.button`
   margin-top: 8px;
   text-align: left;
   cursor: pointer;
-  color: ${({ active }) => active ? 'var(--text)' : 'var(--sub)'};
-  font-weight: ${({ active }) => active ? 800 : 500};
+  /* 미선택 글자를 --sub 로 두면 다크의 어두운 유리 위에서 묻힌다.
+     둘 다 본문색으로 읽히게 하고, 차이는 굵기와 유리 두께가 낸다. */
+  color: var(--text);
+  opacity: ${({ active }) => active ? 1 : .78};
+  font-weight: ${({ active }) => active ? 800 : 600};
   transition: background .18s ease, box-shadow .18s ease, color .18s ease;
 
   /* 호버는 선택보다 약하게. 반대면 마우스를 올렸을 때만 반응하는 것처럼 보인다. */
   &:hover {
     background: ${({ active }) => active
-      ? 'linear-gradient(135deg, rgba(255,255,255,.78), rgba(255,255,255,.4))'
-      : 'linear-gradient(135deg, rgba(255,255,255,.26), rgba(255,255,255,.08))'};
+      ? 'linear-gradient(135deg, rgba(255,255,255,.2), rgba(255,255,255,.07)), var(--card-strong)'
+      : 'linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02)), var(--card)'};
+    opacity: 1;
   }
 `;
 
