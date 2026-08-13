@@ -17,12 +17,17 @@ const Shell = styled.div`
   --ink: ${({ mode }) => mode === 'dark' ? '#ECEBF0' : '#2b2723'};
   --on-ink: ${({ mode }) => mode === 'dark' ? '#141220' : '#fbf9f6'};
   --line: ${({ mode }) => mode === 'dark' ? 'rgba(255,255,255,.10)' : 'rgba(50,42,32,.10)'};
-  --modal-bg: ${({ mode }) => mode === 'dark' ? 'rgba(22,24,34,.58)' : 'rgba(248,245,240,.58)'};
+  /* 다크에서 이 값이 페이지(--bg-1 #12141e)보다 어두워, 카드는 배경 위로 뜨는데 모달만 가라앉았다.
+     스크림까지 겹치면 거의 검정이 된다. 배경보다 밝은 표면으로 올려 유리판처럼 뜨게 한다. */
+  --modal-bg: ${({ mode }) => mode === 'dark' ? 'rgba(54,58,78,.86)' : 'rgba(248,245,240,.58)'};
   --scrim: ${({ mode }) => mode === 'dark' ? 'rgba(5,6,12,.42)' : 'rgba(40,32,24,.22)'};
   --shadow: ${({ mode }) => mode === 'dark' ? theme.darkShadow : theme.shadow};
   --mobile-nav-height: 67px;
   --mobile-nav-offset: 12px;
-  --mobile-nav-clearance: calc(var(--mobile-nav-height) + var(--mobile-nav-offset) + env(safe-area-inset-bottom, 0px));
+  /* clearance 는 메뉴바가 깔고 앉는 자리까지만 비웠다. 그래서 홈을 뺀 화면은 마지막 카드가
+     메뉴바에 딱 붙었다. 홈이 혼자 갖고 있던 30px 숨통을 토큰으로 올려 모든 화면이 같이 쓴다. */
+  --mobile-nav-gap: 30px;
+  --mobile-nav-clearance: calc(var(--mobile-nav-height) + var(--mobile-nav-offset) + var(--mobile-nav-gap) + env(safe-area-inset-bottom, 0px));
   position: relative;
   height: 100dvh;
   overflow: hidden;

@@ -156,6 +156,20 @@ const RISK_ROUTE_LABEL = '위험 루트';
 // '예산 미설정'은 등급이 아니라 판정 불가라 매핑하지 않는다 → 세 칸 모두 꺼짐.
 const RISK_WORDS = { 위험: 'RED', 주의: 'YELLOW', 안전: 'GREEN' };
 
+/**
+ * 예산 소진율 색 구간. 소비 위험도 신호등과 같은 기준·같은 팔레트를 쓴다 —
+ * 같은 화면에서 같은 숫자를 놓고 두 곳이 다른 색을 켜면 안 된다.
+ *
+ * 경계는 서버 판정(SpendStatus.of)과 같은 값이다: 70 미만 안전 · 70~90 주의 · 90 이상 위험.
+ * 서버 등급을 그대로 받아 쓰지 않고 여기서 다시 계산하는 이유는, 화면에 찍히는 숫자가
+ * 프론트에서 구한 budgetAverage 라서다. 색은 자기 옆에 적힌 숫자를 따라야 한다.
+ */
+function budgetRateLevel(rate) {
+  if (rate >= 90) return RISK_LEVELS.RED;
+  if (rate >= 70) return RISK_LEVELS.YELLOW;
+  return RISK_LEVELS.GREEN;
+}
+
 function resolveRisk(raw) {
   const text = String(raw ?? '').trim();
   return RISK_LEVELS[text.toUpperCase()] ?? RISK_LEVELS[RISK_WORDS[text]] ?? null;
@@ -366,6 +380,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const budgetTotal = validBudgetItems.reduce((sum, item) => sum + item.budget, 0);
   const budgetSpent = validBudgetItems.reduce((sum, item) => sum + item.amount, 0);
   const budgetAverage = budgetTotal > 0 ? Math.round((budgetSpent / budgetTotal) * 100) : 0;
+  // '측정중'은 아직 판정할 수 없는 상태라 구간 색을 입히지 않는다 (아래 항목별 '측정중'과 같은 색).
+  const budgetRateColor = validBudgetItems.length > 0 ? budgetRateLevel(budgetAverage).color : 'var(--sub)';
   // 급박도순(초과 → 진행률순) 정렬된 목록에서 상위 5개만 노출 (#145)
   const topBudgetItems = budgetItems.slice(0, 5);
   const hiddenBudgetCount = budgetItems.length - topBudgetItems.length;
@@ -542,7 +558,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                     color: item.type === 'fact' ? '#E87573' : 'var(--text)',
                     // 팩트 리포트는 모바일에서 두세 줄로 접혀 덩치가 커진다.
                     // 네 칸 중 한 칸만 크게 외치는 꼴이라 모바일에서만 낮춘다(데스크톱은 한 줄이라 그대로).
-                    fontSize: item.type === 'fact' ? 12.5 : 13,
+                    // 위험도도 note 가 '아직 303,600원 남았어요' 처럼 길어져 같은 처지가 됐다.
+                    fontSize: (item.type === 'fact' || isRisk) ? 12.5 : 13,
                     fontWeight: item.type === 'fact' ? 900 : 900,
                     lineHeight: 1.35,
                     overflow: 'visible',
@@ -588,8 +605,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                     whiteSpace: 'nowrap',
                     // 위험도 칸에서 초록을 가져가는 건 등급('안전')이다. 여기 오는 소진율은 기본색.
                     color: isRisk ? 'var(--text)' : item.color,
-                    fontSize: (item.type === 'risk' || item.label === RISK_ROUTE_LABEL) ? 13.5 : 11,
-                    fontWeight: (item.type === 'risk' || item.label === RISK_ROUTE_LABEL) ? 950 : 900
+                    // 위험도 note 가 소진율(짧음)에서 남은 금액(김)으로 바뀌어 nowrap 으로는 13.5 가 넘쳤다.
+                    fontSize: isRisk ? 12 : (item.label === RISK_ROUTE_LABEL ? 13.5 : 11),
+                    fontWeight: (isRisk || item.label === RISK_ROUTE_LABEL) ? 950 : 900
                   }
                 }}>{item.note}</span>
               )}
@@ -605,7 +623,10 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               <p css={{ margin: 0, color: 'var(--sub)', fontSize: 12, lineHeight: 1.5 }}>지금 바로 조정해야 할 예산부터 보여줘요</p>
             </div>
             <div css={{ textAlign: 'right', flexShrink: 0 }}>
-              <div css={{ color: overBudgetItem ? '#E87573' : 'var(--text)', fontSize: 18, fontWeight: 950, lineHeight: 1 }}>
+              {/* 색은 소진율 자체가 정한다. 예전엔 overBudgetItem 이 빨강을 정해서, 총액 40%처럼
+                  여유로운 달에도 카테고리 하나가 초과하면 '많이 썼다'로 읽혔다.
+                  초과 사실은 바로 아래 '초과' 블록이 이미 말해준다. */}
+              <div css={{ color: budgetRateColor, fontSize: 18, fontWeight: 950, lineHeight: 1 }}>
                 {validBudgetItems.length > 0 ? `${budgetAverage}%` : '측정중'}
               </div>
               <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 800, marginTop: 4 }}>예산 소진율</div>
@@ -1096,7 +1117,10 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
             <div css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, padding: '0 0 12px', fontSize: 11, color: 'var(--sub)', fontWeight: 900, borderBottom: '1px solid var(--line)' }}>
               <span>날짜</span><span>내역</span><span>금액</span>
             </div>
-            <div css={{ overflowY: 'auto', flex: 1, paddingBottom: 16, maxHeight: 240, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+            {/* 모바일 뒷면은 카드 높이(absolute inset:0)가 이미 상한이라, 리스트는 남은 높이를 채우고
+                내용이 그걸 넘을 때만 스크롤되면 된다. 240 고정이면 카드가 더 커도 5행에서 잘렸다.
+                데스크톱은 2단 그리드라 이 칼럼이 행 높이를 밀어올려서 상한이 없으면 스크롤이 안 생긴다 → 상한 유지. */}
+            <div css={{ overflowY: 'auto', flex: 1, minHeight: 0, paddingBottom: 16, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' }, '@media (min-width: 821px)': { maxHeight: 240 } }}>
               {evidence.map((ev, idx) => {
                 const emo = getEmotion(ev.emotion);
                 return <div key={`${ev.date}-${idx}`} css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, alignItems: 'center', padding: '15px 0', borderBottom: '1px solid var(--line)' }}>

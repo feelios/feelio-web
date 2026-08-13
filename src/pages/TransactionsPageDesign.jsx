@@ -177,6 +177,48 @@ const Group = styled.div`
   margin-top: 22px;
 `;
 
+// 목록 맨 위 합계 줄. 툴바와 같은 테두리·배경을 써서 필터 영역의 연장으로 읽히게 한다.
+const SummaryBar = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 13px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--card);
+`;
+
+const SummaryCell = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+
+  /* 두 칸이 각자 떠 보이지 않게 가운데 선으로 한 덩어리로 묶는다. */
+  & + & {
+    text-align: right;
+    padding-left: 12px;
+    border-left: 1px solid var(--line);
+  }
+
+  span {
+    color: var(--sub);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .01em;
+  }
+
+  /* 날짜 헤더 합계(=금액 줄)보다 커지면 목록의 위계가 뒤집힌다. 15 로 눌러 둔다. */
+  b {
+    font-size: 15px;
+    font-weight: 900;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+`;
+
 const Row = styled.button`
   width: 100%;
   display: grid;
@@ -542,6 +584,16 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
       }));
   }, [transactions, view]);
 
+  /**
+   * 목록 맨 위 합계. 필터는 서버가 걸어 transactions 로 내려주므로, 화면에 깔린 줄들과
+   * 항상 같은 집합을 더한다 — 눈에 보이는 것과 합계가 어긋나지 않는다.
+   */
+  const totals = useMemo(() => transactions.reduce((acc, item) => {
+    if (item.type === 'INCOME') acc.income += item.amount;
+    else acc.expense += item.amount;
+    return acc;
+  }, { income: 0, expense: 0 }), [transactions]);
+
   const monthNav = (
     <MonthLine>
       <MonthButton type="button" onClick={() => moveMonth(-1)} aria-label="이전달">
@@ -623,6 +675,19 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
         />
       </ControlGrid>}
 
+      {!isLoading && groups.length > 0 && (
+        <SummaryBar>
+          <SummaryCell>
+            <span>총 지출</span>
+            <b css={{ color: 'var(--text)' }}>-{money(totals.expense)}</b>
+          </SummaryCell>
+          <SummaryCell>
+            <span>총 수입</span>
+            <b css={{ color: '#3E9578' }}>+{money(totals.income)}</b>
+          </SummaryCell>
+        </SummaryBar>
+      )}
+
       {isLoading && <TransactionListSkeleton />}
 
       {!isLoading && groups.length === 0 && <div css={{ textAlign: 'center', padding: '40px', color: 'var(--sub)' }}>거래 내역이 없습니다.</div>}
@@ -652,7 +717,9 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
                     </strong>
                     <small css={{ display: 'block', color: 'var(--sub)', marginTop: 3 }}>{item.emotion?.name}{item.memo ? ` · ${item.memo}` : ''}</small>
                   </span>
-                  <b css={{ fontFamily: 'var(--font-display)', color: item.type === 'INCOME' ? '#3E9578' : 'var(--text)' }}>{signedMoney(item)}</b>
+                  {/* --font-display 는 Fredoka 라 숫자만 다른 글꼴로 나온다(unicode-range).
+                      바로 위 날짜 헤더 합계는 Pretendard 라 같은 금액이 두 글꼴로 보였다. Pretendard 로 맞춘다. */}
+                  <b css={{ color: item.type === 'INCOME' ? '#3E9578' : 'var(--text)' }}>{signedMoney(item)}</b>
                 </Row>
               );
             })}
