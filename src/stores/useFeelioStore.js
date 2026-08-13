@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authAPI } from '../api/auth.js';
 import { goalsAPI } from '../api/goals.js'; // fix 브랜치 반영
+import { usersAPI } from '../api/users.js';
 import { BASE_URL } from '../api/client.js';
 
 const initialState = {
@@ -22,7 +23,7 @@ function normalizeMode(mode) {
 
 const useStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       state: initialState,
       actions: {
         login: (provider) => {
@@ -38,17 +39,39 @@ const useStore = create(
               return null;
             });
 
+            /*
+             * 로그인 화면에서 고른 테마가 로그인하는 순간 덮이던 문제.
+             *
+             * 서버 themeMode 를 무조건 우선했는데, 아직 온보딩 전인 사용자의 그 값은
+             * 본인이 고른 게 아니라 DB 기본값(LIGHT)이다. 그래서 로그인 화면에서 다크를
+             * 켜고 들어와도 온보딩이 라이트로 떴다 — 방금 누른 선택이 조용히 사라졌다.
+             *
+             * 온보딩 전이고 로컬 선택이 서버 기본값과 다르면 로컬을 살린다.
+             * 서버에도 밀어 두어야 다음 로그인·다른 기기에서도 유지된다.
+             * 이미 온보딩을 마친 사용자는 서버 값이 본인의 저장된 설정이므로 그대로 따른다.
+             */
+            const localMode = normalizeMode(get().state.mode);
+            const serverMode = user.themeMode ? normalizeMode(user.themeMode) : null;
+            const keepLocalMode = !user.onboardingDone && serverMode !== null && serverMode !== localMode;
+
             set((prev) => ({
               state: {
                 ...prev.state,
                 user,
                 isLoggedIn: true,
                 onboardingDone: user.onboardingDone,
-                mode: user.themeMode ? user.themeMode.toLowerCase() : prev.state.mode,
+                mode: keepLocalMode ? localMode : (serverMode ?? prev.state.mode),
                 aurora: user.auroraTheme || prev.state.aurora,
                 goals: Array.isArray(goals) ? goals : prev.state.goals // fix 브랜치 반영
               }
             }));
+
+            if (keepLocalMode) {
+              // 화면은 이미 로컬 선택으로 그려졌다. 저장 실패해도 이번 세션을 막지 않는다.
+              usersAPI.updateSettings({ themeMode: localMode.toUpperCase() }).catch((settingsError) => {
+                console.error('Failed to persist the theme chosen before login', settingsError);
+              });
+            }
           } catch (error) {
             console.error('Failed to fetch user profile', error);
             set((prev) => ({
@@ -99,7 +122,10 @@ const useStore = create(
                 user,
                 isLoggedIn: true,
                 onboardingDone: true,
-                mode: user.themeMode ? user.themeMode.toLowerCase() : prev.state.mode,
+                /* 온보딩 내내 화면에 떠 있던 테마를 그대로 이어간다.
+                   위 fetchMe 의 저장이 실패했다면 서버는 아직 기본값(LIGHT)이라,
+                   여기서 서버 값을 따르면 온보딩을 마치는 순간 라이트로 튕긴다. */
+                mode: prev.state.mode,
                 aurora: user.auroraTheme || prev.state.aurora,
                 goals: Array.isArray(goals) ? goals : prev.state.goals // fix 브랜치 반영
               }
