@@ -54,6 +54,22 @@ const titles = {
 export default function App() {
   const { state, actions } = useFeelioStore();
   const [route, setRoute] = useState('home');
+
+  /*
+   * 온보딩 미리보기 스위치 (개발 서버 전용).
+   *
+   * 온보딩은 가입 직후 한 번만 보이는 화면이라, 이미 완료한 계정으로는 다시 볼 수가 없다.
+   * localStorage 를 고쳐도 앱이 뜨면서 getMe() 가 서버 값으로 덮어버린다.
+   * 그래서 화면을 손볼 때마다 계정을 새로 만들어야 했다.
+   *
+   * ?onboarding 을 붙이면 완료 여부와 무관하게 온보딩을 띄운다.
+   * import.meta.env.DEV 로 막아 두어 프로덕션 번들에서는 조건이 상수 false 가 되고 제거된다.
+   */
+  const previewOnboarding = import.meta.env.DEV
+    && typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).has('onboarding');
+  const showOnboarding = state.isLoggedIn && (!state.onboardingDone || previewOnboarding);
+  const showApp = state.isLoggedIn && state.onboardingDone && !previewOnboarding;
   const [isInitializing, setIsInitializing] = useState(true);
 
   const [globalDate, setGlobalDate] = useState(() => new Date());
@@ -133,17 +149,17 @@ export default function App() {
   return (
     <Root mode={state.mode} id="app-root">
       <GlobalStyles />
-      {(!state.isLoggedIn || !state.onboardingDone) && (
+      {(!state.isLoggedIn || showOnboarding) && (
         <AuroraBackground mode={state.mode} aurora={state.aurora} />
       )}
       {!state.isLoggedIn && (
         <LoginPage mode={state.mode} onToggleMode={actions.toggleMode} onLogin={actions.login} />
       )}
-      {state.isLoggedIn && !state.onboardingDone && (
-        <OnboardingPage onComplete={actions.completeOnboarding} />
+      {showOnboarding && (
+        <OnboardingPage onComplete={actions.completeOnboarding} onExit={actions.logout} />
       )}
-      {state.isLoggedIn && state.onboardingDone && <BudgetSync />}
-      {state.isLoggedIn && state.onboardingDone && (
+      {showApp && <BudgetSync />}
+      {showApp && (
         <AppLayoutDc
           route={route}
           title={
