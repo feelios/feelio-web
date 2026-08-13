@@ -112,6 +112,20 @@ const Button = styled.button`
   font-size: 14.5px;
   font-weight: 900;
   cursor: pointer;
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease, opacity .18s ease;
+
+  /*
+   * 테두리는 그대로 두고 배경·하이라이트로만 반응한다 — 선을 바꾸면 유리 재질이 깨진다.
+   * - 삭제(기본형): 평소엔 빨간 글자만인데, 올리면 빨간 기운이 배경으로 번져
+   *   되돌릴 수 없는 동작이라는 걸 누르기 전에 보여준다.
+   * - 수정(primary)·danger: 이미 채워진 버튼이라 톤만 눌러 반응을 준다.
+   */
+  &:hover {
+    background: ${({ primary, danger }) =>
+      primary ? 'var(--ink)' : danger ? '#DE645F' : 'color-mix(in srgb, #E87573 16%, var(--card))'};
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+    opacity: ${({ primary, danger }) => primary || danger ? .9 : 1};
+  }
 `;
 
 const FieldGrid = styled.div`

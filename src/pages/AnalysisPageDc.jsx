@@ -10,12 +10,27 @@ import { FactBomberIcon } from '../components/analysis/FactBomberIcon.jsx';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
 import { useMonthlyAnalysisQuery, useAiReportQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery, useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
+import { monthAnchorDate } from '../utils/date.js';
 
 /**
  * 분석 문구를 문장 단위 문단으로 끊는다.
  * 마침표·물음표·느낌표 뒤의 공백에서만 자른다. 서버가 이미 줄바꿈을 넣어 보내면 그것도 존중한다.
  * 문장이 하나뿐이어도 그대로 한 문단이 되므로 옛 문구에도 안전하다.
  */
+/**
+ * 값이 0인 항목은 목록에서 감춘다.
+ *
+ * 감정 탭은 8개 감정을 항상 다 그려서, 기록이 없는 '스트레스 0% · 화남 0% · 무덤덤 0%' 가
+ * 실제 소비가 있는 줄만큼 자리를 차지했다. 목록이 데이터가 아니라 감정 사전처럼 읽힌다.
+ *
+ * 전부 0이면 그 달에 기록이 없다는 뜻이라 거를 게 아니라 보여줄 게 없는 것이므로,
+ * 빈 목록 대신 원본을 그대로 둔다(카드가 통째로 비어 보이는 것보다 낫다).
+ */
+function visibleSegments(segments) {
+  const filtered = segments.filter(seg => seg.percent > 0);
+  return filtered.length > 0 ? filtered : segments;
+}
+
 function toParagraphs(text) {
   return String(text ?? '')
     .split(/\n+|(?<=[.!?])\s+/)
@@ -155,6 +170,20 @@ const RISK_ROUTE_LABEL = '위험 루트';
 // 서버(AiQuickInsightAssembler)는 등급을 위험도 항목의 value에 한글로 담아 보낸다.
 // '예산 미설정'은 등급이 아니라 판정 불가라 매핑하지 않는다 → 세 칸 모두 꺼짐.
 const RISK_WORDS = { 위험: 'RED', 주의: 'YELLOW', 안전: 'GREEN' };
+
+/**
+ * 예산 소진율 색 구간. 소비 위험도 신호등과 같은 기준·같은 팔레트를 쓴다 —
+ * 같은 화면에서 같은 숫자를 놓고 두 곳이 다른 색을 켜면 안 된다.
+ *
+ * 경계는 서버 판정(SpendStatus.of)과 같은 값이다: 70 미만 안전 · 70~90 주의 · 90 이상 위험.
+ * 서버 등급을 그대로 받아 쓰지 않고 여기서 다시 계산하는 이유는, 화면에 찍히는 숫자가
+ * 프론트에서 구한 budgetAverage 라서다. 색은 자기 옆에 적힌 숫자를 따라야 한다.
+ */
+function budgetRateLevel(rate) {
+  if (rate >= 90) return RISK_LEVELS.RED;
+  if (rate >= 70) return RISK_LEVELS.YELLOW;
+  return RISK_LEVELS.GREEN;
+}
 
 function resolveRisk(raw) {
   const text = String(raw ?? '').trim();
@@ -335,12 +364,14 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   // 탭마다 목록 줄 수가 달라(감정 8줄 / 사용처·시간대 4줄) 전환할 때마다 카드 높이가 튄다.
   // 가장 긴 탭에 맞춰 빈 줄로 자리를 잡아 높이를 고정한다. px 을 박지 않으므로
   // 글자 크기나 항목 수가 바뀌어도 따라간다 (#280).
+  // 0% 를 감춘 뒤의 줄 수로 센다. 원본 길이로 재면 감정 탭이 늘 8줄로 잡혀 빈 공간이 남는다.
+  const activeSegments = visibleSegments(activeChart.segments);
   const segmentRowCount = Math.max(
-    chartConfig.emotion.segments.length,
-    chartConfig.category.segments.length,
-    chartConfig.time.segments.length
+    visibleSegments(chartConfig.emotion.segments).length,
+    visibleSegments(chartConfig.category.segments).length,
+    visibleSegments(chartConfig.time.segments).length
   );
-  const segmentPlaceholders = Math.max(0, segmentRowCount - activeChart.segments.length);
+  const segmentPlaceholders = Math.max(0, segmentRowCount - activeSegments.length);
   const budgetItems = serverBudgetItems
     .map(data => {
       const emo = getEmotion(data.emotion);
@@ -366,6 +397,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const budgetTotal = validBudgetItems.reduce((sum, item) => sum + item.budget, 0);
   const budgetSpent = validBudgetItems.reduce((sum, item) => sum + item.amount, 0);
   const budgetAverage = budgetTotal > 0 ? Math.round((budgetSpent / budgetTotal) * 100) : 0;
+  // '측정중'은 아직 판정할 수 없는 상태라 구간 색을 입히지 않는다 (아래 항목별 '측정중'과 같은 색).
+  const budgetRateColor = validBudgetItems.length > 0 ? budgetRateLevel(budgetAverage).color : 'var(--sub)';
   // 급박도순(초과 → 진행률순) 정렬된 목록에서 상위 5개만 노출 (#145)
   const topBudgetItems = budgetItems.slice(0, 5);
   const hiddenBudgetCount = budgetItems.length - topBudgetItems.length;
@@ -542,7 +575,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                     color: item.type === 'fact' ? '#E87573' : 'var(--text)',
                     // 팩트 리포트는 모바일에서 두세 줄로 접혀 덩치가 커진다.
                     // 네 칸 중 한 칸만 크게 외치는 꼴이라 모바일에서만 낮춘다(데스크톱은 한 줄이라 그대로).
-                    fontSize: item.type === 'fact' ? 12.5 : 13,
+                    // 위험도도 note 가 '아직 303,600원 남았어요' 처럼 길어져 같은 처지가 됐다.
+                    fontSize: (item.type === 'fact' || isRisk) ? 12.5 : 13,
                     fontWeight: item.type === 'fact' ? 900 : 900,
                     lineHeight: 1.35,
                     overflow: 'visible',
@@ -588,8 +622,9 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                     whiteSpace: 'nowrap',
                     // 위험도 칸에서 초록을 가져가는 건 등급('안전')이다. 여기 오는 소진율은 기본색.
                     color: isRisk ? 'var(--text)' : item.color,
-                    fontSize: (item.type === 'risk' || item.label === RISK_ROUTE_LABEL) ? 13.5 : 11,
-                    fontWeight: (item.type === 'risk' || item.label === RISK_ROUTE_LABEL) ? 950 : 900
+                    // 위험도 note 가 소진율(짧음)에서 남은 금액(김)으로 바뀌어 nowrap 으로는 13.5 가 넘쳤다.
+                    fontSize: isRisk ? 12 : (item.label === RISK_ROUTE_LABEL ? 13.5 : 11),
+                    fontWeight: (isRisk || item.label === RISK_ROUTE_LABEL) ? 950 : 900
                   }
                 }}>{item.note}</span>
               )}
@@ -604,16 +639,43 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               <h3 css={{ margin: '0 0 5px', fontSize: 16, fontWeight: 900 }}>목표 예산 현황</h3>
               <p css={{ margin: 0, color: 'var(--sub)', fontSize: 12, lineHeight: 1.5 }}>지금 바로 조정해야 할 예산부터 보여줘요</p>
             </div>
-            <div css={{ textAlign: 'right', flexShrink: 0 }}>
-              <div css={{ color: overBudgetItem ? '#E87573' : 'var(--text)', fontSize: 18, fontWeight: 950, lineHeight: 1 }}>
-                {validBudgetItems.length > 0 ? `${budgetAverage}%` : '측정중'}
-              </div>
-              <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 800, marginTop: 4 }}>예산 소진율</div>
+            {/* stretch 라야 두 칸이 같은 높이가 되고, 그래야 사이 구분선도 위아래가 꽉 찬다.
+                flex-end 는 아래만 맞춰서 글자 크기가 다르면 윗변이 어긋나 보였다. */}
+            <div css={{ flexShrink: 0, display: 'flex', alignItems: 'stretch', justifyContent: 'flex-end', '@media (min-width: 821px)': { gap: 26 } }}>
+              {/*
+                데스크톱 전용 총 예산 칸.
+                제목과 소진율 사이가 넓게 비어 있는데 총 예산은 오른쪽 구석에 10.5px 로 눌려
+                셋 중 가장 안 읽혔다. 소진율의 분모라 이게 안 보이면 40%가 무엇의 40%인지 알 수 없다.
+                비어 있던 가로 공간으로 꺼내 소진율과 나란한 두 번째 지표로 세운다.
+                모바일은 폭이 없어 아래 한 줄짜리를 그대로 쓴다 — 그래서 마크업이 둘로 갈린다.
+              */}
               {validBudgetItems.length > 0 && (
-                <div css={{ color: 'var(--sub)', fontSize: 10.5, fontWeight: 700, marginTop: 3, whiteSpace: 'nowrap' }}>
-                  총 예산 {budgetTotal.toLocaleString()}원
+                <div css={{ display: 'none', '@media (min-width: 821px)': { display: 'block', textAlign: 'right', paddingRight: 26, borderRight: '1px solid var(--line)' } }}>
+                  <div css={{ color: 'var(--sub)', fontSize: 11.5, fontWeight: 800, marginBottom: 7, lineHeight: 1.2 }}>총 예산</div>
+                  {/* 옆 소진율과 같은 크기·같은 lineHeight 라야 두 숫자의 윗변·아랫변이 나란히 선다.
+                      강조는 크기가 아니라 색이 가져간다(소진율만 신호등 색). */}
+                  <div css={{ color: 'var(--text)', fontSize: 24, fontWeight: 900, lineHeight: 1, whiteSpace: 'nowrap' }}>
+                    {budgetTotal.toLocaleString()}원
+                  </div>
                 </div>
               )}
+
+              <div css={{ textAlign: 'right' }}>
+                {/* 옆 '총 예산' 칸과 같은 꼴로 맞춘다 — 라벨이 위, 숫자가 아래.
+                    두 지표가 서로 다른 순서면 나란히 놓았을 때 한 쌍으로 안 읽힌다. */}
+                <div css={{ color: 'var(--sub)', fontSize: 11, fontWeight: 800, marginBottom: 4, lineHeight: 1.2, '@media (min-width: 821px)': { fontSize: 11.5, marginBottom: 7 } }}>예산 소진율</div>
+                {/* 색은 소진율 자체가 정한다. 예전엔 overBudgetItem 이 빨강을 정해서, 총액 40%처럼
+                    여유로운 달에도 카테고리 하나가 초과하면 '많이 썼다'로 읽혔다.
+                    초과 사실은 바로 아래 '초과' 블록이 이미 말해준다. */}
+                <div css={{ color: budgetRateColor, fontSize: 18, fontWeight: 950, lineHeight: 1, '@media (min-width: 821px)': { fontSize: 24 } }}>
+                  {validBudgetItems.length > 0 ? `${budgetAverage}%` : '측정중'}
+                </div>
+                {validBudgetItems.length > 0 && (
+                  <div css={{ color: 'var(--sub)', fontSize: 10.5, fontWeight: 700, marginTop: 3, whiteSpace: 'nowrap', '@media (min-width: 821px)': { display: 'none' } }}>
+                    총 예산 {budgetTotal.toLocaleString()}원
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -708,6 +770,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
           )}
         </Card>
 
+        {/* 높이는 옆 '목표 예산 현황' 카드와 같이 간다(Duo 기본 stretch).
+            남는 높이는 안쪽 그리드의 alignItems: center 가 위아래로 나눠 갖는다. */}
         <Card css={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div css={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 18 }}>
             <div>
@@ -724,23 +788,36 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
             gridTemplateColumns: 'minmax(230px, .85fr) 1fr',
             flex: 1, 
             gap: 24, 
+            /* 왼쪽 지표 묶음이 오른쪽(목록+탭)보다 짧다. 위를 맞추면 왼쪽 아래가 비어 기울어 보여서,
+               짧은 쪽을 긴 쪽의 세로 가운데에 건다. */
             alignItems: 'center',
             '@media (max-width: 820px)': { gridTemplateColumns: 'auto 1fr', gap: 16, alignItems: 'center', marginTop: 18 }
           }}>
-            <div css={{ display: 'grid', justifyItems: 'center', gap: 12, '@media (max-width: 820px)': { gap: 5 } }}>
+            {/* 바깥은 가운데 정렬, 안쪽 묶음은 왼쪽 정렬.
+                묶음 전체가 하나의 덩어리로 칼럼 가운데에 걸리고, 라벨→숫자→막대→설명은
+                묶음 안에서 왼쪽 축을 공유한다. 둘 다 필요해서 한 겹을 더 둔다. */}
+            <div css={{ display: 'grid', justifyItems: 'center' }}>
+            <div css={{ display: 'grid', justifyItems: 'start', gap: 10, '@media (max-width: 820px)': { gap: 5 } }}>
+              {/* 감정(사용처·시간대)이 퍼센트 위로 온다 — 무엇의 40%인지 먼저 말해줘야 숫자가 읽힌다.
+                  같은 화면 예산 헤더도 라벨이 위, 숫자가 아래라 규칙이 일관된다. */}
+              {/* 라벨과 숫자는 같은 것을 가리키므로 색도 같이 간다(감정 탭이면 감정색).
+                  사용처·시간대 탭은 activeChart.color 가 var(--text) 라 기존과 동일하다. */}
+              <div css={{ color: activeChart.color, fontSize: 'clamp(18px, 4vw, 20px)', fontWeight: 950 }}>{activeChart.label}</div>
               <div css={{ fontFamily: 'var(--font-display)', color: activeChart.color, fontSize: 'clamp(46px, 8vw, 56px)', fontWeight: 950, lineHeight: .95, '@media (max-width: 820px)': { fontSize: 56 } }}>{activeChart.percent}%</div>
-              <div css={{ color: 'var(--text)', fontSize: 'clamp(18px, 4vw, 20px)', fontWeight: 950 }}>{activeChart.label}</div>
-              <div css={{ maxWidth: 230, color: 'var(--sub)', fontSize: 12, fontWeight: 750, lineHeight: 1.55, textAlign: 'center', '@media (max-width: 820px)': { display: 'none' } }}>{activeChart.focus}</div>
-              <div css={{ width: 'min(100%, 220px)', marginTop: 4, '@media (max-width: 820px)': { display: 'none' } }}>
+              {/* 막대는 숫자 바로 아래에 붙는다 — 같은 값을 말하는 둘이라 한 덩어리로 묶이고,
+                  설명 문구는 그 묶음을 풀어주는 말이라 맨 뒤로 간다. */}
+              <div css={{ width: 'min(100%, 220px)', '@media (max-width: 820px)': { display: 'none' } }}>
                 <BarTrack css={{ height: 8, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(31,32,54,0.08)' }}>
                   <div css={{ width: `${activeChart.percent}%`, height: '100%', borderRadius: 99, background: activeChart.color, opacity: .86 }} />
                 </BarTrack>
               </div>
+              <div css={{ maxWidth: 230, color: 'var(--sub)', fontSize: 12, fontWeight: 750, lineHeight: 1.55, textAlign: 'left', wordBreak: 'keep-all', '@media (max-width: 820px)': { display: 'none' } }}>{activeChart.focus}</div>
+            </div>
             </div>
 
             <div css={{ display: 'grid', gap: 14, '@media (max-width: 820px)': { maxWidth: 165, width: '100%', justifySelf: 'end' } }}>
               <div css={{ display: 'grid', gap: 9 }}>
-                {activeChart.segments.map((seg, index) => {
+                {activeSegments.map((seg, index) => {
                   const isPrimary = index === 0;
                   return <div key={seg.name} css={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 9 }}>
                     <span css={{ width: isPrimary ? 10 : 8, height: isPrimary ? 10 : 8, borderRadius: '50%', background: activeChartTab === 'emotion' ? seg.color : 'var(--text)', opacity: activeChartTab === 'emotion' ? (isPrimary ? 1 : .5) : (isPrimary ? .6 : .22) }} />
@@ -798,7 +875,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                       if (itemMonth > new Date().getMonth()) {
                         y -= 1;
                       }
-                      setGlobalDate(new Date(y, itemMonth, 1));
+                      setGlobalDate(monthAnchorDate(y, itemMonth));
                     }
                   }}
                 >
@@ -1080,8 +1157,8 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
             </div>
           </div>
 
-          <div css={{ 
-            display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: '1px solid var(--line)', paddingLeft: 28,
+          <div css={{
+            position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: '1px solid var(--line)',
             '@media (max-width: 820px)': {
               position: 'absolute', inset: 0,
               backfaceVisibility: 'hidden',
@@ -1093,10 +1170,22 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               overflow: 'hidden'
             }
           }}>
-            <div css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, padding: '0 0 12px', fontSize: 11, color: 'var(--sub)', fontWeight: 900, borderBottom: '1px solid var(--line)' }}>
-              <span>날짜</span><span>내역</span><span>금액</span>
-            </div>
-            <div css={{ overflowY: 'auto', flex: 1, paddingBottom: 16, maxHeight: 240, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+            {/*
+              데스크톱에서 이 속을 absolute 로 띄우는 이유:
+              2단 그리드의 행 높이는 두 칼럼 중 큰 쪽으로 정해진다. 리스트가 정상 흐름에 있으면
+              행 높이를 자기가 밀어올려서 넘칠 일이 없고, 그래서 스크롤이 영영 안 생긴다.
+              예전엔 maxHeight 240 으로 눌렀는데, 카드가 더 커도 거기서 잘려 '절반에서 멈추는' 문제가 됐다.
+              absolute 는 행 높이 계산에 참여하지 않으므로, 행 높이는 왼쪽 칼럼이 정하고
+              리스트는 그 높이를 채운 뒤 넘칠 때만 스크롤된다 — 모바일 뒷면과 같은 규칙이 된다.
+            */}
+            <div css={{
+              display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1,
+              '@media (min-width: 821px)': { position: 'absolute', inset: 0, paddingLeft: 28 }
+            }}>
+              <div css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, padding: '0 0 12px', fontSize: 11, color: 'var(--sub)', fontWeight: 900, borderBottom: '1px solid var(--line)' }}>
+                <span>날짜</span><span>내역</span><span>금액</span>
+              </div>
+              <div css={{ overflowY: 'auto', flex: 1, minHeight: 0, paddingBottom: 16, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
               {evidence.map((ev, idx) => {
                 const emo = getEmotion(ev.emotion);
                 return <div key={`${ev.date}-${idx}`} css={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 14, alignItems: 'center', padding: '15px 0', borderBottom: '1px solid var(--line)' }}>
@@ -1109,8 +1198,10 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                   <b css={{ color: 'var(--text)' }}>-{Number(ev.amount).toLocaleString()}원</b>
                 </div>;
               })}
+              </div>
             </div>
-            
+
+            {/* 모바일 전용. 위 묶음(flex:1) 아래에 남아야 하므로 그 바깥에 둔다. */}
             <div css={{ display: 'none', '@media (max-width: 820px)': { display: 'block', textAlign: 'center', marginTop: 12, fontSize: 12, color: 'var(--sub)', fontWeight: 800 } }}>
               돌아가기 ↺
             </div>

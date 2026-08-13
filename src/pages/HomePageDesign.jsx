@@ -12,6 +12,7 @@ import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 import { PartyPopper } from 'lucide-react';
+import { monthAnchorDate } from '../utils/date.js';
 
 const Grid = styled.div`
   width: 100%;
@@ -39,6 +40,11 @@ const Grid = styled.div`
     overflow: visible;
     display: flex;
     flex-direction: column;
+  }
+
+  /* 하단 30px 숨통은 --mobile-nav-gap 으로 옮겼다(모든 화면 공통).
+     다만 그 토큰은 메뉴바가 뜨는 820px 이하에만 걸리므로, 메뉴바가 없는 이 구간은 여기서 채운다. */
+  @media (min-width: 821px) and (max-width: 980px) {
     padding-bottom: 30px;
   }
 `;
@@ -911,7 +917,8 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const monthLabel = `${visibleMonth.getFullYear()}년 ${visibleMonth.getMonth() + 1}월`;
   const moveMonth = (step) => setVisibleMonth(prev => {
     const next = new Date(prev.getFullYear(), prev.getMonth() + step, 1);
-    onSelectDate?.(next);
+    // 이번 달로 돌아오면 1일이 아니라 오늘을 고른다(monthAnchorDate 주석 참고).
+    onSelectDate?.(monthAnchorDate(next.getFullYear(), next.getMonth()));
     return next;
   });
 
@@ -992,8 +999,12 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
               <AccordionSummary expanded={isRidgeExpanded}>
                 <div css={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A68BEA" strokeWidth="1.9"><path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  <span css={{ fontSize: 14.5, fontWeight: 900 }}>감정 능선</span>
-                  <span css={{ fontSize: 12, color: 'var(--sub)', fontWeight: 500, marginLeft: 2 }}>이번 달 감정이 흘러온 결</span>
+                  <span css={{ fontSize: 14.5, fontWeight: 900, whiteSpace: 'nowrap' }}>감정 능선</span>
+                  {/* 좁은 폭에선 이 부제와 오른쪽 '가장 높은 감정'이 한 줄을 다투다 둘 다 어중간하게
+                      잘렸다('이번 달 감정이 흘러온 / 결'). 오른쪽은 981px 미만에서만 나오므로
+                      부제는 그 반대 구간에서만 보여 서로 자리를 뺏지 않게 한다.
+                      marginLeft 2 는 왼쪽 묶음의 gap 9 를 혼자 11 로 어긋내고 있어 뺀다. */}
+                  <span css={{ display: 'none', '@media (min-width: 981px)': { display: 'inline' }, fontSize: 12, color: 'var(--sub)', fontWeight: 500, whiteSpace: 'nowrap' }}>이번 달 감정이 흘러온 결</span>
                 </div>
                 <div css={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {!isRidgeExpanded && (
