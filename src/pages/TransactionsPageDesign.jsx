@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { money, signedMoney } from '../utils/format.js';
+import { monthAnchorDate } from '../utils/date.js';
 import { useDebounce } from '../hooks/useDebounce.js';
 import { useTransactionsQuery, useBulkDeleteTransactionsMutation, useUpdateTransactionMutation } from '../hooks/queries/useTransactions.js';
 import { useCategoriesQuery } from '../hooks/queries/useCategories.js';
@@ -430,7 +431,8 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
   // Sync local changes back to globalDate
   useEffect(() => {
     if (month !== 'all') {
-      setGlobalDate(new Date(Number(year), Number(month) - 1, 1));
+      // 이번 달이면 1일이 아니라 오늘로 맞춘다 — 홈으로 돌아갔을 때 오늘의 선택 링이 살아 있어야 한다.
+      setGlobalDate(monthAnchorDate(Number(year), Number(month) - 1));
     }
   }, [year, month, setGlobalDate]);
 

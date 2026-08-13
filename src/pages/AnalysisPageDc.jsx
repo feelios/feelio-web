@@ -10,6 +10,7 @@ import { FactBomberIcon } from '../components/analysis/FactBomberIcon.jsx';
 import { EmotionBlob } from '../components/common/EmotionBlob.jsx';
 import { getEmotion, emotions } from '../data/emotions.js';
 import { useMonthlyAnalysisQuery, useAiReportQuery, useAiInsightsQuery, useMonthlyTrendQuery, usePatternQuery, useBudgetStatusQuery } from '../hooks/queries/useAnalysis.js';
+import { monthAnchorDate } from '../utils/date.js';
 
 /**
  * 분석 문구를 문장 단위 문단으로 끊는다.
@@ -874,7 +875,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                       if (itemMonth > new Date().getMonth()) {
                         y -= 1;
                       }
-                      setGlobalDate(new Date(y, itemMonth, 1));
+                      setGlobalDate(monthAnchorDate(y, itemMonth));
                     }
                   }}
                 >
