@@ -156,7 +156,7 @@ export default function App() {
         <LoginPage mode={state.mode} onToggleMode={actions.toggleMode} onLogin={actions.login} />
       )}
       {showOnboarding && (
-        <OnboardingPage onComplete={actions.completeOnboarding} />
+        <OnboardingPage onComplete={actions.completeOnboarding} onExit={actions.logout} />
       )}
       {showApp && <BudgetSync />}
       {showApp && (

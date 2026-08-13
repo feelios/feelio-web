@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 import { GlassCard } from '../components/common/GlassCard.jsx';
@@ -304,7 +304,7 @@ const addMonthsFromToday = (months) => {
   return formatLocalDate(dueDate);
 };
 
-export default function OnboardingPage({ onComplete }) {
+export default function OnboardingPage({ onComplete, onExit }) {
   const [step, setStep] = useState(0);
   const [nickname, setNickname] = useState('');
   const [goal, setGoal] = useState('제주도 여행');
@@ -339,6 +339,38 @@ export default function OnboardingPage({ onComplete }) {
    * handleNext 가 이미 단계별 유효성(닉네임·목표)을 스스로 검사하므로 여기선 조합 중인
    * 한글만 걸러낸다 — IME 조합 확정용 엔터에 단계가 넘어가면 글자가 잘린다.
    */
+  /*
+   * 브라우저 뒤로가기로 단계를 되돌리고, 첫 단계에서는 로그인 화면으로 나간다.
+   *
+   * 이 앱은 라우터 없이 상태로 화면을 가르므로 온보딩에는 히스토리 항목이 없다.
+   * 그래서 뒤로가기를 눌러도 아무 일이 없거나 사이트 밖으로 나가버렸고, 계정을 잘못 골라도
+   * 빠져나갈 길이 없었다. 진입할 때 항목을 하나 쌓아 뒤로가기를 받아낸다.
+   *
+   * step 을 의존성에 넣으면 단계마다 항목이 새로 쌓여 뒤로가기를 여러 번 눌러야 하므로,
+   * 현재 단계는 ref 로 읽는다.
+   */
+  const stepRef = useRef(step);
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+
+  useEffect(() => {
+    window.history.pushState({ feelio: 'onboarding' }, '');
+
+    const handlePopState = () => {
+      if (stepRef.current > 0) {
+        setStep((prev) => prev - 1);
+        // 다음 뒤로가기도 받으려면 소비한 항목을 다시 채워 넣어야 한다.
+        window.history.pushState({ feelio: 'onboarding' }, '');
+        return;
+      }
+      onExit?.();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [onExit]);
+
   const handleEnterKey = (event) => {
     if (event.key !== 'Enter' || event.nativeEvent?.isComposing) return;
     event.preventDefault();
