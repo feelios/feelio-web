@@ -177,42 +177,72 @@ const Group = styled.div`
   margin-top: 22px;
 `;
 
-// 목록 맨 위 합계 줄. 툴바와 같은 테두리·배경을 써서 필터 영역의 연장으로 읽히게 한다.
+/**
+ * 목록 맨 위 합계 줄.
+ *
+ * 처음엔 툴바처럼 테두리·배경을 준 카드로 만들었는데, 이미 카드가 층층이 쌓인 화면에
+ * 블록이 하나 더 얹힌 꼴이라 무거웠다. 배경과 테두리를 걷어내고 아래 실선만 남겨,
+ * 목록의 머리글처럼 읽히게 한다. 좌우 padding 은 아래 날짜 헤더(0 4px)와 맞춘다.
+ */
+/**
+ * 목록 맨 위 합계.
+ *
+ * 아래 거래 묶음도 전부 GlassCard 라, 같은 --card 면 카드가 하나 더 쌓인 것처럼만 보이고
+ * '합계'로 읽히지 않았다. 한 단계 진한 표면(--card-strong)과 또렷한 테두리(--card-border)를 써서
+ * 리스트보다 위 층에 놓고, 숫자도 행 금액(14px)의 1.4배로 키워 위계를 만든다.
+ */
+/**
+ * 목록 맨 위 합계.
+ *
+ * 카드로 감싸면 아래 거래 묶음(GlassCard)들 위에 블록이 하나 더 쌓인 꼴이라 무거웠다.
+ * 배경·테두리를 걷어내고 아래 실선만 남긴다. 대신 금액을 행 금액(14px)보다 키워
+ * 리스트의 한 줄이 아니라 합계로 읽히게 한다.
+ */
 const SummaryBar = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 14px;
-  padding: 13px 16px;
-  border-radius: 18px;
-  border: 1px solid var(--line);
-  background: var(--card);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 16px;
+  padding: 0 4px 12px;
+  border-bottom: 1px solid var(--line);
+`;
+
+const SummaryLabel = styled.strong`
+  color: var(--sub);
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  white-space: nowrap;
+`;
+
+const SummaryTotals = styled.div`
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  min-width: 0;
 `;
 
 const SummaryCell = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  align-items: baseline;
+  gap: 8px;
   min-width: 0;
-
-  /* 두 칸이 각자 떠 보이지 않게 가운데 선으로 한 덩어리로 묶는다. */
-  & + & {
-    text-align: right;
-    padding-left: 12px;
-    border-left: 1px solid var(--line);
-  }
 
   span {
     color: var(--sub);
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 800;
-    letter-spacing: .01em;
+    flex-shrink: 0;
   }
 
-  /* 날짜 헤더 합계(=금액 줄)보다 커지면 목록의 위계가 뒤집힌다. 15 로 눌러 둔다. */
   b {
-    font-size: 15px;
-    font-weight: 900;
+    font-size: 17px;
+    font-weight: 950;
+    letter-spacing: -.02em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -677,14 +707,17 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
 
       {!isLoading && groups.length > 0 && (
         <SummaryBar>
-          <SummaryCell>
-            <span>총 지출</span>
-            <b css={{ color: 'var(--text)' }}>-{money(totals.expense)}</b>
-          </SummaryCell>
-          <SummaryCell>
-            <span>총 수입</span>
-            <b css={{ color: '#3E9578' }}>+{money(totals.income)}</b>
-          </SummaryCell>
+          <SummaryLabel>합계</SummaryLabel>
+          <SummaryTotals>
+            <SummaryCell>
+              <span>총 지출</span>
+              <b css={{ color: 'var(--text)' }}>-{money(totals.expense)}</b>
+            </SummaryCell>
+            <SummaryCell>
+              <span>총 수입</span>
+              <b css={{ color: '#3E9578' }}>+{money(totals.income)}</b>
+            </SummaryCell>
+          </SummaryTotals>
         </SummaryBar>
       )}
 

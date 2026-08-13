@@ -156,6 +156,16 @@ const Logout = styled.button`
   font-weight: 700;
   cursor: pointer;
   color: var(--sub);
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+
+  /* 테두리를 바꾸면 유리판에 선이 그어진 것처럼 보여 재질이 깨진다.
+     대신 흰 막을 한 단계 두껍게 올리고 윗변 하이라이트를 밝혀,
+     빛을 더 받은 유리처럼 반응하게 한다. 테두리는 건드리지 않는다. */
+  &:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.14));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 6px 18px rgba(0, 0, 0, 0.10);
+    color: var(--text);
+  }
 `;
 
 const BackHeader = styled.div`
