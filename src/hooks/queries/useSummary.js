@@ -44,6 +44,9 @@ export const useEmotionSignalCommentQuery = (year, month) => {
     refetchOnMount: ALWAYS_REVALIDATE_ON_MOUNT,
     enabled: !!year && !!month,
     retry: 1,
+    // AI 문구는 부가 정보다. 서버 AI 호출이 5xx여도 홈 전체를 ErrorBoundary로 보내지 않고
+    // HomePageDesign의 실제 감정 통계 기반 문구로 대체한다.
+    throwOnError: false,
   });
 };
 
@@ -60,5 +63,7 @@ export const useMallangCommentQuery = () => {
     staleTime: 1000 * 60 * 30, // 30분
     refetchOnMount: ALWAYS_REVALIDATE_ON_MOUNT,
     retry: 1,
+    // 말랑이 문구도 부가 AI 응답이다. 실패하면 HomePageDesign의 예산 문구를 사용한다.
+    throwOnError: false,
   });
 };
