@@ -162,9 +162,11 @@ const ControlGrid = styled.div`
   }
 `;
 
+/* 반지름을 같은 줄의 이웃들과 맞춘다. 검색창 12px · 탭 묶음 12px 인데 여기만 999px(알약)이라,
+   한 줄에 각진 칸과 둥근 칸이 섞여 이 둘만 다른 화면에서 온 것처럼 보였다. */
 const FilterButton = styled.button`
   border: 1px solid ${({ active }) => active ? 'var(--ink)' : 'var(--line)'};
-  border-radius: 999px;
+  border-radius: 12px;
   background: ${({ active }) => active ? 'var(--ink)' : 'var(--card-strong)'};
   color: ${({ active }) => active ? 'var(--on-ink)' : 'var(--text)'};
   padding: 10px 17px;
@@ -353,7 +355,9 @@ const BarDanger = styled.button`
   }
 `;
 
-const viewTabs = ['일별', '월별', '감정별'];
+// '월별'은 뺐다. 이 화면은 이미 상단 월 선택으로 한 달을 보고 있어서, 그 안에서 다시
+// 월로 묶으면 모든 항목이 한 덩어리로 들어간 그룹 하나만 나온다 — 묶는 의미가 없다.
+const viewTabs = ['일별', '감정별'];
 const sortOptions = [
   ['date-desc', '날짜 최신순'],
   ['date-asc', '날짜 오래된순'],
@@ -374,14 +378,11 @@ function groupLabel(item, view) {
   const month = date.getMonth() + 1;
   const day = date.getDate();
   const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
-  if (view === '월별') return `${year}년 ${month}월`;
   return `${year}년 ${month}월 ${day}일 (${weekday})`;
 }
 
 function groupKey(item, view) {
   if (view === '감정별') return item.emotion?.name || '';
-  const date = toDate(item);
-  if (view === '월별') return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
   return item.occurredAt.split('T')[0];
 }
 

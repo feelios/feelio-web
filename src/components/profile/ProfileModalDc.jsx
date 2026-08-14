@@ -99,9 +99,11 @@ const Close = styled.button`
   color: var(--sub);
 `;
 
+/* 7% 는 모달 배경과 거의 구분되지 않아, 대표 목표 줄이 그냥 글자 두 줄로 보였다.
+   이 모달에서 유일하게 강조되는 칸이므로 면이 먼저 보여야 한다. 배경·테두리를 함께 올린다. */
 const GoalBanner = styled.div`
-  background: color-mix(in srgb, var(--ink) 7%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background: color-mix(in srgb, var(--ink) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
   border-radius: 18px;
   padding: 16px 18px;
   margin-bottom: 20px;

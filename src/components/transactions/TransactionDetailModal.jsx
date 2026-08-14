@@ -158,7 +158,10 @@ const TypeBtn = styled.button`
   cursor: pointer;
   transition: background .18s, color .18s;
   background: ${({ active }) => active ? 'var(--ink)' : 'transparent'};
-  color: ${({ active }) => active ? '#fff' : 'var(--sub)'};
+  /* --ink 위에 올라가는 글자는 --on-ink 다. 흰색을 박아 두면 라이트모드에서만 맞고,
+     다크모드에서는 --ink 가 밝은 색(#ECEBF0)이라 흰 글자가 배경에 묻혀 사라진다.
+     같은 파일 Button(primary) 은 이미 --on-ink 를 쓰고 있었다. */
+  color: ${({ active }) => active ? 'var(--on-ink)' : 'var(--sub)'};
 
   @media (max-width: 820px) {
     padding: 5px 11px;
