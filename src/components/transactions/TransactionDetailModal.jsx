@@ -304,7 +304,8 @@ function dateLabel(value) {
   return `${month}월 ${day}일 (${weekdays[date.getDay()]}) ${hour}:${minute}`;
 }
 
-export default function TransactionDetailModal({ transaction: initialTxn, onClose }) {
+// actions 는 App 이 이미 넘기고 있었는데 받지 않고 있었다. 토스트를 띄우려고 꺼내 쓴다.
+export default function TransactionDetailModal({ transaction: initialTxn, actions, onClose }) {
   // 수정 시 emotionId 를 그대로 서버에 보내므로 목록도 서버 기준이어야 한다 (#266).
   const { data: metaData } = useMetadata();
   const emotions = mergeEmotions(metaData?.emotions);
@@ -411,10 +412,25 @@ export default function TransactionDetailModal({ transaction: initialTxn, onClos
     setMode('detail');
   };
 
+  /**
+   * 삭제하면 바로 지우고 모달을 닫는다.
+   *
+   * window.confirm 을 걷어냈다. 브라우저 기본 대화상자라 앱 결과 안 맞고, 무엇보다
+   * 한 번 더 묻는 것 자체가 이 동작에는 과했다 — 거래 한 건은 다시 기록하면 그만이다.
+   * 대신 지운 뒤에 토스트로 결과를 말한다. 예전에는 모달만 닫히고 아무 말이 없어서
+   * 지워진 건지 창만 닫힌 건지 알 수가 없었다.
+   *
+   * 실패하면 모달을 닫지 않는다. 닫아 버리면 목록에 그대로 남은 항목을 보고
+   * 사용자가 '삭제가 안 먹었나' 를 스스로 추측해야 한다.
+   */
   const handleDelete = async () => {
-    if (window.confirm('정말 삭제하시겠습니까?')) {
+    if (deleteTx.isPending) return;
+    try {
       await deleteTx.mutateAsync(transaction.transactionId);
+      actions.showToast('기록을 삭제했어요');
       onClose();
+    } catch {
+      actions.showToast('삭제에 실패했어요. 다시 시도해 주세요.');
     }
   };
 
