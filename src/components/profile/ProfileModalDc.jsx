@@ -81,6 +81,20 @@ const WithdrawButton = styled.button`
   font-weight: 800;
   cursor: pointer;
   color: #E87573;
+  transition: background .15s ease, box-shadow .15s ease, transform .1s ease;
+  -webkit-tap-highlight-color: transparent;
+
+  /* 되돌릴 수 없는 동작이라 반응이 있어야 한다. 눌렀는지 모른 채 다시 누르는 게 제일 나쁘다.
+     색은 이미 경고색이므로 더 세게 만들지 않고, 자기 색을 옅게 깔아 면만 살린다. */
+  &:not(:disabled):hover {
+    background: color-mix(in srgb, #E87573 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #E87573 32%, transparent);
+  }
+
+  &:not(:disabled):active {
+    transform: scale(.99);
+    background: color-mix(in srgb, #E87573 18%, transparent);
+  }
 
   &:disabled {
     opacity: .7;
