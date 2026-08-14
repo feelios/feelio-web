@@ -7,12 +7,14 @@ import { EmptyEmotionBlob } from '../components/common/EmptyEmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
 import { money, percent } from '../utils/format.js';
-import { useCalendarSummaryQuery, useEmotionSummaryQuery, useMallangCommentQuery } from '../hooks/queries/useSummary.js';
+import { useCalendarSummaryQuery, useEmotionSummaryQuery, useEmotionSignalCommentQuery, useMallangCommentQuery } from '../hooks/queries/useSummary.js';
 import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
+
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 import { PartyPopper } from 'lucide-react';
 import { monthAnchorDate } from '../utils/date.js';
+
 
 const Grid = styled.div`
   width: 100%;
@@ -207,10 +209,14 @@ const Week = styled.div`
   text-align: center;
 `;
 
+/* 선택 표시는 조약돌 바깥으로 2px 뻗는 링(box-shadow 0 0 0 2px)이다.
+   격자가 카드 안쪽 끝에 딱 붙어 있으면 첫째 열(일요일)과 마지막 열(토요일)에서
+   그 링이 카드의 overflow: hidden 에 잘려 반달처럼 보였다. 링이 설 자리를 남긴다. */
 const PebbleGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: clamp(3px, .36vw, 5px);
+  padding: 3px 4px;
 `;
 
 const Pebble = styled.button`
@@ -537,59 +543,82 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
                 )}
               </DeckCard>
             ) : (() => {
-              // 다 모은 목표. 카드 구조는 그대로 두고 강조색만 잉크색으로 바꾼다
-              // (라이트에선 검정, 다크에선 흰색). 서버에 완료 상태가 없어 금액으로 판정한다.
+              // 다 모으면 카드를 덮는 게 아니라 축하 화면으로 통째로 바꾼다.
+              // 서버에 완료 상태가 없어 금액으로 판정한다.
               const pct = percent(card.goal.currentAmount, card.goal.targetAmount);
               const isDone = card.goal.currentAmount >= card.goal.targetAmount;
-              const over = card.goal.currentAmount - card.goal.targetAmount;
               return (
               <DeckCard tappable onClick={() => { if (!dragRef.current.moved) onRoute('universe'); }}>
                 {isDone && (
                   <div
                     css={{
-                      position: 'absolute', inset: 0,
-                      background: 'rgba(26,27,33,0.85)',
-                      backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
-                      display: 'flex', flexDirection: 'column',
-                      zIndex: 10,
-                      padding: '24px 20px',
-                      color: '#fff',
-                      textAlign: 'left'
+                      /* 어두운 판을 걷어냈다. 그건 아래에 깔린 카드 내용을 가리려고 있던 것인데,
+                         이제 덮는 게 아니라 갈아끼우므로 가릴 게 없다. 판만 남으니 달성 카드
+                         하나만 모달처럼 툭 튀어 보였다. 평소 카드와 같은 면 위에 내용만 다르게 둔다. */
+                      display: 'flex', flexDirection: 'column', height: '100%'
                     }}
                   >
-                    <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'auto' }}>
+                    {/* 목표 이름 옆은 비워 둔다. 축하 아이콘은 아래 '달성했어요' 줄이 가져간다 —
+                        축하할 일은 이름이 아니라 달성 사실이라, 문구 옆에 붙어야 뜻이 산다. */}
+                    <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                       <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                        <PartyPopper size={16} color="#fff" strokeWidth={2.5} />
-                        <span css={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.goal.name}</span>
+                        {/* 진행 중 카드와 같은 행성 아이콘. 목표 줄의 표식이라 달성해도 그대로 둔다.
+                            다 모았으니 안을 채워(fill) 진행 중과 구분한다. */}
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.9" css={{ flex: '0 0 auto' }}><circle cx="12" cy="12" r="4.5" fill="var(--ink)" /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
+                        <span css={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{card.goal.name}</span>
                       </div>
-                      <span css={{ color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: 4, fontSize: 12.5, fontWeight: 900, flex: '0 0 auto' }}>
+                      {/* 진행 중 카드의 12.5px 보다는 크게 두되, 카드 하나가 소리치는 정도는 아니게.
+                          22px 까지 키웠더니 이 작은 카드에서 숫자만 튀어나와 보였다. */}
+                      <span css={{ color: 'var(--ink)', background: 'color-mix(in srgb, var(--ink) 10%, transparent)', padding: '4px 10px', borderRadius: 9, fontSize: 16, fontWeight: 900, letterSpacing: '-.02em', lineHeight: 1.1, flex: '0 0 auto' }}>
                         100%
                       </span>
                     </div>
-                    
-                    <div css={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16, marginTop: 'auto' }}>
-                      <span css={{ fontSize: 18, color: '#fff', fontWeight: 900 }}>✔️</span>
-                      <span css={{ fontSize: 16, color: '#fff', fontWeight: 800 }}>목표를 달성했어요!</span>
+
+                    {/* 제목 줄 바로 아래에 붙인다. 예전에는 제목에 marginBottom:auto, 여기에 marginTop:auto 가
+                        둘 다 걸려 남는 높이를 둘이 나눠 가졌다 — 가운데가 벌어지고 이 문구만 버튼 쪽으로
+                        내려앉았다. 남는 높이는 버튼 하나만 아래로 밀어내는 데 쓴다. */}
+                    <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                      <PartyPopper size={22} color="var(--ink)" strokeWidth={2.4} />
+                      <span css={{ fontSize: 19, color: 'var(--text)', fontWeight: 900, letterSpacing: '-.02em' }}>목표를 달성했어요!</span>
                     </div>
-                    
+
+                    {/* 같은 카드의 '저금하기'와 같은 결. 달성 카드만 흰 알약이면 또 혼자 튄다. */}
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); onOpenGoals?.(); }}
                       css={{
-                        background: '#fff', color: '#111',
-                        border: 'none', borderRadius: 999,
-                        padding: '12px 20px', fontSize: 14, fontWeight: 800,
-                        cursor: 'pointer', width: '100%',
-                        fontFamily: 'inherit'
+                        marginTop: 'auto',
+                        borderRadius: 12, border: 0,
+                        background: 'color-mix(in srgb, var(--ink) 92%, transparent)',
+                        backdropFilter: 'blur(20px) saturate(1.5)',
+                        WebkitBackdropFilter: 'blur(20px) saturate(1.5)',
+                        color: 'var(--on-ink)',
+                        boxShadow: [
+                          'inset 0 0 0 1px color-mix(in srgb, var(--on-ink) 15%, transparent)',
+                          'inset 0 1.5px 0 color-mix(in srgb, var(--on-ink) 38%, transparent)',
+                          'inset 0 -14px 22px -10px color-mix(in srgb, var(--ink) 85%, transparent)',
+                          '0 14px 28px -16px color-mix(in srgb, var(--ink) 80%, transparent)'
+                        ].join(', '),
+                        fontSize: 12.5, fontWeight: 800, padding: '10px 0',
+                        cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+                        transition: 'background .15s ease, transform .1s ease',
+                        '&:hover': { filter: 'brightness(1.12)' },
+                        '&:active': { transform: 'scale(0.98)' }
                       }}
                     >
                       목표 관리로 가기
                     </button>
                   </div>
                 )}
+                {/* 달성 카드는 위 축하 화면 하나만 그린다.
+                    예전에는 축하 화면을 얹고 그 아래에 평소 카드 내용을 그대로 뒀는데,
+                    축하 화면이 85% 반투명 + blur(4px) 라 아래 글자가 비쳐서 목표 이름과 100% 가
+                    두 겹으로 겹쳐 보였다. 불투명하게 덮어 가리는 것도 방법이지만, 그러면 가려진
+                    자리에 누를 수 없는 버튼이 남아 키보드 탭 순서에는 계속 걸린다. 아예 안 그린다. */}
+                {!isDone && (<>
                 <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.9"><circle cx="12" cy="12" r="4.5" fill={isDone ? 'var(--ink)' : 'none'} /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.9"><circle cx="12" cy="12" r="4.5" fill="none" /><ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-25 12 12)" /></svg>
                     <span css={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.goal.name}</span>
                     {card.goal.isMain && <span css={{ flex: '0 0 auto', fontSize: 10, fontWeight: 800, color: 'var(--ink)', background: 'color-mix(in srgb, var(--ink) 12%, transparent)', padding: '2px 7px', borderRadius: 99 }}>대표</span>}
                   </div>
@@ -597,29 +626,16 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
                     {Math.min(100, pct)}%
                   </span>
                 </div>
-                {/* 다 모으면 진행바를 그리지 않는다 */}
-                {!isDone && <Bar value={Math.min(100, pct)}><span /></Bar>}
-                {/* 다 모으면 '남은 금액' 줄이 사라지고 목표 금액만 남는다.
-                    더 채울 게 없다는 걸 문구가 아니라 정보의 부재로 보여준다. */}
+                <Bar value={Math.min(100, pct)}><span /></Bar>
                 <div css={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginTop: 10, color: 'var(--sub)', fontSize: 12 }}>
-                  {isDone ? (
-                    <span css={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <b css={{ color: 'var(--text)', fontSize: 14, fontWeight: 900, letterSpacing: '-.02em' }}>{money(card.goal.currentAmount)}</b>
-                      <span css={{ marginLeft: 5 }}>다 모음</span>
-                    </span>
-                  ) : (
-                    <span>{money(card.goal.currentAmount)} / {money(card.goal.targetAmount)}</span>
-                  )}
-                  {isDone
-                    ? (over > 0 && <span css={{ flex: '0 0 auto' }}>+{money(over)}</span>)
-                    : <span>{money(card.goal.targetAmount - card.goal.currentAmount)} 남음</span>}
+                  <span>{money(card.goal.currentAmount)} / {money(card.goal.targetAmount)}</span>
+                  <span>{money(card.goal.targetAmount - card.goal.currentAmount)} 남음</span>
                 </div>
                 <button
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
-                    if (isDone) onOpenGoals?.();
-                    else onSaveToGoal?.(card.goal.goalId);
+                    onSaveToGoal?.(card.goal.goalId);
                   }}
                   css={{
                     marginTop: 12, borderRadius: 12, border: 0,
@@ -640,8 +656,9 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
                     '&:active': { transform: 'scale(0.98)' },
                   }}
                 >
-                  {isDone ? '목표 관리로 가기' : '저금하기'}
+                  저금하기
                 </button>
+                </>)}
               </DeckCard>
               );
             })()}
@@ -804,12 +821,18 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     return () => window.removeEventListener('resize', onResize);
   }, []);
   /**
-   * 말랑이 크기. 담는 박스(BlobHalo, 모바일 clamp(252px, 62vw, 336px))보다 크면
-   * 좌우로 넘치는데, 상위에 overflow-x: hidden 이 걸려 있어 왼쪽만 잘린다.
-   * 그러면 말랑이가 오른쪽으로 밀린 것처럼 보인다 — 264px 고정이라 좁은 기기에서
-   * 늘 그 상태였다 (#302). 박스 안에 들어오도록 폭을 따라가게 한다.
+   * 말랑이 크기와, 말랑이를 담는 박스(BlobHalo) 크기.
+   *
+   * 이 둘을 각자 계산하면 반드시 어긋난다. 말랑이가 박스보다 커지는 순간 좌우로 삐져나가는데,
+   * 상위에 overflow-x: hidden 이 걸려 있어 왼쪽만 잘린다 — 그러면 말랑이가 오른쪽으로 밀린
+   * 것처럼 보인다. #302 에서 말랑이만 반응형으로 고쳤다가 박스가 고정이라 그대로 남았고,
+   * 이번엔 말랑이만 키웠다가 박스의 clamp 최소폭(252px)을 넘겨 같은 증상이 다시 났다.
+   *
+   * 그래서 박스를 말랑이에서 파생시킨다. 하나만 정하면 둘이 어긋날 방법이 없다.
    */
-  const blobSize = isMobile ? Math.min(264, Math.max(200, Math.round(viewportW * 0.62) - 8)) : 410;
+  const blobSize = isMobile ? Math.min(300, Math.max(224, Math.round(viewportW * 0.72) - 8)) : 410;
+  // 말랑이가 드래그로 늘어나거나 그림자가 번질 자리로 6% 만 남긴다.
+  const haloSize = isMobile ? Math.round(blobSize * 1.06) : null;
   // 데스크톱: 12초마다 3개가 물결처럼 / 모바일: 4.5초마다 말풍선 1개 순환
   const [budgetWave, setBudgetWave] = useState(0);
   useEffect(() => {
@@ -835,6 +858,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
 
   // Fetch emotion summary data from API
   const { data: emotionData, isLoading: isEmotionLoading } = useEmotionSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
+  const { data: emotionSignalComment } = useEmotionSignalCommentQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
   const { data: goalsData, isLoading: isGoalsLoading } = useGoalsQuery();
 
   const isSummaryLoading = isCalendarLoading || isEmotionLoading || isGoalsLoading;
@@ -859,8 +883,18 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const topMeta = showEmptyBlob ? { color: dark ? '#9B8CFF' : '#7C6BE0' } : getEmotion(displayEmotion);
 
   // 서버 상태(['goals'])를 직접 구독 → 설정에서 대표목표(isMain) 변경 시 홈/우주 동시 실시간 반영
-  const goals = goalsData?.goals || [];
+  // 아래 달성 감지 useEffect 의 의존값이라 memo 로 고정한다 — 매 렌더 새 배열이면 효과가 매번 돈다.
+  const goals = useMemo(() => goalsData?.goals || [], [goalsData]);
   const totalAsset = state.user?.totalAsset ?? 0;
+
+  /*
+   * 목표 달성 축하는 여기가 아니라 기록 화면(RecordPageDc)에서 띄운다.
+   *
+   * 여기서는 goals 가 '달라졌는지'를 봐야 하는데, 그러려면 달라지기 전 상태를 들고 있어야 한다.
+   * 그런데 저금은 기록 화면에서 일어나고 홈은 그 뒤에 새로 마운트되므로, 홈이 보는 첫 값은
+   * 이미 달성된 상태다 — 비교할 '이전'이 없어 변화를 알아챌 수가 없다.
+   * 저금하는 그 순간에는 목표의 현재 금액과 넣을 금액을 둘 다 알고 있어 판단이 확실하다.
+   */
 
   // 전역 예산 스토어 구독 → 서버 문구를 못 받았을 때 쓰는 소진율 기반 문구 (F7-10 · #145)
   // 계산·동기화는 BudgetSync가 담당하고, 여기선 파생 상태만 읽는다.
@@ -914,6 +948,11 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     ?? ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0])[0];
   const slot = 560 / ridgeData.length;
   const signals = getEmotionSignals(serverEmotions, serverPrevEmotions);
+  const fallbackSignalComment = signals.length > 0 && signals[0].rate > 0
+    ? (isMobile ? `이번 달은 ${signals[0].name} 소비가 조금 늘었어. 괜찮아, 같이 들여다보자.` : `이번 달은 ${signals[0].name} 소비가 조금 늘고 있어요.`)
+    : (isMobile ? '감정 소비가 안정적으로 관리되고 있어. 이대로도 충분해.' : '감정 소비가 안정적으로 관리되고 있어요.');
+  const signalComment = emotionSignalComment?.comment || fallbackSignalComment;
+  const signalCommaIndex = signalComment.indexOf(',');
   const monthLabel = `${visibleMonth.getFullYear()}년 ${visibleMonth.getMonth() + 1}월`;
   const moveMonth = (step) => setVisibleMonth(prev => {
     const next = new Date(prev.getFullYear(), prev.getMonth() + step, 1);
@@ -923,6 +962,10 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   });
 
   const selectDay = (day, dateKey, now) => {
+    // 달 넘기려고 쓸어 넘긴 손끝이 마지막에 어느 날짜 위에 있었을 뿐인데,
+    // touchend 뒤에 click 이 그대로 따라와 그 날짜가 선택된다. 방금 스와이프했으면 무시한다.
+    if (swipeRef.current.justSwiped) return;
+
     const lastClick = lastClickTimeRef.current[dateKey] || 0;
 
     if (dateKey === selectedDayKey || now - lastClick < 600) {
@@ -933,8 +976,37 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     }
   };
 
+  /**
+   * 달력 좌우 스와이프로 달 넘기기 (모바일).
+   * 세로로 긋는 건 페이지 스크롤이므로, 가로 이동이 세로보다 뚜렷할 때만 달을 넘긴다.
+   */
+  const swipeRef = useRef({ x: 0, y: 0, active: false, justSwiped: false });
+
+  const onCalendarTouchStart = (event) => {
+    const touch = event.touches[0];
+    swipeRef.current = { x: touch.clientX, y: touch.clientY, active: true, justSwiped: false };
+  };
+
+  const onCalendarTouchEnd = (event) => {
+    if (!swipeRef.current.active) return;
+    swipeRef.current.active = false;
+
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - swipeRef.current.x;
+    const dy = touch.clientY - swipeRef.current.y;
+
+    // 48px 은 넘겨야 '넘기려던 것'으로 본다. 날짜를 누르다 손가락이 조금 밀린 정도로 달이 바뀌면 곤란하다.
+    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+
+    swipeRef.current.justSwiped = true;
+    // click 은 touchend 직후에 온다. 그 한 박자만 막고 곧바로 푼다.
+    setTimeout(() => { swipeRef.current.justSwiped = false; }, 350);
+
+    moveMonth(dx < 0 ? 1 : -1);
+  };
+
   const renderCalendarBody = (onAfterSelect) => (
-    <>
+    <div onTouchStart={onCalendarTouchStart} onTouchEnd={onCalendarTouchEnd}>
       <MonthBar>
         <MonthButton type="button" onClick={() => moveMonth(-1)} aria-label="이전 달">‹</MonthButton>
         <strong>{monthLabel}</strong>
@@ -949,7 +1021,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
           return <Pebble key={item.id} color={color} strong={item.strong} selected={dateKey === selectedDayKey} today={item.today} dark={dark} onClick={event => { selectDay(item.day, dateKey, event.timeStamp); onAfterSelect?.(); }}>{item.day}</Pebble>;
         })}
       </PebbleGrid>
-    </>
+    </div>
   );
 
   return (
@@ -959,8 +1031,17 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
         <Stage>
           <div>
             <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'center', '@media (max-width: 980px)': { flexDirection: 'column-reverse' } }}>
-              <BlobHalo color={topMeta.color}>
-                <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? 272 : 'clamp(320px, 28vw, 400px)', height: isMobile ? 280 : 'clamp(360px, 31vw, 372px)' }}>
+              {/* BlobHalo 의 모바일 폭은 미디어쿼리 안에 있다. 밖에서 width 를 덮으면
+                  같은 우선순위끼리 순서 싸움이 되므로, 같은 미디어쿼리 안에서 덮는다. */}
+              <BlobHalo color={topMeta.color} css={haloSize ? { '@media (max-width: 980px)': { width: haloSize, height: haloSize } } : undefined}>
+                {/* 폭을 담는 박스(BlobHalo)에 맞춘다. 예전에는 모바일에서 272px 고정이었는데
+                    BlobHalo 는 clamp(252px, 62vw, 336px) 라, 좁은 기기에서는 이 박스가 부모보다
+                    20px 넓었다. place-items:center 로 가운데 정렬돼 좌우로 10px 씩 삐져나가는데
+                    상위에 overflow-x: hidden 이 걸려 있어 왼쪽만 잘린다 — 그래서 말랑이가
+                    오른쪽으로 밀린 것처럼 보였다.
+                    #302 에서 말랑이(blobSize)만 반응형으로 고치고 이 박스는 고정으로 남겨 둬서
+                    같은 증상이 그대로 남아 있었다. */}
+                <div css={{ position: 'relative', display: 'grid', placeItems: 'center', overflow: 'visible', width: isMobile ? '100%' : 'clamp(320px, 28vw, 400px)', maxWidth: '100%', height: isMobile ? 280 : 'clamp(360px, 31vw, 372px)' }}>
                   {!showEmptyBlob
                     ? <EmotionBlob emotion={displayEmotion} size={blobSize} onDragChange={handleBlobDrag} />
                     : <EmptyEmotionBlob size={blobSize} dark={dark} />}
@@ -1073,9 +1154,13 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
           {hasMonthlyTransactions ? (
             <>
               <div css={{ fontSize: isMobile ? 18 : 14.5, fontWeight: 900, lineHeight: isMobile ? 1.42 : 1.35 }}>
-                {signals.length > 0 && signals[0].rate > 0
-                  ? (isMobile ? `이번 달은 ${signals[0].name} 소비가 조금 늘었어. 괜찮아, 같이 들여다보자.` : `이번 달은 ${signals[0].name} 소비가 조금 늘고 있어요.`)
-                  : (isMobile ? '감정 소비가 안정적으로 관리되고 있어. 이대로도 충분해.' : '감정 소비가 안정적으로 관리되고 있어요.')}
+                {signalCommaIndex >= 0 ? (
+                  <>
+                    {signalComment.slice(0, signalCommaIndex + 1)}
+                    <br />
+                    {signalComment.slice(signalCommaIndex + 1).trimStart()}
+                  </>
+                ) : signalComment}
               </div>
               <div css={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '8px 0 7px', borderTop: '1px solid var(--line)', marginTop: 8 }}>
                 {signals.length > 0 ? (

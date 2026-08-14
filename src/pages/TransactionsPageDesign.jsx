@@ -162,9 +162,11 @@ const ControlGrid = styled.div`
   }
 `;
 
+/* 반지름을 같은 줄의 이웃들과 맞춘다. 검색창 12px · 탭 묶음 12px 인데 여기만 999px(알약)이라,
+   한 줄에 각진 칸과 둥근 칸이 섞여 이 둘만 다른 화면에서 온 것처럼 보였다. */
 const FilterButton = styled.button`
   border: 1px solid ${({ active }) => active ? 'var(--ink)' : 'var(--line)'};
-  border-radius: 999px;
+  border-radius: 12px;
   background: ${({ active }) => active ? 'var(--ink)' : 'var(--card-strong)'};
   color: ${({ active }) => active ? 'var(--on-ink)' : 'var(--text)'};
   padding: 10px 17px;
@@ -353,7 +355,9 @@ const BarDanger = styled.button`
   }
 `;
 
-const viewTabs = ['일별', '월별', '감정별'];
+// '월별'은 뺐다. 이 화면은 이미 상단 월 선택으로 한 달을 보고 있어서, 그 안에서 다시
+// 월로 묶으면 모든 항목이 한 덩어리로 들어간 그룹 하나만 나온다 — 묶는 의미가 없다.
+const viewTabs = ['일별', '감정별'];
 const sortOptions = [
   ['date-desc', '날짜 최신순'],
   ['date-asc', '날짜 오래된순'],
@@ -374,14 +378,11 @@ function groupLabel(item, view) {
   const month = date.getMonth() + 1;
   const day = date.getDate();
   const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
-  if (view === '월별') return `${year}년 ${month}월`;
   return `${year}년 ${month}월 ${day}일 (${weekday})`;
 }
 
 function groupKey(item, view) {
   if (view === '감정별') return item.emotion?.name || '';
-  const date = toDate(item);
-  if (view === '월별') return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
   return item.occurredAt.split('T')[0];
 }
 
@@ -459,7 +460,6 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
   // 다중 선택 삭제
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
-  const [confirming, setConfirming] = useState(false);
   const bulkDeleteMutation = useBulkDeleteTransactionsMutation();
   const updateMutation = useUpdateTransactionMutation();
   const [merging, setMerging] = useState(false);
@@ -481,7 +481,7 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
   const toggleSelectMode = () => {
     setSelectMode(prev => {
       const next = !prev;
-      if (!next) { setSelectedIds(new Set()); setConfirming(false); }
+      if (!next) { setSelectedIds(new Set()); }
       return next;
     });
   };
@@ -499,14 +499,10 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
   };
 
   const handleBulkDelete = async () => {
-    if (!selectedCount) return;
-    try {
-      await bulkDeleteMutation.mutateAsync(selectedVisibleIds);
-      setSelectMode(false);
-      setSelectedIds(new Set());
-    } finally {
-      setConfirming(false);
-    }
+    if (!selectedCount || bulkDeleteMutation.isPending) return;
+    await bulkDeleteMutation.mutateAsync(selectedVisibleIds);
+    setSelectMode(false);
+    setSelectedIds(new Set());
   };
 
   const handleBulkMerge = async () => {
@@ -768,25 +764,18 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
             {allSelected ? '전체 해제' : '전체 선택'}
           </BarGhost>
           <BarText>{selectedCount}개 선택</BarText>
-          {confirming ? (
-            <>
-              <BarText>삭제할까요?</BarText>
-              <BarDanger type="button" disabled={bulkDeleteMutation.isPending} onClick={handleBulkDelete}>
-                {bulkDeleteMutation.isPending ? '삭제 중…' : '삭제'}
-              </BarDanger>
-              <BarGhost type="button" onClick={() => setConfirming(false)}>취소</BarGhost>
-            </>
-          ) : (
-            <>
-              {canMerge && (
-                <BarGhost type="button" disabled={merging || bulkDeleteMutation.isPending} onClick={handleBulkMerge} css={{ color: 'var(--accent)', fontWeight: 'bold' }}>
-                  {merging ? '합치는 중...' : '정산 합치기'}
-                </BarGhost>
-              )}
-              <BarDanger type="button" disabled={!selectedCount || merging} onClick={() => setConfirming(true)}>삭제</BarDanger>
-              <BarGhost type="button" onClick={toggleSelectMode} disabled={merging}>취소</BarGhost>
-            </>
+          {/* '삭제할까요?' 확인 단계를 뺐다. 지울 항목을 이미 하나씩 골라 놓은 뒤라
+              여기서 한 번 더 묻는 건 같은 결정을 두 번 시키는 것에 가깝다.
+              오래 걸릴 때 눌린 줄 알 수 있게 '삭제 중…' 만 남긴다. */}
+          {canMerge && (
+            <BarGhost type="button" disabled={merging || bulkDeleteMutation.isPending} onClick={handleBulkMerge} css={{ color: 'var(--accent)', fontWeight: 'bold' }}>
+              {merging ? '합치는 중...' : '정산 합치기'}
+            </BarGhost>
           )}
+          <BarDanger type="button" disabled={!selectedCount || merging || bulkDeleteMutation.isPending} onClick={handleBulkDelete}>
+            {bulkDeleteMutation.isPending ? '삭제 중…' : '삭제'}
+          </BarDanger>
+          <BarGhost type="button" onClick={toggleSelectMode} disabled={merging || bulkDeleteMutation.isPending}>취소</BarGhost>
         </SelectBar>
       )}
     </Wrap>

@@ -47,7 +47,13 @@ const globalStyles = css`
     0%, 10%, 20%, 30%, 100% { filter: brightness(1); }
     5%, 15%, 25% { filter: brightness(1.3) contrast(1.2); }
   }
+  /* 모바일 목표 줄은 가로로 넘겨 본다. 스크롤바는 이 어두운 판에서 흰 막대로 튀어 보인다. */
+  .pu-goal-rail { scrollbar-width: none; -ms-overflow-style: none; }
+  .pu-goal-rail::-webkit-scrollbar { display: none; }
 `;
+
+/** 세로가 짧은 기기(높이 700px 미만)에서 하단 콘솔을 줄이는 비율. */
+const SHORT_MOBILE_SCALE = 0.82;
 
 const Container = styled.div`
   position: relative;
@@ -58,6 +64,13 @@ const Container = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* 머리말 아래 여백을 다른 화면과 같은 값으로 맞춘다.
+     AnalysisPageDc·TransactionsPageDesign 이 쓰는 22px 이다 — 이 화면만 값이 없어서
+     제목 바로 밑에 카드가 붙어 다른 탭에서 넘어오면 화면이 한 칸 위로 밀려 보였다. */
+  @media (max-width: 820px) {
+    padding-top: 22px;
+  }
 `;
 
 const PageWrapper = styled.div`
@@ -110,31 +123,21 @@ export default function UniversePageDc() {
       return showDays(s) ? `${s.daysToGoal}일 예상` : `${s.monthsToGoal}개월 예상`;
     };
 
-    const currentNote = `${goal.name} · ${durationOf(current)}`;
-
-    const savedAmount = reduced.monthlySaving - current.monthlySaving;
-    const monthsSaved = (current.monthsToGoal ?? 0) - (reduced.monthsToGoal ?? 0);
-    const daysSaved = (current.daysToGoal ?? 0) - (reduced.daysToGoal ?? 0);
-
-    // 얼마나 빨라지는지가 이 칸의 요점이다. 개월로 드러나면 개월, 한 달 안쪽이면 일,
-    // 그래도 같으면(반올림으로 하루도 안 줄면) 매달 더 남는 금액으로 말한다.
-    let reducedNote = `${goal.name} · `;
-    if (reduced.monthsToGoal == null) {
-      reducedNote += "도달 불가";
-    } else if (monthsSaved > 0) {
-      reducedNote += `${monthsSaved}개월 단축!`;
-    } else if (daysSaved > 0) {
-      reducedNote += `${daysSaved}일 단축!`;
-    } else if (savedAmount > 0) {
-      reducedNote += `매달 ${formatMoney(savedAmount)} 더`;
-    } else {
-      reducedNote += durationOf(reduced);
-    }
+    /*
+     * '아낀 금액'은 저축액 차이가 아니라 실제 지출 감소액이다.
+     * 수입보다 지출이 큰 사용자는 CURRENT·REDUCED의 monthlySaving이 둘 다 0으로 보정되므로
+     * 둘을 빼면 실제로 소비를 줄였는데도 +0원으로 보였다.
+     */
+    const savedAmount = Math.max(0, current.monthlyExpense - reduced.monthlyExpense);
+    // 목표 도달 예상 배지는 절약을 실천한 미래의 보상으로만 보여준다.
+    // 현재 소비 행성에서는 같은 정보가 팩폭 문장과 중복되고 긍정적인 예측처럼 읽힌다.
+    const reducedNote = `${goal.name} · ${durationOf(reduced)}`;
 
     return {
       goalName: goal.name,
       current: {
         tag: "현재 우주",
+        planetLabel: "현재 소비 행성",
         title: current.title,
         // 현재 우주는 이번 달 전체 소비를 보여준다. 특정 항목 금액을 보여주면
         // 그 아래 '목표까지 N개월'과 근거가 어긋난다 — 개월 수는 전체 지출로 계산된 값이다.
@@ -142,7 +145,7 @@ export default function UniversePageDc() {
         metric: `-${formatMoney(current.monthlyExpense)}`,
         accent: "#9E96EE",
         narratives: current.narrations || [ current.narration ],
-        goalNote: currentNote,
+        goalNote: null,
         focusTag: null,
         // 항해 머리말용. 제목("지금처럼 쓴다면")은 ~면 으로 끝나는 조건절이라
         // "… 우주로 진입하고 있어요" 앞에 그대로 붙이면 말이 안 된다. 관형형을 따로 둔다.
@@ -154,18 +157,25 @@ export default function UniversePageDc() {
       },
       reduced: {
         tag: "다른 우주",
+        planetLabel: "소비를 줄인 행성",
         title: reduced.title,
         metricLabel: "매달 아낄 수 있는 금액",
         metric: `+${formatMoney(savedAmount)}`,
         accent: "#82E2C2",
         narratives: reduced.narrations || [ reduced.narration ],
         goalNote: reducedNote,
-        // 줄이는 대상만 태그로 단다. 현재 우주에는 줄일 대상이 없어 태그가 없다.
-        // 예전에는 여기에 "평온 · 뿌듯함"이 하드코딩돼 있었다 — 아무 데이터도 안 보는 값이었다.
+        /*
+         * 행성은 '상태'를 가리키고, 어떤 카테고리를 줄일지는 그 안에서 말랑이가 말한다.
+         *
+         * 예전에는 행성 이름 자체가 "여행 줄인 나" 였다. 그러면 이 우주가 여행 전용 시뮬레이션처럼
+         * 읽히는데, 실제로 이 화면이 보여주는 건 "소비를 줄이면 목표에 언제 닿는가" 하나다.
+         * 카테고리는 그 안에서 '무엇부터 줄일지'를 짚어 주는 근거지 우주의 이름이 아니다.
+         * 그래서 이름은 "소비를 줄인 나"로 고정하고, 카테고리는 설명·태그·말랑이 문구에 남긴다.
+         */
         focusTag: topCategory ? topCategory.name : null,
-        voyageLabel: topCategory ? `${topCategory.name} 소비를 줄인` : "덜 쓰는",
+        voyageLabel: "소비를 줄인",
         universeDesc: topCategory
-          ? `${topCategory.name} 지출을 ${Math.round(universeData.reductionRate * 100)}% 줄인 미래예요.`
+          ? `가장 많이 쓴 ${topCategory.name}을(를) ${Math.round(universeData.reductionRate * 100)}% 줄인 미래예요.`
           : "지출을 줄인 미래예요.",
         monthlySaving: reduced.monthlySaving,
         monthsToGoal: reduced.monthsToGoal,
@@ -225,7 +235,7 @@ export default function UniversePageDc() {
 
   const reset = () => {
     if (tRef.current) clearTimeout(tRef.current);
-    setPhase("idle"); setSelected(""); setHeading("");
+    setPhase("idle"); setSelected(""); setHeading(""); setNarrativeIndex(0);
   };
 
   // 하단 목표 선택 → 해당 goalId로 시뮬레이션 전환(항해 상태 초기화)
@@ -233,7 +243,7 @@ export default function UniversePageDc() {
     if (goalId === activeGoalId) return;
     if (tRef.current) clearTimeout(tRef.current);
     setSelectedGoalId(goalId);
-    setPhase("idle"); setSelected(""); setHeading("");
+    setPhase("idle"); setSelected(""); setHeading(""); setNarrativeIndex(0);
   };
 
   const select = (key) => {
@@ -274,6 +284,9 @@ export default function UniversePageDc() {
     if (tRef.current) clearTimeout(tRef.current);
     // selected 는 애니메이션이 끝난 뒤에야 바뀐다. 머리말은 지금 향하는 쪽을 말해야 하므로 먼저 잡는다.
     setHeading(key);
+    // 다른 우주에 들어가면 반드시 0번(목표 도달 개월·일수)부터 보여준다.
+    // 이전 우주에서 넘겨 본 코멘트 인덱스를 이어받으면 원인·조언 문장이 첫 화면에 노출된다.
+    setNarrativeIndex(0);
     setPhase("departing");
     tRef.current = setTimeout(() => {
       setPhase("result"); setSelected(key);
@@ -334,10 +347,44 @@ export default function UniversePageDc() {
   const pSize = isShortMobile ? 74 : (isMobile ? 100 : 150);
   const pTextOffset = isShortMobile ? 84 : (isMobile ? 105 : 170);
 
+  /**
+   * 목표 칩 하나. 데스크톱 우상단 묶음과 모바일 제목 아래 줄이 같은 모양을 쓴다.
+   *
+   * @param standalone 묶음 배경 없이 혼자 서는 칸인지. 모바일 줄은 칩마다 배경·테두리를
+   *                   직접 가져야 가로로 넘길 때 서로 구분된다. 데스크톱은 바깥 알약이
+   *                   이미 배경을 깔고 있어 선택되지 않은 칩은 투명해야 한다.
+   */
+  const renderGoalChip = (g, standalone) => {
+    const on = g.goalId === activeGoalId;
+    return (
+      <button
+        key={g.goalId}
+        type="button"
+        onClick={() => selectGoal(g.goalId)}
+        style={{
+          flex: "none",
+          border: standalone ? `1px solid ${on ? "transparent" : "rgba(255,255,255,.12)"}` : 0,
+          borderRadius: 999,
+          padding: isMobile ? "6px 12px" : "6px 15px",
+          cursor: "pointer",
+          background: on ? "rgba(255,255,255,.92)" : (standalone ? "rgba(255,255,255,.06)" : "transparent"),
+          color: on ? "#1b1622" : "#b8b3c4",
+          font: `${on ? 800 : 600} 12px system-ui`,
+          whiteSpace: "nowrap",
+          transition: "all .2s ease"
+        }}
+      >
+        {g.name}
+      </button>
+    );
+  };
+
   return (
     <>
       <Global styles={globalStyles} />
-      <Container ref={containerRef} style={isMobile ? { height: '100%', minHeight: 0, padding: '0', borderRadius: 24, boxShadow: 'none', overflow: 'hidden' } : {}}>
+      {/* padding 을 인라인으로 0 으로 박으면 위 미디어쿼리의 padding-top 이 죽는다.
+          Container 는 원래 padding 이 없으니 여기서 다시 지울 이유도 없다. */}
+      <Container ref={containerRef} style={isMobile ? { height: '100%', minHeight: 0, borderRadius: 24, boxShadow: 'none', overflow: 'hidden' } : {}}>
         <div style={isMobile ? { width: '100%', height: '100%' } : { transform: `scale(${scale})`, transformOrigin: "center center" }}>
           <PageWrapper style={isMobile ? { width: '100%', height: '100%', borderRadius: 24, overflow: 'hidden', transform: 'none' } : {}}>
 
@@ -352,11 +399,25 @@ export default function UniversePageDc() {
             {isMobile ? (
               <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", position: "absolute", inset: 0, zIndex: 3 }}>
                 {/* 데스크톱과 같은 머리말 구성(날짜 + 평행우주)으로 맞춘다.
-                    예전 제목 "미래는 지금 갈라지고 있어요"는 22px 두 줄이라 우측 상단 목표 칩
-                    아래로 파고들어 글자가 겹쳤다. paddingRight 로 칩 자리를 비워 두 번 막는다. */}
-                <div style={{ flexShrink: 0, padding: "24px 130px 24px 24px", zIndex: 10, display: "flex", flexDirection: "column", gap: 6, opacity: phase === "idle" ? 1 : 0, transition: "opacity .3s ease", pointerEvents: "none" }}>
+                    예전에는 우상단 목표 칩이 이 위에 절대배치로 겹쳐 있어서, paddingRight 130px 로
+                    칩 자리를 비워 뒀다. 그런데 칩 묶음은 최대 68%(≈275px)까지 자라므로 목표가
+                    둘만 돼도 예약폭을 넘어 날짜를 덮었고, 이름이 길면 카드 밖으로 나가 잘렸다.
+                    고정 예약폭으로는 개수·길이를 따라갈 수 없어서, 모바일은 칩을 아래 제 줄로 내린다. */}
+                <div style={{ flexShrink: 0, padding: "24px 24px 0", zIndex: 10, display: "flex", flexDirection: "column", gap: 6, opacity: phase === "idle" ? 1 : 0, transition: "opacity .3s ease", pointerEvents: "none" }}>
                   <div style={{ font: "600 10px ui-monospace,Menlo,monospace", letterSpacing: ".1em", color: "#ECEBF0" }}>{today}</div>
                   <div style={{ font: "800 22px/1 system-ui", color: "#fff", letterSpacing: "-.02em" }}>평행우주 ☾</div>
+
+                  {/* 가로로 넘겨 본다. 줄바꿈(flexWrap)이면 목표가 늘수록 머리말이 아래로 자라
+                      행성 그림을 밀어내므로, 높이는 한 줄로 고정하고 넘치는 건 스크롤에 맡긴다.
+                      바깥 머리말이 pointerEvents:none 이라 이 줄에서 다시 켜 준다. */}
+                  {goalsList.length > 0 && (
+                    <div
+                      className="pu-goal-rail"
+                      style={{ display: "flex", gap: 6, marginTop: 4, overflowX: "auto", overflowY: "hidden", pointerEvents: "auto", paddingBottom: 2, WebkitOverflowScrolling: "touch" }}
+                    >
+                      {goalsList.map(g => renderGoalChip(g, true))}
+                    </div>
+                  )}
                 </div>
 
                 {(phase === "flying" || phase === "departing") && (
@@ -407,7 +468,7 @@ export default function UniversePageDc() {
                               <UniversePlanet tone="calm" size={pSize} />
                             </div>
                             <div style={{ position: "absolute", left: "50%", top: pTextOffset, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", opacity: parked ? 0 : 1, transition: "opacity .3s ease", pointerEvents: "none" }}>
-                              <div style={{ font: "600 13px system-ui", color: "#ECEBF0" }}>{U_DATA.reduced.focusTag ? `${U_DATA.reduced.focusTag} 줄인 나` : "덜 쓴 나"}</div>
+                              <div style={{ font: "600 13px system-ui", color: "#ECEBF0" }}>소비를 줄인 나</div>
                             </div>
                           </div>
                         </div>
@@ -416,9 +477,15 @@ export default function UniversePageDc() {
                   </div>
                 </div>
 
-                <div style={{ flexShrink: 0, paddingBottom: isShortMobile ? 4 : 8, zIndex: 5, transform: parked ? "translateY(48px)" : "none", opacity: parked ? 0 : 1, pointerEvents: parked ? "none" : "auto", transition: "opacity .5s ease, transform .6s cubic-bezier(.5,.05,.2,1)" }}>
+                {/* 콘솔이 카드 아래 끝까지 닿아야 '하단을 채우는 판'이 된다.
+                    아래 여백을 남기면 판 밑으로 배경이 비쳐 다시 떠 있는 것처럼 보인다. */}
+                <div style={{ flexShrink: 0, zIndex: 5, transform: parked ? "translateY(48px)" : "none", opacity: parked ? 0 : 1, pointerEvents: parked ? "none" : "auto", transition: "opacity .5s ease, transform .6s cubic-bezier(.5,.05,.2,1)" }}>
                   <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
-                    <div style={{ width: "100%", transform: isShortMobile ? 'scale(0.82)' : 'none', transformOrigin: 'bottom center' }}>
+                    {/* 세로가 짧은 기기에서는 콘솔을 줄여 넣는데, scale 은 가로도 같이 줄여
+                        판이 좌우로 82% 만 덮고 양옆에 배경이 비쳤다 — 다시 떠 있는 카드로 보인다.
+                        줄어드는 만큼 미리 넓혀 두면 축소 후 폭이 정확히 100% 가 된다.
+                        넘치는 폭은 카드의 overflow:hidden 이 받아준다. */}
+                    <div style={{ width: isShortMobile ? `calc(100% / ${SHORT_MOBILE_SCALE})` : "100%", transform: isShortMobile ? `scale(${SHORT_MOBILE_SCALE})` : 'none', transformOrigin: 'bottom center' }}>
                       <UniverseConsole 
                         isMobile={true}
                         leverA={leverA} leverB={leverB} 
@@ -473,7 +540,7 @@ export default function UniversePageDc() {
                       <UniversePlanet tone="calm" size={150} />
                     </div>
                     <div style={{ position: "absolute", left: "50%", top: 168, transform: "translateX(-50%)", whiteSpace: "nowrap", textAlign: "center", pointerEvents: "none" }}>
-                      <div style={{ font: "600 14px system-ui", color: "#ECEBF0" }}>{U_DATA.reduced.focusTag ? `${U_DATA.reduced.focusTag} 줄인 나` : "덜 쓴 나"}</div>
+                      <div style={{ font: "600 14px system-ui", color: "#ECEBF0" }}>소비를 줄인 나</div>
                     </div>
                   </div>
                 </div>
@@ -513,6 +580,21 @@ export default function UniversePageDc() {
               <div style={{ position: "absolute", left: isMobile ? "-60vw" : "-340px", bottom: isMobile ? "-30vh" : "-640px", zIndex: 0, animation: phase === "departing" ? "pu-recoil 1.1s cubic-bezier(.2,.8,.3,1)" : "none" }}>
                 <UniversePlanet tone={selected === "reduced" ? "calm" : "stress"} size={isMobile ? 800 : 1000} />
               </div>
+
+              {phase === "result" && u && (
+                <div style={{
+                  position: "absolute", left: isMobile ? 18 : 32, top: isMobile ? 18 : 28, zIndex: 6,
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  padding: isMobile ? "8px 11px" : "9px 13px", borderRadius: 999,
+                  border: `1px solid ${u.accent}55`, background: "rgba(18,20,30,.68)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,.18)", backdropFilter: "blur(12px)",
+                  color: "#F4F2F8", font: `${isMobile ? 700 : 750} ${isMobile ? 11.5 : 13}px system-ui`,
+                  letterSpacing: "-.01em", animation: "pu-welldraw .6s ease both", pointerEvents: "none"
+                }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: u.accent, boxShadow: `0 0 10px ${u.accent}` }} />
+                  {u.planetLabel}
+                </div>
+              )}
 
               <div onClick={() => depart(otherKey)} style={{ position: "absolute", left: isMobile ? "80%" : 948, top: isMobile ? "12%" : 344, transform: "translate(-50%,-50%)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, zIndex: 1 }}>
                 <UniversePlanet tone={otherKey === "reduced" ? "calm" : "stress"} size={isMobile ? 140 : 212} />
@@ -557,7 +639,9 @@ export default function UniversePageDc() {
                       </div>
                     )}
                     <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 11, background: "rgba(50,42,32,.055)", font: "600 11px system-ui", color: "#5c564e" }}>🎯 {u.goalNote}</span>
+                      {u.goalNote && (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 11, background: "rgba(50,42,32,.055)", font: "600 11px system-ui", color: "#5c564e" }}>🎯 {u.goalNote}</span>
+                      )}
                       {u.focusTag && (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 11, background: "rgba(50,42,32,.055)", font: "600 11px system-ui", color: "#5c564e" }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: u.accent }}></span>{u.focusTag}</span>
                       )}
@@ -576,16 +660,19 @@ export default function UniversePageDc() {
                     position: "absolute", zIndex: 6,
                     right: isMobile ? 16 : 34,
                     bottom: isMobile ? 20 : 28,
-                    display: "inline-flex", alignItems: "center", gap: 9,
-                    padding: "9px 10px 9px 18px", borderRadius: 24,
+                    display: "inline-flex", alignItems: "center", gap: isMobile ? 6 : 9,
+                    /* 모바일에서는 한 치수 작게 간다. 결과 카드가 폭을 거의 다 쓰는데 이 버튼이
+                       그 위에 겹쳐 떠서, 카드 오른쪽 아래 모서리를 물고 있었다. */
+                    padding: isMobile ? "6px 7px 6px 13px" : "9px 10px 9px 18px",
+                    borderRadius: isMobile ? 20 : 24,
                     border: "1px solid rgba(255,255,255,.5)",
                     background: "rgba(255,255,255,.92)",
-                    color: "#1b1622", font: "800 13px system-ui",
+                    color: "#1b1622", font: `800 ${isMobile ? 12 : 13}px system-ui`,
                     boxShadow: "0 10px 26px -8px rgba(0,0,0,.75)",
                     cursor: "pointer", whiteSpace: "nowrap"
                   }}
                 >
-                  콘솔로 돌아가기 <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: "50%", background: "rgba(27,22,34,.10)", fontSize: 13 }}>↩</span>
+                  콘솔로 돌아가기 <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: isMobile ? 21 : 26, height: isMobile ? 21 : 26, borderRadius: "50%", background: "rgba(27,22,34,.10)", fontSize: isMobile ? 11.5 : 13 }}>↩</span>
                 </button>
               )}
             </div>
@@ -602,22 +689,12 @@ export default function UniversePageDc() {
             />
           )}
 
-          {phase === "idle" && goalsList.length > 0 && (
-            <div style={{ position: "absolute", top: isMobile ? 20 : 24, right: isMobile ? 16 : 26, zIndex: 16, display: "flex", justifyContent: "flex-end", maxWidth: "68%", pointerEvents: "auto" }}>
+          {/* 데스크톱 전용 우상단 묶음. 모바일 칩은 머리말 아래 제 줄에 있다 —
+              폭이 좁아 여기 겹쳐 두면 날짜·제목과 자리를 다툰다. */}
+          {!isMobile && phase === "idle" && goalsList.length > 0 && (
+            <div style={{ position: "absolute", top: 24, right: 26, zIndex: 16, display: "flex", justifyContent: "flex-end", maxWidth: "68%", pointerEvents: "auto" }}>
               <div style={{ display: "inline-flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 3, padding: 4, borderRadius: 999, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
-                {goalsList.map(g => {
-                  const on = g.goalId === activeGoalId;
-                  return (
-                    <button
-                      key={g.goalId}
-                      type="button"
-                      onClick={() => selectGoal(g.goalId)}
-                      style={{ border: 0, borderRadius: 999, padding: isMobile ? "6px 12px" : "6px 15px", cursor: "pointer", background: on ? "rgba(255,255,255,.92)" : "transparent", color: on ? "#1b1622" : "#b8b3c4", font: `${on ? 800 : 600} 12px system-ui`, whiteSpace: "nowrap", transition: "all .2s ease" }}
-                    >
-                      {g.name}
-                    </button>
-                  );
-                })}
+                {goalsList.map(g => renderGoalChip(g, false))}
               </div>
             </div>
           )}

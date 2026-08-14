@@ -81,6 +81,20 @@ const WithdrawButton = styled.button`
   font-weight: 800;
   cursor: pointer;
   color: #E87573;
+  transition: background .15s ease, box-shadow .15s ease, transform .1s ease;
+  -webkit-tap-highlight-color: transparent;
+
+  /* 되돌릴 수 없는 동작이라 반응이 있어야 한다. 눌렀는지 모른 채 다시 누르는 게 제일 나쁘다.
+     색은 이미 경고색이므로 더 세게 만들지 않고, 자기 색을 옅게 깔아 면만 살린다. */
+  &:not(:disabled):hover {
+    background: color-mix(in srgb, #E87573 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #E87573 32%, transparent);
+  }
+
+  &:not(:disabled):active {
+    transform: scale(.99);
+    background: color-mix(in srgb, #E87573 18%, transparent);
+  }
 
   &:disabled {
     opacity: .7;
@@ -99,9 +113,11 @@ const Close = styled.button`
   color: var(--sub);
 `;
 
+/* 7% 는 모달 배경과 거의 구분되지 않아, 대표 목표 줄이 그냥 글자 두 줄로 보였다.
+   이 모달에서 유일하게 강조되는 칸이므로 면이 먼저 보여야 한다. 배경·테두리를 함께 올린다. */
 const GoalBanner = styled.div`
-  background: color-mix(in srgb, var(--ink) 7%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background: color-mix(in srgb, var(--ink) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
   border-radius: 18px;
   padding: 16px 18px;
   margin-bottom: 20px;

@@ -8,6 +8,19 @@ const ToastBox = styled.div`
   bottom: 38px;
   z-index: 300;
   transform: translateX(-50%);
+
+  /* 모바일에서는 하단 메뉴바 위로 올린다. 38px 은 메뉴바(높이 67px + 아래 여백)가
+     깔고 앉은 자리라, 토스트가 메뉴 항목을 가로질러 걸쳤다.
+
+     토큰마다 기본값을 함께 적는다. 이 토스트는 AppLayoutDc(Shell) 바깥에서 렌더되므로
+     Shell 에 선언된 --mobile-* 변수가 스코프에 없다. 값이 없으면 calc() 전체가 무효가 되고,
+     bottom 이 auto 로 떨어져 토스트가 화면 밖에 서서 아예 안 보인다. */
+  @media (max-width: 820px) {
+    bottom: calc(
+      var(--mobile-nav-height, 67px) + var(--mobile-nav-offset, 12px) +
+      var(--mobile-nav-gap, 30px) + env(safe-area-inset-bottom, 0px) + 6px
+    );
+  }
   display: flex;
   align-items: center;
   gap: 10px;

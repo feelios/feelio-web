@@ -28,11 +28,14 @@ export const useAiReportQuery = (year, month) => {
   });
 };
 
-export const useMonthlyTrendQuery = () => {
+// 추이도 선택한 달을 따라간다. year·month 가 queryKey 에 없으면 달을 바꿔도 캐시된 값이 그대로 나와,
+// 화면에서는 월 전환이 아예 동작하지 않는 것처럼 보인다.
+export const useMonthlyTrendQuery = (year, month) => {
   return useQuery({
-    queryKey: ['analysis', 'trend'],
-    queryFn: () => analysisAPI.getMonthlyTrend(),
+    queryKey: ['analysis', 'trend', year, month],
+    queryFn: () => analysisAPI.getMonthlyTrend(year, month),
     staleTime: 1000 * 60 * 5, // 5분
+    enabled: !!year && !!month,
   });
 };
 

@@ -246,6 +246,19 @@ Response `data`:
 ```
 - 지출 기록 기준 집계. 감정 능선(8종 전체 축)·홈 감정 신호(전월 대비)에 사용.
 
+### GET /api/summary/emotion-signal?year&month · 인증 필요
+
+Response `data`:
+```json
+{ "comment": "이번 달은 평온 소비가 지난달보다 크게 늘었어. 어떤 순간에 늘었는지 같이 들여다보자." }
+```
+
+- 선택한 달과 전월의 감정별 지출 기록 횟수·금액을 바탕으로 홈의 감정 신호 문구를 생성한다.
+- 증감률과 상위 변화 감정은 서버가 계산하고, AI는 제공된 사실로 문장만 작성한다.
+- GPT 실패·지연·형식 오류 시 동일 집계값을 사용하는 규칙 기반 문구로 대체한다.
+- 당월 지출 기록이 없으면 `comment`는 `null`이다.
+- 감정 요약과 분리 호출하여 AI 지연이 홈의 캘린더·능선 로딩을 막지 않게 한다.
+
 ## 9. 분석·평행우주 (3순위 — 스키마 확정, A3-1)
 
 > 스키마 확정 완료. A3-2(analysis)·A3-3(universe)는 아래 응답 형태를 기준으로 구현한다.
@@ -337,7 +350,9 @@ Response(200) `data`:
 - `reductionRate`: 서버가 가정한 감축 비율(0~1, 예 `0.5`). 응답에 명시해 프론트 하드코딩을 피한다.
 - `scenarios`: `CURRENT`(현행)·`REDUCED`(감축) 2건 고정. `REDUCED.title`은 focusEmotion 이름을 반영(예: "설렘 소비를 줄이면").
   - `REDUCED.monthlyExpense = monthlyExpense − round(focusEmotion.monthlyAmount × reductionRate)` (focusEmotion 이 `null`이면 CURRENT 와 동일).
-  - `monthlySaving = monthlyIncome − 시나리오 monthlyExpense` (음수면 0 처리).
+  - `CURRENT.monthlySaving = max(monthlyIncome − monthlyExpense, 0)`.
+  - `REDUCED.monthlySaving = CURRENT.monthlySaving + (CURRENT.monthlyExpense − REDUCED.monthlyExpense)`.
+    줄인 소비액을 매달 목표 저금으로 옮긴 미래이므로 현재 수지가 적자여도 감축액은 0원이 되지 않는다.
   - `monthsToGoal = ceil((targetAmount − currentAmount) / monthlySaving)`. `monthlySaving ≤ 0`이면 `monthsToGoal`·`estimatedAchieveDate` 모두 `null`(도달 불가).
 - 에러: `NOT_FOUND`(목표 없음) · `FORBIDDEN`(타인 목표) · `VALIDATION_ERROR`(goalId 누락).
 

@@ -1,11 +1,14 @@
 /**
  * 모바일 콘솔의 우주 선택 버튼. 데스크톱 버튼과 같은 구성이다 —
- * 유리 질감 배경에 [표시등][라벨 / PLANET-0x · TONE] 가로 배치.
+ * 유리 질감 배경에 [표시등][라벨] 가로 배치.
+ *
+ * 라벨 아래에 "PLANET-01 · STRESS" 같은 영문 부제를 달았었는데, 우주선 계기판 분위기를
+ * 내려던 장식일 뿐 사용자에게 알려주는 게 없었다. 한글 라벨만 남긴다.
  *
  * 아주 좁은 기기를 대비해 ellipsis 를 남겨두지만, 노브를 이 줄에서 뺀 뒤로는
  * 실제로 잘릴 일이 거의 없다.
  */
-function ConsoleChoice({ on, onClick, label, sub, glow }) {
+function ConsoleChoice({ on, onClick, label, glow }) {
   return (
     <button
       onClick={onClick}
@@ -19,10 +22,7 @@ function ConsoleChoice({ on, onClick, label, sub, glow }) {
       }}
     >
       <span style={{ width: 8, height: 8, borderRadius: '50%', flex: 'none', background: on ? glow : 'rgba(255,255,255,.24)', boxShadow: on ? `0 0 9px ${glow}` : 'none', transition: '.25s' }}></span>
-      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.22, minWidth: 0, overflow: 'hidden' }}>
-        <span style={{ font: "600 12.5px system-ui", color: '#ECEBF0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{label}</span>
-        <span style={{ font: "500 7.5px ui-monospace,Menlo,monospace", color: '#8f8c9c', letterSpacing: '.06em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{sub}</span>
-      </span>
+      <span style={{ font: "600 12.5px system-ui", color: '#ECEBF0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{label}</span>
       {on && (
         <span style={{ position: 'absolute', inset: 0, borderRadius: 13, border: `1.5px solid ${glow}a6`, boxShadow: `inset 0 2px 7px rgba(0,0,0,.4),0 0 18px -4px ${glow}b3`, pointerEvents: 'none' }}></span>
       )}
@@ -36,9 +36,13 @@ export default function UniverseConsole({
 }) {
   if (isMobile) {
     return (
-      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        {/* 모바일 콘솔 메인 패널 (크기 및 여백 축소) */}
-        <div style={{ width: '92%', maxWidth: '400px', background: '#17181c', borderRadius: '28px', border: '1.5px solid #23252a', padding: '16px 16px 26px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.6)' }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'flex-end' }}>
+        {/* 모바일 콘솔은 화면 하단을 채우는 조작판이다.
+            예전에는 폭 92% 에 사방이 둥근 카드였고 큰 그림자까지 얹혀 있어, 화면 위에 잠깐
+            떠 있는 모달처럼 보였다. 실제로는 이 화면에 늘 붙어 있는 조작부라 떠 있을 이유가 없다.
+            좌우·아래로 붙이고 윗변만 둥글린다 — 아래 모서리는 카드(PageWrapper)의 radius 가
+            overflow:hidden 으로 잘라주므로 여기서 따로 줄 필요가 없다. */}
+        <div style={{ width: '100%', background: '#17181c', borderRadius: '24px 24px 0 0', borderTop: '1.5px solid #23252a', padding: '16px 16px 26px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
           
           {/* 상단 도트 인디케이터 (여백 축소) */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -61,8 +65,8 @@ export default function UniverseConsole({
               노브가 가운데를 먹어 "지금 이대로…" 처럼 라벨이 잘렸다.
               같은 구도를 우겨넣는 것보다 글자가 온전한 쪽이 낫다. */}
           <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '4px' }}>
-            <ConsoleChoice on={leftOn} onClick={selectCurrent} label="지금 이대로라면" sub="PLANET-01 · STRESS" glow="#9E96EE" />
-            <ConsoleChoice on={rightOn} onClick={selectReduced} label="조금 줄여본다면" sub="PLANET-02 · CALM" glow="#82E2C2" />
+            <ConsoleChoice on={leftOn} onClick={selectCurrent} label="지금 이대로라면" glow="#9E96EE" />
+            <ConsoleChoice on={rightOn} onClick={selectReduced} label="조금 줄여본다면" glow="#82E2C2" />
           </div>
 
           {/* 두 미래 비교. 노브만 있고 라벨이 REC 뿐이라 눌러도 뭐가 나오는지 알 수 없었다.
@@ -232,10 +236,7 @@ export default function UniverseConsole({
       <button onClick={selectCurrent} style={{ position: "absolute", left: "29.31%", top: "55%", width: "16.55%", height: "17.33%", border: "none", padding: 0, background: "transparent", cursor: "pointer" }}>
         <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: 13, background: "linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.03))", border: "1px solid rgba(255,255,255,.14)", boxShadow: "0 3px 7px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.2)", display: "flex", alignItems: "center", gap: 11, padding: "0 15px", boxSizing: "border-box", transition: "transform .15s ease,box-shadow .2s ease" }}>
           <span style={{ width: 9, height: 9, borderRadius: "50%", background: "rgba(255,255,255,.24)", flex: "none", transition: ".25s" }}></span>
-          <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", lineHeight: 1.22 }}>
-            <span style={{ font: "600 13.5px system-ui", color: "#ECEBF0" }}>지금 이대로라면</span>
-            <span style={{ font: "500 8.5px ui-monospace,Menlo,monospace", color: "#8f8c9c", letterSpacing: ".1em" }}>PLANET-01 · STRESS</span>
-          </span>
+          <span style={{ font: "600 13.5px system-ui", color: "#ECEBF0" }}>지금 이대로라면</span>
           <span style={{ marginLeft: "auto", display: "flex", gap: 2.5 }}>
             <i style={{ width: 1.5, height: 18, background: "rgba(255,255,255,.1)", display: "block" }}></i>
             <i style={{ width: 1.5, height: 18, background: "rgba(255,255,255,.1)", display: "block" }}></i>
@@ -253,10 +254,7 @@ export default function UniverseConsole({
       <button onClick={selectReduced} style={{ position: "absolute", left: "54.14%", top: "55%", width: "16.55%", height: "17.33%", border: "none", padding: 0, background: "transparent", cursor: "pointer" }}>
         <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: 13, background: "linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.03))", border: "1px solid rgba(255,255,255,.14)", boxShadow: "0 3px 7px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.2)", display: "flex", alignItems: "center", gap: 11, padding: "0 15px", boxSizing: "border-box", transition: "transform .15s ease,box-shadow .2s ease" }}>
           <span style={{ width: 9, height: 9, borderRadius: "50%", background: "rgba(255,255,255,.24)", flex: "none", transition: ".25s" }}></span>
-          <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", lineHeight: 1.22 }}>
-            <span style={{ font: "600 13.5px system-ui", color: "#ECEBF0" }}>조금 줄여본다면</span>
-            <span style={{ font: "500 8.5px ui-monospace,Menlo,monospace", color: "#8f8c9c", letterSpacing: ".1em" }}>PLANET-02 · CALM</span>
-          </span>
+          <span style={{ font: "600 13.5px system-ui", color: "#ECEBF0" }}>조금 줄여본다면</span>
           <span style={{ marginLeft: "auto", display: "flex", gap: 2.5 }}>
             <i style={{ width: 1.5, height: 18, background: "rgba(255,255,255,.1)", display: "block" }}></i>
             <i style={{ width: 1.5, height: 18, background: "rgba(255,255,255,.1)", display: "block" }}></i>

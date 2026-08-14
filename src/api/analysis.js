@@ -13,8 +13,8 @@ export const analysisAPI = {
     const response = await client.get('/analysis/ai-report', { params: { year, month } });
     return response.data.data;
   },
-  getMonthlyTrend: async () => {
-    const response = await client.get('/analysis/trend');
+  getMonthlyTrend: async (year, month) => {
+    const response = await client.get('/analysis/trend', { params: { year, month } });
     return response.data.data;
   },
   getBudgetStatus: async (year, month) => {
