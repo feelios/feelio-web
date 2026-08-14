@@ -103,7 +103,15 @@ export const useBulkDeleteTransactionsMutation = () => {
     onError: (_err, _vars, context) => {
       context?.previous?.forEach(([key, data]) => queryClient.setQueryData(key, data));
     },
-    onSettled: () => invalidateRelatedQueries(queryClient),
+    /*
+     * 목록은 onMutate 에서 이미 삭제된 상태로 갱신됐다. 여기서 전체 관련 쿼리의
+     * 재조회까지 반환해 기다리면, AI 분석·평행우주처럼 응답이 오래 걸리는 쿼리 하나 때문에
+     * mutation 이 계속 pending 으로 남아 선택 바가 "삭제 중…"에 멈춘다.
+     * 정합성 재확인은 백그라운드에서 진행하고 삭제 UI는 서버 DELETE 완료 즉시 끝낸다.
+     */
+    onSettled: () => {
+      void invalidateRelatedQueries(queryClient);
+    },
   });
 };
 

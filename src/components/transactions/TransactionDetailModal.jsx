@@ -112,7 +112,8 @@ const Button = styled.button`
   font-size: 14.5px;
   font-weight: 900;
   cursor: pointer;
-  transition: background .18s ease, color .18s ease, box-shadow .18s ease, opacity .18s ease;
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease, opacity .18s ease, transform .1s ease;
+  -webkit-tap-highlight-color: transparent;
 
   /*
    * 테두리는 그대로 두고 배경·하이라이트로만 반응한다 — 선을 바꾸면 유리 재질이 깨진다.
@@ -120,11 +121,25 @@ const Button = styled.button`
    *   되돌릴 수 없는 동작이라는 걸 누르기 전에 보여준다.
    * - 수정(primary)·danger: 이미 채워진 버튼이라 톤만 눌러 반응을 준다.
    */
-  &:hover {
+  &:not(:disabled):hover {
     background: ${({ primary, danger }) =>
       primary ? 'var(--ink)' : danger ? '#DE645F' : 'color-mix(in srgb, #E87573 16%, var(--card))'};
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
     opacity: ${({ primary, danger }) => primary || danger ? .9 : 1};
+  }
+
+  /* hover 는 '누를 수 있다'까지만 알려준다. 실제로 눌렸는지는 active 가 말해야 하고,
+     모바일엔 hover 자체가 없어서 여기가 유일한 반응이다. */
+  &:not(:disabled):active {
+    transform: scale(.985);
+    background: ${({ primary, danger }) =>
+      primary ? 'var(--ink)' : danger ? '#D4534E' : 'color-mix(in srgb, #E87573 26%, var(--card))'};
+  }
+
+  /* 삭제가 오래 걸릴 때. 진행 중이라는 걸 커서와 톤으로 같이 말한다. */
+  &:disabled {
+    opacity: .6;
+    cursor: wait;
   }
 `;
 
@@ -415,23 +430,24 @@ export default function TransactionDetailModal({ transaction: initialTxn, action
   /**
    * 삭제하면 바로 지우고 모달을 닫는다.
    *
-   * window.confirm 을 걷어냈다. 브라우저 기본 대화상자라 앱 결과 안 맞고, 무엇보다
-   * 한 번 더 묻는 것 자체가 이 동작에는 과했다 — 거래 한 건은 다시 기록하면 그만이다.
-   * 대신 지운 뒤에 토스트로 결과를 말한다. 예전에는 모달만 닫히고 아무 말이 없어서
-   * 지워진 건지 창만 닫힌 건지 알 수가 없었다.
+   * window.confirm 을 걷어냈다. 브라우저 기본 대화상자라 앱 결과 안 맞고, 한 번 더 묻는 것 자체가
+   * 이 동작에는 과했다 — 거래 한 건은 다시 기록하면 그만이다.
    *
-   * 실패하면 모달을 닫지 않는다. 닫아 버리면 목록에 그대로 남은 항목을 보고
+   * 끝났다는 알림은 따로 띄우지 않는다. 모달이 닫히고 목록에서 사라지는 것이 이미 결과다.
+   * 대신 진행 중에는 버튼이 '삭제 중…' 으로 바뀐다(느릴 때 눌렸는지 알 수 있게).
+   *
+   * 실패했을 때만 말해 주고 모달을 닫지 않는다. 닫아 버리면 목록에 그대로 남은 항목을 보고
    * 사용자가 '삭제가 안 먹었나' 를 스스로 추측해야 한다.
    */
   const handleDelete = async () => {
     if (deleteTx.isPending) return;
     try {
       await deleteTx.mutateAsync(transaction.transactionId);
-      actions.showToast('기록을 삭제했어요');
-      onClose();
     } catch {
-      actions.showToast('삭제에 실패했어요. 다시 시도해 주세요.');
+      actions?.showToast?.('삭제에 실패했어요. 다시 시도해 주세요.');
+      return;
     }
+    onClose();
   };
 
   return (
@@ -452,7 +468,9 @@ export default function TransactionDetailModal({ transaction: initialTxn, action
 
           <Actions css={{ marginTop: transaction.type === 'EXPENSE' ? 0 : 'auto' }}>
             <Button type="button" primary onClick={() => setMode('edit')}>수정</Button>
-            <Button type="button" onClick={handleDelete}>삭제</Button>
+            <Button type="button" onClick={handleDelete} disabled={deleteTx.isPending}>
+              {deleteTx.isPending ? '삭제 중…' : '삭제'}
+            </Button>
           </Actions>
         </Wrap>
       ) : (

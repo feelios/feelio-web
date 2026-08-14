@@ -460,9 +460,43 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
       occurredAt: form.date.length === 16 ? `${form.date}:00` : form.date
     };
 
+    /*
+     * 목표를 다 채우는 저금인지 여기서 미리 판단한다.
+     *
+     * 처음에는 홈에서 "달성 목록이 늘었네"를 알아채게 했는데, 그건 '변화'를 봐야 하는 방식이라
+     * 이미 달성된 상태로 홈에 들어오면 알아챌 게 없다. 정작 저금은 이 화면에서 일어나므로
+     * 저금하는 그 순간에 판단하는 편이 확실하다.
+     *
+     * 저장 전 값으로 계산한다 — 저장 후 goals 를 다시 받아오길 기다리면 그사이 화면이 넘어간다.
+     * '방금 넘겼는지'를 봐야 하므로 이미 채워져 있던 목표에 더 넣은 경우는 축하하지 않는다.
+     */
+    const crossedGoal = isGoalSaving
+      ? goals.find(g => g.goalId === form.goalId
+          && g.currentAmount < g.targetAmount
+          && g.currentAmount + Number(form.amount) >= g.targetAmount)
+      : null;
+
     mutation.mutate(payload, {
       onSuccess: () => {
+        // 저장됐다는 확인이 먼저다. 방금 누른 것에 대한 답이라 즉시 와야 한다.
         actions.showToast('기록 저장됨');
+
+        /*
+         * 달성 축하는 그 뒤에 화면 위쪽 알림으로 띄운다. 둘을 동시에 띄우면 아래위에서
+         * 한꺼번에 튀어나와 어느 쪽이 무엇에 대한 답인지 흐려진다.
+         * 아래 토스트가 1.8초 뒤 사라지므로 그 언저리에서 이어받게 한다.
+         * 스토어에 넣는 일이라 이 화면을 떠나 있어도 그대로 뜬다.
+         */
+        if (crossedGoal) {
+          window.setTimeout(() => {
+            actions.showToastNotification({
+              title: '목표를 다 모았어요!',
+              body: `'${crossedGoal.name}' 목표를 달성했어요. 축하해요 🎉`,
+              // 누르면 홈으로. 달성한 목표 카드가 거기 있다.
+              url: '/'
+            });
+          }, 1600);
+        }
         onSaved?.(form.date);
         setForm(prev => ({ ...prev, amount: '', category: null, emotion: null, situation: [], memo: '', savingsType: null, goalId: null }));
       },
