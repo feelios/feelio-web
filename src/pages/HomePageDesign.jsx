@@ -7,16 +7,14 @@ import { EmptyEmotionBlob } from '../components/common/EmptyEmotionBlob.jsx';
 import { GlassCard } from '../components/common/GlassCard.jsx';
 import { getEmotion } from '../data/emotions.js';
 import { money, percent } from '../utils/format.js';
-import { useCalendarSummaryQuery, useEmotionSummaryQuery, useMallangCommentQuery } from '../hooks/queries/useSummary.js';
+import { useCalendarSummaryQuery, useEmotionSummaryQuery, useEmotionSignalCommentQuery, useMallangCommentQuery } from '../hooks/queries/useSummary.js';
 import { useGoalsQuery } from '../hooks/queries/useGoals.js';
 import { useBudgetStore } from '../stores/budgetStore.js';
-import { useFeelioStore } from '../stores/useFeelioStore.js';
+
 import { HomeSummarySkeleton } from '../components/common/Skeleton.jsx';
 import { PartyPopper } from 'lucide-react';
 import { monthAnchorDate } from '../utils/date.js';
 
-/** 축하를 이미 띄운 목표 id 들. 목표당 한 번만 알리려고 브라우저에 남긴다. */
-const CELEBRATED_GOALS_KEY = 'feelio.celebratedGoals';
 
 const Grid = styled.div`
   width: 100%;
@@ -562,7 +560,7 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
                   >
                     {/* 목표 이름 옆은 비워 둔다. 축하 아이콘은 아래 '달성했어요' 줄이 가져간다 —
                         축하할 일은 이름이 아니라 달성 사실이라, 문구 옆에 붙어야 뜻이 산다. */}
-                    <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 'auto' }}>
+                    <div css={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                       <div css={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                         {/* 진행 중 카드와 같은 행성 아이콘. 목표 줄의 표식이라 달성해도 그대로 둔다.
                             다 모았으니 안을 채워(fill) 진행 중과 구분한다. */}
@@ -576,9 +574,12 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
                       </span>
                     </div>
 
-                    <div css={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 'auto', marginBottom: 12 }}>
-                      <PartyPopper size={18} color="var(--ink)" strokeWidth={2.4} />
-                      <span css={{ fontSize: 16, color: 'var(--text)', fontWeight: 800, letterSpacing: '-.01em' }}>목표를 달성했어요!</span>
+                    {/* 제목 줄 바로 아래에 붙인다. 예전에는 제목에 marginBottom:auto, 여기에 marginTop:auto 가
+                        둘 다 걸려 남는 높이를 둘이 나눠 가졌다 — 가운데가 벌어지고 이 문구만 버튼 쪽으로
+                        내려앉았다. 남는 높이는 버튼 하나만 아래로 밀어내는 데 쓴다. */}
+                    <div css={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                      <PartyPopper size={22} color="var(--ink)" strokeWidth={2.4} />
+                      <span css={{ fontSize: 19, color: 'var(--text)', fontWeight: 900, letterSpacing: '-.02em' }}>목표를 달성했어요!</span>
                     </div>
 
                     {/* 같은 카드의 '저금하기'와 같은 결. 달성 카드만 흰 알약이면 또 혼자 튄다. */}
@@ -586,6 +587,7 @@ function AssetGoalDeck({ totalAsset, goals, onRoute, onSaveToGoal, onOpenGoals }
                       type="button"
                       onClick={(e) => { e.stopPropagation(); onOpenGoals?.(); }}
                       css={{
+                        marginTop: 'auto',
                         borderRadius: 12, border: 0,
                         background: 'color-mix(in srgb, var(--ink) 92%, transparent)',
                         backdropFilter: 'blur(20px) saturate(1.5)',
@@ -856,6 +858,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
 
   // Fetch emotion summary data from API
   const { data: emotionData, isLoading: isEmotionLoading } = useEmotionSummaryQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
+  const { data: emotionSignalComment } = useEmotionSignalCommentQuery(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1);
   const { data: goalsData, isLoading: isGoalsLoading } = useGoalsQuery();
 
   const isSummaryLoading = isCalendarLoading || isEmotionLoading || isGoalsLoading;
@@ -885,54 +888,13 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
   const totalAsset = state.user?.totalAsset ?? 0;
 
   /*
-   * 목표를 다 모은 순간을 알린다.
+   * 목표 달성 축하는 여기가 아니라 기록 화면(RecordPageDc)에서 띄운다.
    *
-   * 카드가 축하 화면으로 바뀌기는 하지만, 저금하고 나면 시선이 그 카드에 있다는 보장이 없다
-   * (기록 화면에서 돌아오는 길이라 더 그렇다). 달성은 이 앱에서 가장 좋은 소식이라 한 번은 말해준다.
-   *
-   * 기억을 컴포넌트 밖(localStorage)에 둔다. 처음에는 ref 에 담았는데, 홈을 벗어났다 돌아오면
-   * 이 컴포넌트가 다시 마운트되면서 ref 가 비고 '첫 렌더'로 취급돼 축하가 영영 안 떴다.
-   * 정작 달성은 기록 화면에서 저금하고 홈으로 돌아오는 길에 일어나므로 매번 그 경로였다.
-   *
-   * 목표당 한 번만 축하한다. 달성 여부만 보면 홈에 들어올 때마다 다시 뜬다.
-   * 키가 아예 없으면(설치 후 첫 실행) 이미 달성해 둔 목표들로 조용히 기준선만 잡는다 —
-   * 예전에 이룬 목표를 지금 축하하면 뜬금없다.
+   * 여기서는 goals 가 '달라졌는지'를 봐야 하는데, 그러려면 달라지기 전 상태를 들고 있어야 한다.
+   * 그런데 저금은 기록 화면에서 일어나고 홈은 그 뒤에 새로 마운트되므로, 홈이 보는 첫 값은
+   * 이미 달성된 상태다 — 비교할 '이전'이 없어 변화를 알아챌 수가 없다.
+   * 저금하는 그 순간에는 목표의 현재 금액과 넣을 금액을 둘 다 알고 있어 판단이 확실하다.
    */
-  // 토스트만 쓰므로 actions 만 스토어에서 직접 받는다(state 는 이미 prop 으로 온다).
-  const { actions } = useFeelioStore();
-  useEffect(() => {
-    if (isGoalsLoading) return;
-
-    const doneIds = goals
-      .filter(g => g.currentAmount >= g.targetAmount)
-      .map(g => g.goalId);
-
-    let celebrated;
-    try {
-      const raw = window.localStorage.getItem(CELEBRATED_GOALS_KEY);
-      if (raw === null) {
-        // 기준선만 잡고 이번에는 알리지 않는다.
-        window.localStorage.setItem(CELEBRATED_GOALS_KEY, JSON.stringify(doneIds));
-        return;
-      }
-      celebrated = new Set(JSON.parse(raw));
-    } catch {
-      // 저장소를 못 쓰는 환경(사생활 보호 모드 등)에서는 축하를 건너뛴다.
-      // 매번 축하가 뜨는 것보다 아예 안 뜨는 편이 덜 시끄럽다.
-      return;
-    }
-
-    const justDone = goals.find(
-      g => doneIds.includes(g.goalId) && !celebrated.has(g.goalId)
-    );
-    if (!justDone) return;
-
-    try {
-      window.localStorage.setItem(CELEBRATED_GOALS_KEY, JSON.stringify([...celebrated, ...doneIds]));
-    } catch { /* 저장 실패해도 축하는 한 번 띄운다 */ }
-
-    actions.showToast(`🎉 '${justDone.name}' 목표를 다 모았어요!`);
-  }, [goals, isGoalsLoading, actions]);
 
   // 전역 예산 스토어 구독 → 서버 문구를 못 받았을 때 쓰는 소진율 기반 문구 (F7-10 · #145)
   // 계산·동기화는 BudgetSync가 담당하고, 여기선 파생 상태만 읽는다.
@@ -986,6 +948,11 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     ?? ridgeData.reduce((max, item) => item[1] > max[1] ? item : max, ridgeData[0])[0];
   const slot = 560 / ridgeData.length;
   const signals = getEmotionSignals(serverEmotions, serverPrevEmotions);
+  const fallbackSignalComment = signals.length > 0 && signals[0].rate > 0
+    ? (isMobile ? `이번 달은 ${signals[0].name} 소비가 조금 늘었어. 괜찮아, 같이 들여다보자.` : `이번 달은 ${signals[0].name} 소비가 조금 늘고 있어요.`)
+    : (isMobile ? '감정 소비가 안정적으로 관리되고 있어. 이대로도 충분해.' : '감정 소비가 안정적으로 관리되고 있어요.');
+  const signalComment = emotionSignalComment?.comment || fallbackSignalComment;
+  const signalCommaIndex = signalComment.indexOf(',');
   const monthLabel = `${visibleMonth.getFullYear()}년 ${visibleMonth.getMonth() + 1}월`;
   const moveMonth = (step) => setVisibleMonth(prev => {
     const next = new Date(prev.getFullYear(), prev.getMonth() + step, 1);
@@ -1187,9 +1154,13 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
           {hasMonthlyTransactions ? (
             <>
               <div css={{ fontSize: isMobile ? 18 : 14.5, fontWeight: 900, lineHeight: isMobile ? 1.42 : 1.35 }}>
-                {signals.length > 0 && signals[0].rate > 0
-                  ? (isMobile ? `이번 달은 ${signals[0].name} 소비가 조금 늘었어. 괜찮아, 같이 들여다보자.` : `이번 달은 ${signals[0].name} 소비가 조금 늘고 있어요.`)
-                  : (isMobile ? '감정 소비가 안정적으로 관리되고 있어. 이대로도 충분해.' : '감정 소비가 안정적으로 관리되고 있어요.')}
+                {signalCommaIndex >= 0 ? (
+                  <>
+                    {signalComment.slice(0, signalCommaIndex + 1)}
+                    <br />
+                    {signalComment.slice(signalCommaIndex + 1).trimStart()}
+                  </>
+                ) : signalComment}
               </div>
               <div css={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '8px 0 7px', borderTop: '1px solid var(--line)', marginTop: 8 }}>
                 {signals.length > 0 ? (
