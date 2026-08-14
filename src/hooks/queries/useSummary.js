@@ -35,6 +35,18 @@ export const useEmotionSummaryQuery = (year, month) => {
   });
 };
 
+/** AI 지연이 감정 능선 로딩을 막지 않도록 별도로 조회한다. */
+export const useEmotionSignalCommentQuery = (year, month) => {
+  return useQuery({
+    queryKey: ['summary', 'emotionSignal', year, month],
+    queryFn: () => summaryAPI.getEmotionSignalComment(year, month),
+    staleTime: 1000 * 60 * 30,
+    refetchOnMount: ALWAYS_REVALIDATE_ON_MOUNT,
+    enabled: !!year && !!month,
+    retry: 1,
+  });
+};
+
 /**
  * 홈 말랑이 말풍선 문구 (F18-5).
  *

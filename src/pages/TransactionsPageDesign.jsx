@@ -460,7 +460,6 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
   // 다중 선택 삭제
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
-  const [confirming, setConfirming] = useState(false);
   const bulkDeleteMutation = useBulkDeleteTransactionsMutation();
   const updateMutation = useUpdateTransactionMutation();
   const [merging, setMerging] = useState(false);
@@ -482,7 +481,7 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
   const toggleSelectMode = () => {
     setSelectMode(prev => {
       const next = !prev;
-      if (!next) { setSelectedIds(new Set()); setConfirming(false); }
+      if (!next) { setSelectedIds(new Set()); }
       return next;
     });
   };
@@ -500,14 +499,10 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
   };
 
   const handleBulkDelete = async () => {
-    if (!selectedCount) return;
-    try {
-      await bulkDeleteMutation.mutateAsync(selectedVisibleIds);
-      setSelectMode(false);
-      setSelectedIds(new Set());
-    } finally {
-      setConfirming(false);
-    }
+    if (!selectedCount || bulkDeleteMutation.isPending) return;
+    await bulkDeleteMutation.mutateAsync(selectedVisibleIds);
+    setSelectMode(false);
+    setSelectedIds(new Set());
   };
 
   const handleBulkMerge = async () => {
@@ -769,25 +764,18 @@ export default function TransactionsPageDesign({ onSelect, globalDate, setGlobal
             {allSelected ? '전체 해제' : '전체 선택'}
           </BarGhost>
           <BarText>{selectedCount}개 선택</BarText>
-          {confirming ? (
-            <>
-              <BarText>삭제할까요?</BarText>
-              <BarDanger type="button" disabled={bulkDeleteMutation.isPending} onClick={handleBulkDelete}>
-                {bulkDeleteMutation.isPending ? '삭제 중…' : '삭제'}
-              </BarDanger>
-              <BarGhost type="button" onClick={() => setConfirming(false)}>취소</BarGhost>
-            </>
-          ) : (
-            <>
-              {canMerge && (
-                <BarGhost type="button" disabled={merging || bulkDeleteMutation.isPending} onClick={handleBulkMerge} css={{ color: 'var(--accent)', fontWeight: 'bold' }}>
-                  {merging ? '합치는 중...' : '정산 합치기'}
-                </BarGhost>
-              )}
-              <BarDanger type="button" disabled={!selectedCount || merging} onClick={() => setConfirming(true)}>삭제</BarDanger>
-              <BarGhost type="button" onClick={toggleSelectMode} disabled={merging}>취소</BarGhost>
-            </>
+          {/* '삭제할까요?' 확인 단계를 뺐다. 지울 항목을 이미 하나씩 골라 놓은 뒤라
+              여기서 한 번 더 묻는 건 같은 결정을 두 번 시키는 것에 가깝다.
+              오래 걸릴 때 눌린 줄 알 수 있게 '삭제 중…' 만 남긴다. */}
+          {canMerge && (
+            <BarGhost type="button" disabled={merging || bulkDeleteMutation.isPending} onClick={handleBulkMerge} css={{ color: 'var(--accent)', fontWeight: 'bold' }}>
+              {merging ? '합치는 중...' : '정산 합치기'}
+            </BarGhost>
           )}
+          <BarDanger type="button" disabled={!selectedCount || merging || bulkDeleteMutation.isPending} onClick={handleBulkDelete}>
+            {bulkDeleteMutation.isPending ? '삭제 중…' : '삭제'}
+          </BarDanger>
+          <BarGhost type="button" onClick={toggleSelectMode} disabled={merging || bulkDeleteMutation.isPending}>취소</BarGhost>
         </SelectBar>
       )}
     </Wrap>
