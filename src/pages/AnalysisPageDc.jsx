@@ -223,7 +223,7 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
   const { data: analysis } = useMonthlyAnalysisQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: insightsData, isLoading: isInsightsLoading } = useAiInsightsQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const { data: reportData } = useAiReportQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
-  const { data: trendData } = useMonthlyTrendQuery();
+  const { data: trendData } = useMonthlyTrendQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   // 전역 예산 상태 대신 선택된 달의 예산 현황을 동적으로 패칭한다 (#284)
   const { data: budgetData } = useBudgetStatusQuery(globalDate.getFullYear(), globalDate.getMonth() + 1);
   const serverBudgetItems = budgetData?.budgetItems ?? [];
@@ -393,9 +393,14 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
    * 산술평균은 2만원짜리 카테고리와 30만원짜리 카테고리를 같은 무게로 세서, 같은 화면의
    * 소비 위험도(총지출÷총예산)와 다른 숫자가 나왔다 — 한쪽은 36%, 한쪽은 44%.
    * 정의를 위험도와 맞추고, 근거가 되는 총예산 금액도 함께 보여준다.
+   *
+   * 분자는 '측정중'까지 포함한 목록 전체에서 센다. 예전엔 여기서 측정중 항목을 빼고 셌는데,
+   * 서버 위험도는 예산 항목 전체를 세고 있어서 같은 달에 두 숫자가 갈렸다 — 소진율 59%(초록)
+   * 옆에 위험도 '주의'(노랑)가 나란히 떴다. 예산이 0원이어도 쓴 돈은 쓴 돈이라 분자에 들어간다.
+   * 서버(AnalysisService.budgetUsage)와 같은 집합·같은 정의라야 두 칸의 색이 맞는다.
    */
-  const budgetTotal = validBudgetItems.reduce((sum, item) => sum + item.budget, 0);
-  const budgetSpent = validBudgetItems.reduce((sum, item) => sum + item.amount, 0);
+  const budgetTotal = budgetItems.reduce((sum, item) => sum + item.budget, 0);
+  const budgetSpent = budgetItems.reduce((sum, item) => sum + item.amount, 0);
   const budgetAverage = budgetTotal > 0 ? Math.round((budgetSpent / budgetTotal) * 100) : 0;
   // '측정중'은 아직 판정할 수 없는 상태라 구간 색을 입히지 않는다 (아래 항목별 '측정중'과 같은 색).
   const budgetRateColor = validBudgetItems.length > 0 ? budgetRateLevel(budgetAverage).color : 'var(--sub)';
@@ -695,7 +700,16 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
                   <div css={{ minWidth: 0 }}>
                     <div css={{ color: '#E87573', fontSize: 11, fontWeight: 950, marginBottom: 5 }}>초과</div>
                     <div css={{ color: 'var(--text)', fontSize: 20, fontWeight: 950, lineHeight: 1.15 }}>{overBudgetItem.name} {Math.round(overBudgetItem.progress)}%</div>
-                    <div css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 750, marginTop: 6 }}>{overBudgetItem.emotion} 소비가 목표보다 빨라요</div>
+                    {/* 감정을 이 카테고리에 걸어서 말한다. 예전엔 '설렘 소비가 목표보다 빨라요' 였는데,
+                        감정만 주어로 서는 바람에 바로 위 '차량,교통 250%' 와 연결이 끊겼다 —
+                        '설렘 감정 소비 전체가 빠르다'로 읽힌다. 여기 감정은 그런 뜻이 아니라
+                        이 카테고리 지출의 이번 달 지배 감정이다.
+                        이번 달 기록이 없어 감정을 모르면 지어내지 않고 사실만 말한다. */}
+                    <div css={{ color: 'var(--sub)', fontSize: 12, fontWeight: 750, marginTop: 6 }}>
+                      {overBudgetItem.emotion && overBudgetItem.emotion !== NO_EMOTION
+                        ? `이 지출은 주로 '${overBudgetItem.emotion}'일 때 나왔어요`
+                        : '목표보다 빠르게 쓰고 있어요'}
+                    </div>
                   </div>
                   <div css={{ textAlign: 'right', flexShrink: 0 }}>
                     <div css={{ color: '#E87573', fontSize: 20, fontWeight: 950 }}>{overBudgetItem.amount.toLocaleString()}원</div>
@@ -778,7 +792,10 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
               <h3 css={{ margin: '0 0 5px', fontSize: 16, fontWeight: 900 }}>나의 소비 코어</h3>
               <p css={{ margin: 0, color: 'var(--sub)', fontSize: 12 }}>이번 달 소비를 끌고 간 원인이에요</p>
             </div>
-            <span css={{ color: activeChart.color, fontSize: 12, fontWeight: 950 }}>{activeChart.helper}</span>
+            {/* 탭 이름표라 기본 글자색으로 둔다. 감정 탭만 감정 색을 쓰면 세 탭 중 하나만 튀는데,
+                이 자리는 '지금 무슨 탭인지'를 알려줄 뿐이라 색이 뜻을 더하지 않는다.
+                감정 색은 아래 큰 감정명·비율이 그대로 가져간다. */}
+            <span css={{ color: 'var(--text)', fontSize: 12, fontWeight: 950 }}>{activeChart.helper}</span>
           </div>
 
           {renderTabs(true)}
@@ -860,24 +877,31 @@ export default function AnalysisPageDc({ state, globalDate, setGlobalDate }) {
           
           {monthly.length > 0 ? (
             <div css={{ display: 'grid', gap: 12 }}>
-              <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map((item) => {
-                const match = item.label.match(/(\d+)월/);
-                const itemMonth = match ? parseInt(match[1], 10) - 1 : -1;
-                const current = itemMonth === globalDate.getMonth();
+              {/* 막대 7개는 오늘 기준으로 고정된 창이고, 선택한 달은 강조로만 표시한다.
+                  창까지 선택을 따라 움직이면 누를 때마다 방금 누른 막대가 자리를 옮긴다.
+                  연·월은 서버가 yearMonth("2026-07")로 실어 보낸다 — 예전엔 라벨('7월')만 와서
+                  오늘 날짜로 연도를 추측했고, 창이 미래 달을 품으면 작년으로 튀었다. */}
+              <div css={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150 }}>{monthly.map((item, index) => {
+                const parsed = (item.yearMonth ?? '').split('-').map(Number);
+                const hasYearMonth = parsed.length === 2 && parsed.every(Number.isInteger);
+                /* 창의 마지막 칸이 언제나 당월이므로, yearMonth 가 없어도 인덱스로 연·월을 되짚을 수 있다.
+                   서버가 yearMonth 를 싣기 전의 응답이 캐시에 남아 있어도 막대는 계속 눌려야 한다 —
+                   눌러도 아무 일이 없는 게 제일 나쁘다. 오늘 날짜로 연도를 '추측'하던 예전 방식과는
+                   다르다. 그건 창이 미래 달을 품으면 틀렸고, 이건 창의 정의에서 그대로 따라 나온다. */
+                const anchor = new Date();
+                anchor.setDate(1);
+                anchor.setMonth(anchor.getMonth() - (monthly.length - 1 - index));
+                const itemYear = hasYearMonth ? parsed[0] : anchor.getFullYear();
+                const itemMonth = hasYearMonth ? parsed[1] : anchor.getMonth() + 1;   // 1-based
+                // 연도까지 함께 본다. 월만 비교하면 작년 같은 달도 함께 강조된다.
+                const current = itemYear === globalDate.getFullYear()
+                  && itemMonth === globalDate.getMonth() + 1;
                 const maxAmount = Math.max(...monthly.map(m => m.amount)) || 1;
                 const heightPercent = Math.max((item.amount / maxAmount) * 100, 5);
                 return <div
-                  key={item.label}
+                  key={item.yearMonth ?? item.label}
                   css={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0, cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
-                  onClick={() => {
-                    if (match) {
-                      let y = new Date().getFullYear();
-                      if (itemMonth > new Date().getMonth()) {
-                        y -= 1;
-                      }
-                      setGlobalDate(monthAnchorDate(y, itemMonth));
-                    }
-                  }}
+                  onClick={() => setGlobalDate(monthAnchorDate(itemYear, itemMonth - 1))}
                 >
                   <span css={{ color: current ? 'var(--text)' : 'var(--sub)', fontSize: 10, fontWeight: current ? 900 : 750, marginBottom: 6, opacity: current ? 1 : 0.58 }}>{(item.amount / 10000).toFixed(1)}만</span>
                   <div css={{ width: '100%', height: `${heightPercent}%`, minHeight: 8, borderRadius: 8, background: current ? 'var(--text)' : 'var(--line)', opacity: current ? 0.86 : 0.72 }} />

@@ -194,16 +194,46 @@ const Chip = styled.button`
   cursor: pointer;
 `;
 
+/**
+ * 누른 느낌을 준다. 예전에는 transition 이 background 뿐이라 눌러도 화면이 그대로였고,
+ * 저장이 끝나기 전까지는 눌린 건지 안 눌린 건지 알 수가 없었다.
+ * hover 로 살짝 밝히고, active 에서 눌러 들어가게 한다(모바일은 hover 가 없으니 active 가 본체다).
+ * 비활성일 때는 둘 다 걸지 않는다 — 못 누르는 버튼이 반응하면 눌린 줄 안다.
+ */
+/**
+ * 감정 색을 그대로 깔던 걸 유리 결로 바꾼다. 단색이라 이 화면에서 혼자 판판하게 떠 보였다 —
+ * 나머지 카드가 전부 유리(GlassCard)라서 더 그랬다. 색은 그대로 두고 투명도·윗변 하이라이트·
+ * 아래 그림자만 얹어, 감정 색이 유리 아래에서 비치는 것처럼 보이게 한다.
+ *
+ * 누른 느낌도 함께 준다. 예전에는 transition 이 background 뿐이라 눌러도 화면이 그대로였다.
+ * 비활성일 때는 hover·active 를 걸지 않는다 — 못 누르는 버튼이 반응하면 눌린 줄 안다.
+ */
 const SaveButton = styled.button`
   border: 0;
   border-radius: 18px;
   padding: 18px;
-  background: ${({ disabled, accent }) => disabled ? 'var(--line)' : (accent || 'var(--ink)')};
+  background: ${({ disabled, accent }) => disabled
+    ? 'var(--line)'
+    : `color-mix(in srgb, ${accent || 'var(--ink)'} 58%, transparent)`};
+  backdrop-filter: ${({ disabled }) => disabled ? 'none' : 'blur(20px) saturate(1.5)'};
+  -webkit-backdrop-filter: ${({ disabled }) => disabled ? 'none' : 'blur(20px) saturate(1.5)'};
   color: ${({ disabled }) => disabled ? 'var(--sub)' : 'var(--bg-1)'};
+  box-shadow: ${({ disabled, accent }) => disabled ? 'none' : [
+    'inset 0 0 0 1px color-mix(in srgb, #fff 24%, transparent)',
+    'inset 0 1.5px 0 color-mix(in srgb, #fff 42%, transparent)',
+    `inset 0 -16px 24px -12px color-mix(in srgb, ${accent || 'var(--ink)'} 55%, transparent)`,
+    `0 14px 30px -18px color-mix(in srgb, ${accent || 'var(--ink)'} 60%, transparent)`
+  ].join(', ')};
   font-size: 15px;
   font-weight: 900;
   cursor: ${({ disabled }) => disabled ? 'default' : 'pointer'};
-  transition: background 0.2s;
+  transition: background .2s, filter .15s ease, transform .1s ease, box-shadow .15s ease;
+  -webkit-tap-highlight-color: transparent;
+
+  ${({ disabled }) => disabled ? '' : `
+    &:hover { filter: brightness(1.08); }
+    &:active { transform: scale(.985); filter: brightness(.94); }
+  `}
 `;
 
 const AddingInput = styled.input`
@@ -673,8 +703,11 @@ export default function RecordPageDc({ actions, onSaved, prefill, onConsumePrefi
             </label>
           </SideCard>
 
-          <SaveButton disabled={!canSave} onClick={save} accent={accent}>
-            {canSave ? '감정 기록 저장하기' : '금액·감정·카테고리를 골라주세요'}
+          {/* 저장 중에는 못 누르게 막고 그 사실을 글자로 말한다.
+              save() 안에 isPending 가드가 있어 중복 저장은 안 됐지만, 버튼이 멀쩡히 눌리는
+              모양이라 사용자는 눌린 건지 안 눌린 건지 알 수가 없었다. 실제로 여러 번 누르게 된다. */}
+          <SaveButton disabled={!canSave || mutation.isPending} onClick={save} accent={accent}>
+            {mutation.isPending ? '기록 중…' : (canSave ? '기록하기' : '금액·감정·카테고리를 골라주세요')}
           </SaveButton>
         </Side>
       </Grid>
