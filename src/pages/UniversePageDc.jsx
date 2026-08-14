@@ -123,31 +123,21 @@ export default function UniversePageDc() {
       return showDays(s) ? `${s.daysToGoal}일 예상` : `${s.monthsToGoal}개월 예상`;
     };
 
-    const currentNote = `${goal.name} · ${durationOf(current)}`;
-
-    const savedAmount = reduced.monthlySaving - current.monthlySaving;
-    const monthsSaved = (current.monthsToGoal ?? 0) - (reduced.monthsToGoal ?? 0);
-    const daysSaved = (current.daysToGoal ?? 0) - (reduced.daysToGoal ?? 0);
-
-    // 얼마나 빨라지는지가 이 칸의 요점이다. 개월로 드러나면 개월, 한 달 안쪽이면 일,
-    // 그래도 같으면(반올림으로 하루도 안 줄면) 매달 더 남는 금액으로 말한다.
-    let reducedNote = `${goal.name} · `;
-    if (reduced.monthsToGoal == null) {
-      reducedNote += "도달 불가";
-    } else if (monthsSaved > 0) {
-      reducedNote += `${monthsSaved}개월 단축!`;
-    } else if (daysSaved > 0) {
-      reducedNote += `${daysSaved}일 단축!`;
-    } else if (savedAmount > 0) {
-      reducedNote += `매달 ${formatMoney(savedAmount)} 더`;
-    } else {
-      reducedNote += durationOf(reduced);
-    }
+    /*
+     * '아낀 금액'은 저축액 차이가 아니라 실제 지출 감소액이다.
+     * 수입보다 지출이 큰 사용자는 CURRENT·REDUCED의 monthlySaving이 둘 다 0으로 보정되므로
+     * 둘을 빼면 실제로 소비를 줄였는데도 +0원으로 보였다.
+     */
+    const savedAmount = Math.max(0, current.monthlyExpense - reduced.monthlyExpense);
+    // 목표 도달 예상 배지는 절약을 실천한 미래의 보상으로만 보여준다.
+    // 현재 소비 행성에서는 같은 정보가 팩폭 문장과 중복되고 긍정적인 예측처럼 읽힌다.
+    const reducedNote = `${goal.name} · ${durationOf(reduced)}`;
 
     return {
       goalName: goal.name,
       current: {
         tag: "현재 우주",
+        planetLabel: "현재 소비 행성",
         title: current.title,
         // 현재 우주는 이번 달 전체 소비를 보여준다. 특정 항목 금액을 보여주면
         // 그 아래 '목표까지 N개월'과 근거가 어긋난다 — 개월 수는 전체 지출로 계산된 값이다.
@@ -155,7 +145,7 @@ export default function UniversePageDc() {
         metric: `-${formatMoney(current.monthlyExpense)}`,
         accent: "#9E96EE",
         narratives: current.narrations || [ current.narration ],
-        goalNote: currentNote,
+        goalNote: null,
         focusTag: null,
         // 항해 머리말용. 제목("지금처럼 쓴다면")은 ~면 으로 끝나는 조건절이라
         // "… 우주로 진입하고 있어요" 앞에 그대로 붙이면 말이 안 된다. 관형형을 따로 둔다.
@@ -167,6 +157,7 @@ export default function UniversePageDc() {
       },
       reduced: {
         tag: "다른 우주",
+        planetLabel: "소비를 줄인 행성",
         title: reduced.title,
         metricLabel: "매달 아낄 수 있는 금액",
         metric: `+${formatMoney(savedAmount)}`,
@@ -244,7 +235,7 @@ export default function UniversePageDc() {
 
   const reset = () => {
     if (tRef.current) clearTimeout(tRef.current);
-    setPhase("idle"); setSelected(""); setHeading("");
+    setPhase("idle"); setSelected(""); setHeading(""); setNarrativeIndex(0);
   };
 
   // 하단 목표 선택 → 해당 goalId로 시뮬레이션 전환(항해 상태 초기화)
@@ -252,7 +243,7 @@ export default function UniversePageDc() {
     if (goalId === activeGoalId) return;
     if (tRef.current) clearTimeout(tRef.current);
     setSelectedGoalId(goalId);
-    setPhase("idle"); setSelected(""); setHeading("");
+    setPhase("idle"); setSelected(""); setHeading(""); setNarrativeIndex(0);
   };
 
   const select = (key) => {
@@ -293,6 +284,9 @@ export default function UniversePageDc() {
     if (tRef.current) clearTimeout(tRef.current);
     // selected 는 애니메이션이 끝난 뒤에야 바뀐다. 머리말은 지금 향하는 쪽을 말해야 하므로 먼저 잡는다.
     setHeading(key);
+    // 다른 우주에 들어가면 반드시 0번(목표 도달 개월·일수)부터 보여준다.
+    // 이전 우주에서 넘겨 본 코멘트 인덱스를 이어받으면 원인·조언 문장이 첫 화면에 노출된다.
+    setNarrativeIndex(0);
     setPhase("departing");
     tRef.current = setTimeout(() => {
       setPhase("result"); setSelected(key);
@@ -587,6 +581,21 @@ export default function UniversePageDc() {
                 <UniversePlanet tone={selected === "reduced" ? "calm" : "stress"} size={isMobile ? 800 : 1000} />
               </div>
 
+              {phase === "result" && u && (
+                <div style={{
+                  position: "absolute", left: isMobile ? 18 : 32, top: isMobile ? 18 : 28, zIndex: 6,
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  padding: isMobile ? "8px 11px" : "9px 13px", borderRadius: 999,
+                  border: `1px solid ${u.accent}55`, background: "rgba(18,20,30,.68)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,.18)", backdropFilter: "blur(12px)",
+                  color: "#F4F2F8", font: `${isMobile ? 700 : 750} ${isMobile ? 11.5 : 13}px system-ui`,
+                  letterSpacing: "-.01em", animation: "pu-welldraw .6s ease both", pointerEvents: "none"
+                }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: u.accent, boxShadow: `0 0 10px ${u.accent}` }} />
+                  {u.planetLabel}
+                </div>
+              )}
+
               <div onClick={() => depart(otherKey)} style={{ position: "absolute", left: isMobile ? "80%" : 948, top: isMobile ? "12%" : 344, transform: "translate(-50%,-50%)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, zIndex: 1 }}>
                 <UniversePlanet tone={otherKey === "reduced" ? "calm" : "stress"} size={isMobile ? 140 : 212} />
                 {phase === "result" && (
@@ -630,7 +639,9 @@ export default function UniversePageDc() {
                       </div>
                     )}
                     <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 11, background: "rgba(50,42,32,.055)", font: "600 11px system-ui", color: "#5c564e" }}>🎯 {u.goalNote}</span>
+                      {u.goalNote && (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 11, background: "rgba(50,42,32,.055)", font: "600 11px system-ui", color: "#5c564e" }}>🎯 {u.goalNote}</span>
+                      )}
                       {u.focusTag && (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 11, background: "rgba(50,42,32,.055)", font: "600 11px system-ui", color: "#5c564e" }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: u.accent }}></span>{u.focusTag}</span>
                       )}

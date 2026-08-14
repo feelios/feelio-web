@@ -350,7 +350,9 @@ Response(200) `data`:
 - `reductionRate`: 서버가 가정한 감축 비율(0~1, 예 `0.5`). 응답에 명시해 프론트 하드코딩을 피한다.
 - `scenarios`: `CURRENT`(현행)·`REDUCED`(감축) 2건 고정. `REDUCED.title`은 focusEmotion 이름을 반영(예: "설렘 소비를 줄이면").
   - `REDUCED.monthlyExpense = monthlyExpense − round(focusEmotion.monthlyAmount × reductionRate)` (focusEmotion 이 `null`이면 CURRENT 와 동일).
-  - `monthlySaving = monthlyIncome − 시나리오 monthlyExpense` (음수면 0 처리).
+  - `CURRENT.monthlySaving = max(monthlyIncome − monthlyExpense, 0)`.
+  - `REDUCED.monthlySaving = CURRENT.monthlySaving + (CURRENT.monthlyExpense − REDUCED.monthlyExpense)`.
+    줄인 소비액을 매달 목표 저금으로 옮긴 미래이므로 현재 수지가 적자여도 감축액은 0원이 되지 않는다.
   - `monthsToGoal = ceil((targetAmount − currentAmount) / monthlySaving)`. `monthlySaving ≤ 0`이면 `monthsToGoal`·`estimatedAchieveDate` 모두 `null`(도달 불가).
 - 에러: `NOT_FOUND`(목표 없음) · `FORBIDDEN`(타인 목표) · `VALIDATION_ERROR`(goalId 누락).
 

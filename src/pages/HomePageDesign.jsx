@@ -952,6 +952,7 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
     ? (isMobile ? `이번 달은 ${signals[0].name} 소비가 조금 늘었어. 괜찮아, 같이 들여다보자.` : `이번 달은 ${signals[0].name} 소비가 조금 늘고 있어요.`)
     : (isMobile ? '감정 소비가 안정적으로 관리되고 있어. 이대로도 충분해.' : '감정 소비가 안정적으로 관리되고 있어요.');
   const signalComment = emotionSignalComment?.comment || fallbackSignalComment;
+  const signalCommaIndex = signalComment.indexOf(',');
   const monthLabel = `${visibleMonth.getFullYear()}년 ${visibleMonth.getMonth() + 1}월`;
   const moveMonth = (step) => setVisibleMonth(prev => {
     const next = new Date(prev.getFullYear(), prev.getMonth() + step, 1);
@@ -1153,7 +1154,13 @@ export default function HomePageDesign({ state, onRoute, selectedDate, onSelectD
           {hasMonthlyTransactions ? (
             <>
               <div css={{ fontSize: isMobile ? 18 : 14.5, fontWeight: 900, lineHeight: isMobile ? 1.42 : 1.35 }}>
-                {signalComment}
+                {signalCommaIndex >= 0 ? (
+                  <>
+                    {signalComment.slice(0, signalCommaIndex + 1)}
+                    <br />
+                    {signalComment.slice(signalCommaIndex + 1).trimStart()}
+                  </>
+                ) : signalComment}
               </div>
               <div css={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '8px 0 7px', borderTop: '1px solid var(--line)', marginTop: 8 }}>
                 {signals.length > 0 ? (
